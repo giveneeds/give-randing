@@ -40,9 +40,11 @@ class Particle {
     };
 
     const targetMagnitude = Math.sqrt(towardsTarget.x * towardsTarget.x + towardsTarget.y * towardsTarget.y);
+    const dpr = typeof window !== 'undefined' ? (window.devicePixelRatio || 1) : 1;
+    const scaledMaxSpeed = this.maxSpeed * dpr; // 캔버스 스케일링에 맞춰 속도 보정
     if (targetMagnitude > 0) {
-      towardsTarget.x = (towardsTarget.x / targetMagnitude) * this.maxSpeed * proximityMult;
-      towardsTarget.y = (towardsTarget.y / targetMagnitude) * this.maxSpeed * proximityMult;
+      towardsTarget.x = (towardsTarget.x / targetMagnitude) * scaledMaxSpeed * proximityMult;
+      towardsTarget.y = (towardsTarget.y / targetMagnitude) * scaledMaxSpeed * proximityMult;
     }
 
     const steer = {
@@ -51,9 +53,10 @@ class Particle {
     };
 
     const steerMagnitude = Math.sqrt(steer.x * steer.x + steer.y * steer.y);
+    const scaledMaxForce = this.maxForce * dpr;
     if (steerMagnitude > 0) {
-      steer.x = (steer.x / steerMagnitude) * this.maxForce;
-      steer.y = (steer.y / steerMagnitude) * this.maxForce;
+      steer.x = (steer.x / steerMagnitude) * scaledMaxForce;
+      steer.y = (steer.y / steerMagnitude) * scaledMaxForce;
     }
 
     this.acc.x += steer.x;
@@ -64,13 +67,13 @@ class Particle {
       const dx = this.pos.x - mouse.x;
       const dy = this.pos.y - mouse.y;
       const distSq = dx * dx + dy * dy;
-      const mouseRadius = 100; // 영향 반경
+      const mouseRadius = 100 * dpr; // 고해상도 디스플레이에 맞춰 반경 스케일링
       const mouseRadiusSq = mouseRadius * mouseRadius;
 
       if (distSq < mouseRadiusSq) {
         const dist = Math.sqrt(distSq);
         const force = (mouseRadius - dist) / mouseRadius;
-        const repelPower = 8.0; // 척력 강도
+        const repelPower = 8.0 * dpr; // 척력 강도 보정
 
         this.acc.x += (dx / dist) * force * repelPower;
         this.acc.y += (dy / dist) * force * repelPower;
@@ -102,7 +105,9 @@ class Particle {
     };
 
     const colorStr = `rgb(${currentColor.r}, ${currentColor.g}, ${currentColor.b})`;
-    const dotSize = isMobile ? 3 : 2; // 모바일에서 파티클 크기 증가
+    const dpr = typeof window !== 'undefined' ? (window.devicePixelRatio || 1) : 1;
+    // dpr 배율 및 모바일 여부에 따라 점 크기를 조정해 선명도+강도 확보 (블러 방지)
+    const dotSize = (isMobile ? 3 : 2) * (dpr >= 2 ? dpr * 0.7 : 1);
 
     if (drawAsPoints) {
       ctx.fillStyle = colorStr;
@@ -218,16 +223,26 @@ export function ParticleTextEffect({ words = DEFAULT_WORDS }) {
     const offscreenCtx = offscreenCanvas.getContext("2d");
 
     offscreenCtx.fillStyle = "white";
+    const dpr = window.devicePixelRatio || 1;
     // 모바일에서 폰트를 더 크게 설정해 파티클이 획 안에 충분히 들어오도록 함
     const isMobile = window.innerWidth < 768;
-    const mobileFontSize = Math.min(canvas.width / 6, canvas.height / 5, 72);
-    const desktopFontSize = Math.min(canvas.width / 10, canvas.height / 5, 110);
+    const mobileFontSize = Math.min(canvas.width / 6, canvas.height / 5, 72 * dpr);
+    const desktopFontSize = Math.min(canvas.width / 10, canvas.height / 5, 110 * dpr);
     const fontSize = isMobile ? mobileFontSize : desktopFontSize;
     // Canvas API는 CSS 변수를 지원하지 않으므로 실제 폰트명을 직접 사용
     offscreenCtx.font = `bold ${fontSize}px Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
     offscreenCtx.textAlign = "center";
     offscreenCtx.textBaseline = "middle";
-    offscreenCtx.fillText(word, canvas.width / 2, canvas.height / 2);
+    
+    // 줄바꿈 대응 (\n)
+    const lines = word.split('\n');
+    const lineHeight = fontSize * 1.2;
+    // 여러 줄일 경우 물리적 중앙을 찾아 시작 Y 오프셋 보정
+    const startY = (canvas.height / 2) - ((lines.length - 1) * lineHeight / 2);
+    
+    lines.forEach((line, index) => {
+      offscreenCtx.fillText(line, canvas.width / 2, startY + (index * lineHeight));
+    });
 
     const imageData = offscreenCtx.getImageData(0, 0, canvas.width, canvas.height);
     const pixels = imageData.data;
@@ -247,7 +262,8 @@ export function ParticleTextEffect({ words = DEFAULT_WORDS }) {
     const particles = particlesRef.current;
     let particleIndex = 0;
 
-    const pixelSteps = isMobile ? 3 : 5; // 모바일 더 촘촘하게, 데스크탑 적절히
+    // 고해상도 화면(dpr>1)일 때 모바일에서 파티클 개수가 기하급수적으로 터지는 것을 방지(최적화)
+    const pixelSteps = Math.floor((isMobile ? 3 : 5) * (dpr >= 2 ? dpr * 0.8 : 1));
     const coordsIndexes = [];
     for (let i = 0; i < pixels.length; i += pixelSteps * 4) {
       coordsIndexes.push(i);
@@ -366,9 +382,12 @@ export function ParticleTextEffect({ words = DEFAULT_WORDS }) {
       const parent = canvas.parentElement;
       const w = parent && parent.offsetWidth > 0 ? parent.offsetWidth : window.innerWidth;
       const h = parent && parent.offsetHeight > 0 ? parent.offsetHeight : window.innerHeight;
-      canvas.width = w;
-      canvas.height = h;
-
+      
+      const dpr = window.devicePixelRatio || 1;
+      // 물리 픽셀 크기 적용 (블러, 뭉개짐 방지 고화질 렌더링)
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      
       if (canvas.width > 0 && canvas.height > 0) {
         nextWord(words[wordIndexRef.current], canvas, !document.documentElement.classList.contains('dark'));
       }
@@ -382,12 +401,15 @@ export function ParticleTextEffect({ words = DEFAULT_WORDS }) {
       animate();
     });
 
+    const getDpr = () => window.devicePixelRatio || 1;
+
     const handleMouseDown = (e) => {
       mouseRef.current.isPressed = true;
       mouseRef.current.isRightClick = e.button === 2;
       const rect = canvas.getBoundingClientRect();
-      mouseRef.current.x = e.clientX - rect.left;
-      mouseRef.current.y = e.clientY - rect.top;
+      const dpr = getDpr();
+      mouseRef.current.x = (e.clientX - rect.left) * dpr;
+      mouseRef.current.y = (e.clientY - rect.top) * dpr;
     };
 
     const handleMouseUp = () => {
@@ -397,8 +419,9 @@ export function ParticleTextEffect({ words = DEFAULT_WORDS }) {
 
     const handleMouseMove = (e) => {
       const rect = canvas.getBoundingClientRect();
-      mouseRef.current.x = e.clientX - rect.left;
-      mouseRef.current.y = e.clientY - rect.top;
+      const dpr = getDpr();
+      mouseRef.current.x = (e.clientX - rect.left) * dpr;
+      mouseRef.current.y = (e.clientY - rect.top) * dpr;
     };
 
     const handleContextMenu = (e) => {
