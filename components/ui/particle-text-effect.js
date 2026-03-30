@@ -183,8 +183,8 @@ export function ParticleTextEffect({ words = DEFAULT_WORDS }) {
     setIsLight(theme === 'light');
   }, [theme]);
 
-  const pixelSteps = window?.innerWidth < 768 ? 4 : 6; // Denser on mobile
   const drawAsPoints = true;
+  // pixelSteps는 useEffect 내에서만 사용되어 SSR 오류 방지
 
   const generateRandomPos = (x, y, mag) => {
     const randomX = Math.random() * 1000;
@@ -240,6 +240,7 @@ export function ParticleTextEffect({ words = DEFAULT_WORDS }) {
     const particles = particlesRef.current;
     let particleIndex = 0;
 
+    const pixelSteps = window.innerWidth < 768 ? 4 : 6;
     const coordsIndexes = [];
     for (let i = 0; i < pixels.length; i += pixelSteps * 4) {
       coordsIndexes.push(i);
@@ -355,9 +356,11 @@ export function ParticleTextEffect({ words = DEFAULT_WORDS }) {
 
     const resizeCanvas = () => {
       const parent = canvas.parentElement;
-      canvas.width = parent ? parent.offsetWidth : window.innerWidth;
-      canvas.height = parent ? parent.offsetHeight : window.innerHeight * 0.8;
-      
+      const w = parent && parent.offsetWidth > 0 ? parent.offsetWidth : window.innerWidth;
+      const h = parent && parent.offsetHeight > 0 ? parent.offsetHeight : window.innerHeight;
+      canvas.width = w;
+      canvas.height = h;
+
       if (canvas.width > 0 && canvas.height > 0) {
         nextWord(words[wordIndexRef.current], canvas, !document.documentElement.classList.contains('dark'));
       }
@@ -416,10 +419,21 @@ export function ParticleTextEffect({ words = DEFAULT_WORDS }) {
 
 
   return (
-    <div className="w-full flex-1 flex flex-col items-center justify-center p-0 m-0 overflow-hidden relative">
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        minHeight: "100vh",
+        position: "relative",
+        overflow: "hidden",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
       <canvas
         ref={canvasRef}
-        style={{ maxWidth: "100%", display: "block", position: "absolute", top: 0, left: 0 }}
+        style={{ display: "block", position: "absolute", top: 0, left: 0, width: "100%", height: "100%" }}
       />
     </div>
   );
