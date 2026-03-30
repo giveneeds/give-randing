@@ -90,7 +90,7 @@ class Particle {
     this.acc.y = 0;
   }
 
-  draw(ctx, drawAsPoints) {
+  draw(ctx, drawAsPoints, isMobile) {
     if (this.colorWeight < 1.0) {
       this.colorWeight = Math.min(this.colorWeight + this.colorBlendRate, 1.0);
     }
@@ -102,10 +102,11 @@ class Particle {
     };
 
     const colorStr = `rgb(${currentColor.r}, ${currentColor.g}, ${currentColor.b})`;
+    const dotSize = isMobile ? 3 : 2; // 모바일에서 파티클 크기 증가
 
     if (drawAsPoints) {
       ctx.fillStyle = colorStr;
-      ctx.fillRect(this.pos.x, this.pos.y, 2, 2);
+      ctx.fillRect(this.pos.x, this.pos.y, dotSize, dotSize);
     } else {
       ctx.fillStyle = colorStr;
       ctx.beginPath();
@@ -114,7 +115,7 @@ class Particle {
     }
   }
 
-  kill(width, height) {
+  kill(width, height, isLightMode) {
     if (!this.isKilled) {
       const randomPos = this.generateRandomPos(width / 2, height / 2, (width + height) / 2);
       this.target.x = randomPos.x;
@@ -125,8 +126,9 @@ class Particle {
         g: this.startColor.g + (this.targetColor.g - this.startColor.g) * this.colorWeight,
         b: this.startColor.b + (this.targetColor.b - this.startColor.b) * this.colorWeight,
       };
-      // target color back to invisible effectively, just pick 0,0,0
-      this.targetColor = { r: 0, g: 0, b: 0 };
+      // 배경색으로 사라지게 설정: 라이트 모드는 흰색(255,255,255), 다크는 검정(0,0,0)
+      const bgColor = isLightMode ? 255 : 0;
+      this.targetColor = { r: bgColor, g: bgColor, b: bgColor };
       this.colorWeight = 0;
 
       this.isKilled = true;
@@ -216,7 +218,11 @@ export function ParticleTextEffect({ words = DEFAULT_WORDS }) {
     const offscreenCtx = offscreenCanvas.getContext("2d");
 
     offscreenCtx.fillStyle = "white";
-    const fontSize = Math.min(canvas.width / 10, canvas.height / 5, window.innerWidth < 768 ? 60 : 100);
+    // 모바일에서 폰트를 더 크게 설정해 파티클이 획 안에 충분히 들어오도록 함
+    const isMobile = window.innerWidth < 768;
+    const mobileFontSize = Math.min(canvas.width / 6, canvas.height / 5, 72);
+    const desktopFontSize = Math.min(canvas.width / 10, canvas.height / 5, 110);
+    const fontSize = isMobile ? mobileFontSize : desktopFontSize;
     // Canvas API는 CSS 변수를 지원하지 않으므로 실제 폰트명을 직접 사용
     offscreenCtx.font = `bold ${fontSize}px Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
     offscreenCtx.textAlign = "center";
@@ -241,7 +247,7 @@ export function ParticleTextEffect({ words = DEFAULT_WORDS }) {
     const particles = particlesRef.current;
     let particleIndex = 0;
 
-    const pixelSteps = window.innerWidth < 768 ? 4 : 6;
+    const pixelSteps = isMobile ? 3 : 5; // 모바일 더 촘촘하게, 데스크탑 적절히
     const coordsIndexes = [];
     for (let i = 0; i < pixels.length; i += pixelSteps * 4) {
       coordsIndexes.push(i);
@@ -295,7 +301,7 @@ export function ParticleTextEffect({ words = DEFAULT_WORDS }) {
     }
 
     for (let i = particleIndex; i < particles.length; i++) {
-      particles[i].kill(canvas.width, canvas.height);
+      particles[i].kill(canvas.width, canvas.height, isLightMode);
     }
   };
 
@@ -317,7 +323,8 @@ export function ParticleTextEffect({ words = DEFAULT_WORDS }) {
     for (let i = particles.length - 1; i >= 0; i--) {
       const particle = particles[i];
       particle.move(mouseRef.current);
-      particle.draw(ctx, drawAsPoints);
+      const isMobile = canvas.width < 768;
+      particle.draw(ctx, drawAsPoints, isMobile);
 
       if (particle.isKilled) {
         if (
