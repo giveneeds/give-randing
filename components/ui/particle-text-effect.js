@@ -215,9 +215,10 @@ export function ParticleTextEffect({ words = DEFAULT_WORDS }) {
     offscreenCanvas.height = canvas.height;
     const offscreenCtx = offscreenCanvas.getContext("2d");
 
-    offscreenCtx.fillStyle = "white"; 
-    const fontSize = Math.min(canvas.width / 10, canvas.height / 5, window?.innerWidth < 768 ? 60 : 100);
-    offscreenCtx.font = `bold ${fontSize}px var(--font-inter), -apple-system, sans-serif`;
+    offscreenCtx.fillStyle = "white";
+    const fontSize = Math.min(canvas.width / 10, canvas.height / 5, window.innerWidth < 768 ? 60 : 100);
+    // Canvas API는 CSS 변수를 지원하지 않으므로 실제 폰트명을 직접 사용
+    offscreenCtx.font = `bold ${fontSize}px Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
     offscreenCtx.textAlign = "center";
     offscreenCtx.textBaseline = "middle";
     offscreenCtx.fillText(word, canvas.width / 2, canvas.height / 2);
@@ -364,12 +365,15 @@ export function ParticleTextEffect({ words = DEFAULT_WORDS }) {
       if (canvas.width > 0 && canvas.height > 0) {
         nextWord(words[wordIndexRef.current], canvas, !document.documentElement.classList.contains('dark'));
       }
-    }
+    };
 
     window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
 
-    animate();
+    // 폰트가 완전히 로드된 후에 캔버스 초기화 (폰트 미로딩 시 픽셀 감지 불가)
+    document.fonts.ready.then(() => {
+      resizeCanvas();
+      animate();
+    });
 
     const handleMouseDown = (e) => {
       mouseRef.current.isPressed = true;
