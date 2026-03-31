@@ -2,10 +2,11 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request) {
   try {
-    const { password } = await request.json();
-    const adminPassword = process.env.ADMIN_PASSWORD || 'giveneeds2025!';
+    const { id, password } = await request.json();
+    const adminId = process.env.ADMIN_ID || 'giveneeds1@naver.com';
+    const adminPassword = process.env.ADMIN_PASSWORD || 'giveneeds12@';
 
-    if (password === adminPassword) {
+    if (id === adminId && password === adminPassword) {
       const response = NextResponse.json({ success: true });
       // Set a simple auth cookie (httpOnly for security)
       response.cookies.set('admin_auth', 'authenticated', {
@@ -18,7 +19,7 @@ export async function POST(request) {
       return response;
     }
 
-    return NextResponse.json({ success: false, error: '비밀번호가 올바르지 않습니다.' }, { status: 401 });
+    return NextResponse.json({ success: false, error: '아이디 또는 비밀번호가 올바르지 않습니다.' }, { status: 401 });
   } catch (error) {
     return NextResponse.json({ success: false, error: '서버 오류가 발생했습니다.' }, { status: 500 });
   }
