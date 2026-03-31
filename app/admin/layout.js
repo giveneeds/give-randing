@@ -117,7 +117,9 @@ export default function AdminLayout({ children }) {
 
   const navItems = [
     { href: '/admin', icon: '📊', label: '대시보드' },
-    { href: '/admin/sections', icon: '🧩', label: '섹션 관리' },
+    { href: '/admin/campaigns', icon: '🚀', label: '캠페인(LP) 관리' },
+    { href: '/admin/magazine', icon: '📖', label: '매거진 관리' },
+    { href: '/admin/sections', icon: '🧩', label: '글로벌 섹션' },
     { href: '/admin/settings', icon: '⚙️', label: '설정' },
   ];
 

@@ -1,15 +1,16 @@
 import { Inter } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
+import AiChatbot from "@/components/ui/AiChatbot";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata = {
-  title: "기브니즈 | 마케팅 대행사",
-  description: "브랜드 성장을 위한 전략적 마케팅 파트너, 기브니즈",
+  title: "GIVENEEDS | Strategic Marketing Partner",
+  description: "성장을 위한 최고의 마케팅 파트너, 기브니즈 매거진",
   openGraph: {
-    title: "기브니즈 | 마케팅 대행사",
-    description: "브랜드 성장을 위한 전략적 마케팅 파트너, 기브니즈",
+    title: "GIVENEEDS | Strategic Marketing Partner",
+    description: "성장을 위한 최고의 마케팅 파트너, 기브니즈 매거진",
     type: "website",
   },
 };
@@ -25,6 +26,7 @@ export default function RootLayout({ children }) {
           disableTransitionOnChange
         >
           {children}
+          <AiChatbot />
         </ThemeProvider>
       </body>
     </html>
