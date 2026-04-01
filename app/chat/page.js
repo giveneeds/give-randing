@@ -1,61 +1,75 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
+import { 
+  Send, 
+  User, 
+  Sparkles, 
+  ArrowLeft,
+  MessageSquare,
+  ShieldCheck,
+  Zap,
+  Lock
+} from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import LandingNavbar from '@/components/landing/LandingNavbar';
-import LandingFooter from '@/components/landing/LandingFooter';
-import { Send, Clock, User, Sparkles, LogIn, ArrowLeft } from 'lucide-react';
 import { clsx } from 'clsx';
-import { supabase, isDummyMode } from '@/lib/supabase';
-import Link from 'next/link';
+import { supabase } from '@/lib/supabase';
 
 export default function EditorialChatPage() {
   const router = useRouter();
-  const [messages, setMessages] = useState([
-    { role: 'assistant', content: '안녕하세요! 기브니즈 마케팅 에이전트입니다. 어떤 마케팅 고민을 가지고 계신가요? 전략 수립부터 실행까지 상세히 제안해 드립니다.' }
-  ]);
+  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [sessionId, setSessionId] = useState(null);
   const [user, setUser] = useState(null);
-  const [sessionCount, setSessionCount] = useState(0);
-  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  
   const scrollRef = useRef(null);
 
-  // Load User & Session
   useEffect(() => {
-    async function init() {
-      const { data: { user: supabaseUser } } = await supabase.auth.getUser();
-      setUser(supabaseUser);
-      
-      const savedCount = parseInt(localStorage.getItem('chat_message_count') || '0');
-      setSessionCount(savedCount);
+    // 1. 세션 ID 생성 또는 로드
+    let sid = localStorage.getItem('chat_session_id');
+    if (!sid) {
+      sid = crypto.randomUUID();
+      localStorage.setItem('chat_session_id', sid);
     }
-    init();
+    setSessionId(sid);
+
+    // 2. 유저 정보 체크
+    const checkUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+      loadMessages(sid, user?.id);
+    };
+    checkUser();
   }, []);
 
-  // Scroll to Bottom
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messages, isLoading]);
+  const loadMessages = async (sid, uid) => {
+    const { data, error } = await supabase
+      .from('chat_messages')
+      .select('*')
+      .or(`session_id.eq.${sid}${uid ? `,user_id.eq.${uid}` : ''}`)
+      .order('created_at', { ascending: true });
+    
+    if (data) setMessages(data);
+  };
 
-  const handleSendMessage = async (e) => {
-    e?.preventDefault();
-    if (!input.trim() || isLoading) return;
+  const handleSend = async () => {
+    if (!input.trim() || loading) return;
 
-    // Login Threshold Check (3 messages)
-    if (!user && sessionCount >= 3) {
-      setShowLoginModal(true);
+    // 대화 횟수 체크 (로그인 유도)
+    const userMessages = messages.filter(m => m.role === 'user');
+    if (userMessages.length >= 3 && !user) {
+      setShowLoginPrompt(true);
       return;
     }
 
-    const userMessage = { role: 'user', content: input };
-    setMessages(prev => [...prev, userMessage]);
+    const userMsg = { role: 'user', content: input, session_id: sessionId, user_id: user?.id };
+    setMessages(prev => [...prev, userMsg]);
     setInput('');
-    setIsLoading(true);
+    setLoading(true);
 
     try {
-      // 1. Next.js API call (Phase 7 modernized chat API)
+      // API 호출 (실제 연동 시 /api/chat 활용)
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -63,153 +77,119 @@ export default function EditorialChatPage() {
       });
       const data = await res.json();
       
-      const assistantMessage = { role: 'assistant', content: data.content };
-      setMessages(prev => [...prev, assistantMessage]);
+      const assistantMsg = { role: 'assistant', content: data.reply, session_id: sessionId, user_id: user?.id };
+      setMessages(prev => [...prev, assistantMsg]);
 
-      // 2. Incremental Count
-      const newCount = sessionCount + 1;
-      setSessionCount(newCount);
-      localStorage.setItem('chat_message_count', newCount.toString());
-
-      // 3. Persistence if logged in
-      if (user) {
-        await supabase.from('chat_messages').insert([
-          { user_id: user.id, role: 'user', content: input },
-          { user_id: user.id, role: 'assistant', content: data.content }
-        ]);
-      }
-    } catch (error) {
-      console.error(error);
+      // DB 저장
+      await supabase.from('chat_messages').insert([userMsg, assistantMsg]);
+    } catch (e) {
+      console.error(e);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const handleLogin = () => {
-    // Redirect to Kakao via Supabase
-    supabase.auth.signInWithOAuth({
-      provider: 'kakao',
-      options: { redirectTo: `${window.location.origin}/chat` }
-    });
-  };
-
   return (
-    <>
-      <LandingNavbar />
-      
-      <main className="bg-white min-h-screen pt-40 pb-20 px-6 font-mono">
-        {/* Editorial Header */}
-        <div className="max-w-screen-md mx-auto mb-16 space-y-6">
-           <Link href="/" className="inline-flex items-center gap-2 text-zinc-400 hover:text-zinc-900 transition-colors group mb-4">
-             <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-all" />
-             <span className="text-[10px] font-black tracking-widest uppercase">Archive</span>
-           </Link>
-           <h1 className="text-[clamp(2rem,6vw,4rem)] font-black leading-[1.05] tracking-tighter text-zinc-900 uppercase">
-             Marketing<br/>Agent-Consult
-           </h1>
-           <div className="flex items-center gap-6 pt-6 border-t border-zinc-100">
-             <span className="text-[10px] font-black tracking-[0.3em] text-zinc-400 uppercase">AI Strategy Interface</span>
-             <span className="text-[10px] font-black text-zinc-900 uppercase tracking-widest bg-emerald-50 px-2 py-0.5 rounded-sm">Live Connection</span>
-           </div>
+    <div className="min-h-screen bg-white flex flex-col animate-in fade-in duration-700">
+      {/* Header */}
+      <header className="h-20 border-b border-zinc-100 flex items-center justify-between px-8 bg-white/80 backdrop-blur-md sticky top-0 z-50">
+        <button onClick={() => router.back()} className="p-2 hover:bg-zinc-50 rounded-full transition-all group">
+          <ArrowLeft size={20} className="text-zinc-400 group-hover:text-zinc-900 group-hover:-translate-x-1" />
+        </button>
+        <div className="flex flex-col items-center">
+          <span className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 mb-1">Marketing Agent</span>
+          <h1 className="text-sm font-black text-zinc-900 uppercase tracking-widest">Giveneeds Editorial Chat</h1>
         </div>
+        <div className="w-10 h-10 bg-zinc-900 rounded-full flex items-center justify-center text-white scale-90 shadow-lg">
+          <Sparkles size={16} />
+        </div>
+      </header>
 
-        {/* Chat Message Area */}
-        <div className="max-w-screen-md mx-auto min-h-[500px] flex flex-col space-y-12 mb-20 scroll-smooth" ref={scrollRef}>
-          {messages.map((msg, i) => (
+      {/* Chat Area */}
+      <main className="flex-1 max-w-screen-md mx-auto w-full flex flex-col p-8 space-y-12 overflow-y-auto">
+        {messages.length === 0 ? (
+          <div className="flex-1 flex flex-col items-center justify-center text-center space-y-6 opacity-40">
+             <div className="w-16 h-16 bg-zinc-50 rounded-3xl flex items-center justify-center">
+                <MessageSquare size={32} className="text-zinc-300" />
+             </div>
+             <div>
+                <p className="text-sm font-bold text-zinc-900 mb-2 uppercase tracking-widest">Consulting Archive</p>
+                <p className="text-xs text-zinc-400 leading-loose">기브니즈의 마케팅 에이전트와 대화를 시작하세요.<br/>당신의 비즈니스 고민을 에디토리얼 관점에서 해결해 드립니다.</p>
+             </div>
+          </div>
+        ) : (
+          messages.map((m, i) => (
             <div key={i} className={clsx(
-              "flex group",
-              msg.role === 'assistant' ? "items-start gap-6" : "flex-row-reverse items-start gap-6 text-right"
+              "flex flex-col animate-in slide-in-from-bottom-4 duration-500",
+              m.role === 'user' ? "items-end" : "items-start"
             )}>
-              <div className="w-10 h-10 rounded-full border border-zinc-200 bg-zinc-50 flex items-center justify-center shrink-0 mt-1">
-                {msg.role === 'assistant' ? <Sparkles size={16} className="text-zinc-400" /> : <User size={16} className="text-zinc-900" />}
+              <div className={clsx(
+                "max-w-[85%] p-6 rounded-2xl text-[15px] leading-relaxed",
+                m.role === 'user' 
+                  ? "bg-zinc-900 text-white shadow-xl rounded-tr-none" 
+                  : "bg-zinc-50 text-zinc-800 border border-zinc-100 rounded-tl-none font-medium"
+              )}>
+                {m.content}
               </div>
-              <div className="flex-1 space-y-2">
-                <div className="flex items-baseline gap-3">
-                   <span className="text-[10px] font-black uppercase tracking-widest text-zinc-900">
-                     {msg.role === 'assistant' ? 'GIVENEEDS AGENT' : 'CLIENT'}
-                   </span>
-                   <span className="text-[9px] text-zinc-300 font-bold uppercase tracking-tighter">
-                     {new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
-                   </span>
-                </div>
-                <div className={clsx(
-                  "text-lg leading-relaxed text-zinc-600 font-medium tracking-tight",
-                  msg.role === 'assistant' ? "max-w-[85%]" : "max-w-[85%] ml-auto"
-                )}>
-                  {msg.content}
-                </div>
-              </div>
+              <span className="text-[9px] font-bold text-zinc-300 uppercase tracking-widest mt-3 px-1">
+                {m.role === 'user' ? 'Client' : 'Agent Response'}
+              </span>
             </div>
-          ))}
-          
-          {isLoading && (
-            <div className="flex items-center gap-6 animate-pulse">
-              <div className="w-10 h-10 rounded-full bg-zinc-50 border border-zinc-100" />
-              <div className="space-y-2">
-                 <div className="h-2 w-12 bg-zinc-100 rounded" />
-                 <div className="h-4 w-48 bg-zinc-50 rounded" />
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Input Sticky */}
-        <div className="max-w-screen-md mx-auto sticky bottom-12 bg-white/90 backdrop-blur-xl border border-zinc-200 shadow-2xl rounded-2xl overflow-hidden group">
-          <form onSubmit={handleSendMessage} className="flex items-end p-2 gap-2">
-            <textarea 
-              className="flex-1 p-4 bg-transparent outline-none text-zinc-900 placeholder:text-zinc-300 font-bold text-sm resize-none custom-scrollbar min-h-[60px]"
-              placeholder="전략에 대해 물어보세요..."
-              rows={1}
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSendMessage();
-                }
-              }}
-            />
-            <button 
-              type="submit"
-              disabled={isLoading || !input.trim()}
-              className="w-12 h-12 bg-zinc-900 text-white flex items-center justify-center rounded-xl hover:bg-black transition-all hover:scale-105 active:scale-95 disabled:bg-zinc-100 disabled:text-zinc-300"
-            >
-              <Send size={18} />
-            </button>
-          </form>
-        </div>
+          ))
+        )}
+        <div ref={scrollRef} />
       </main>
 
-      {/* Login Protection Modal */}
-      {showLoginModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 sm:p-0">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-md" onClick={() => setShowLoginModal(false)} />
-          <div className="relative w-full max-w-sm bg-white rounded-3xl p-10 text-center shadow-2xl animate-in zoom-in duration-300">
-             <div className="w-16 h-16 bg-zinc-50 border border-zinc-100 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-sm">
-                <LogIn size={24} className="text-zinc-900" />
-             </div>
-             <h3 className="text-2xl font-black tracking-tighter text-zinc-900 mb-4 uppercase">Archive Secured</h3>
-             <p className="text-sm text-zinc-500 leading-relaxed mb-10 break-keep">
-               실시간 전략 상담 아카이브를 활성화하려면<br/>로그인이 필요합니다.<br/>
-               (무료 상담 3회 초과)
-             </p>
-             <button 
-               onClick={handleLogin}
-               className="w-full bg-[#FEE500] hover:bg-[#FADA0A] text-zinc-900 flex items-center justify-center gap-3 py-4 rounded-xl font-black text-sm transition-all hover:scale-[1.02] shadow-xl"
-             >
-               <div className="w-5 h-5 bg-zinc-900 rounded-md flex items-center justify-center">
-                  <span className="text-[10px] text-white">K</span>
-               </div>
-               카카오로 1초 로그인
-             </button>
-             <p className="mt-8 text-[10px] font-bold text-zinc-300 uppercase tracking-widest cursor-pointer hover:text-zinc-900 transition-colors" onClick={() => setShowLoginModal(false)}>
-               Later
-             </p>
-          </div>
+      {/* Input Area */}
+      <footer className="p-8 pb-12 max-w-screen-md mx-auto w-full bg-white">
+        <div className="relative flex items-center bg-zinc-50 rounded-2xl border border-zinc-100 p-2 focus-within:ring-2 focus-within:ring-zinc-900/5 transition-all shadow-sm">
+          <input 
+            className="flex-1 bg-transparent px-4 py-3 outline-none text-[15px] font-medium"
+            placeholder="상담 내용을 입력하세요..."
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleSend()}
+          />
+          <button 
+            onClick={handleSend}
+            disabled={loading}
+            className="w-12 h-12 bg-zinc-900 text-white rounded-xl flex items-center justify-center hover:bg-black transition-all active:scale-95 disabled:bg-zinc-200"
+          >
+            <Send size={18} />
+          </button>
+        </div>
+        <p className="text-[10px] text-center text-zinc-300 mt-6 font-bold uppercase tracking-widest flex items-center justify-center gap-2">
+           <ShieldCheck size={12} /> Secure Business Consultation
+        </p>
+      </footer>
+
+      {/* Login Gate Modal */}
+      {showLoginPrompt && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-6 animate-in fade-in duration-300">
+           <div className="bg-white rounded-3xl w-full max-w-sm p-10 text-center shadow-2xl animate-in zoom-in-95 duration-500">
+              <div className="w-16 h-16 bg-zinc-50 rounded-2xl flex items-center justify-center mx-auto mb-8">
+                 <Lock size={24} className="text-zinc-900" />
+              </div>
+              <h2 className="text-xl font-black text-zinc-900 uppercase tracking-tighter mb-4">Identity Verification</h2>
+              <p className="text-sm text-zinc-400 leading-relaxed mb-10">
+                 기각된 익명 상담의 연속성을 보호하기 위해<br/>카카오 로그인이 필요합니다.<br/>
+                 <span className="text-zinc-600 font-bold">이후 대화 내역이 안전하게 보존됩니다.</span>
+              </p>
+              <button 
+                onClick={() => router.push('/api/auth/kakao')}
+                className="w-full bg-[#FEE500] hover:bg-[#FDD835] text-zinc-900 h-14 rounded-xl font-black text-sm uppercase tracking-widest transition-all flex items-center justify-center gap-3 shadow-lg active:scale-[0.98]"
+              >
+                 Kakao Sync Start
+              </button>
+              <button 
+                onClick={() => setShowLoginPrompt(false)}
+                className="mt-6 text-[10px] font-black text-zinc-300 uppercase tracking-widest hover:text-zinc-900 transition-all"
+              >
+                 Maybe Later
+              </button>
+           </div>
         </div>
       )}
-
-      <LandingFooter />
-    </>
+    </div>
   );
 }

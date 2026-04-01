@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase, isDummyMode, DUMMY_MAGAZINES } from '@/lib/supabase';
 
-// GET: 매거진 목록 또는 상세 조회
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
@@ -9,10 +8,7 @@ export async function GET(request) {
 
   try {
     if (isDummyMode) {
-      if (slug) {
-        const mag = DUMMY_MAGAZINES.find(m => m.slug === slug);
-        return NextResponse.json({ magazine: mag });
-      }
+      if (slug) return NextResponse.json({ magazine: DUMMY_MAGAZINES.find(m => m.slug === slug) });
       return NextResponse.json({ magazines: DUMMY_MAGAZINES });
     }
 
@@ -29,15 +25,10 @@ export async function GET(request) {
   }
 }
 
-// POST: 새 매거진 생성
 export async function POST(request) {
   try {
     const body = await request.json();
-    if (isDummyMode) {
-      const newMag = { ...body, id: crypto.randomUUID(), created_at: new Date().toISOString() };
-      return NextResponse.json({ magazine: newMag });
-    }
-
+    if (isDummyMode) return NextResponse.json({ magazine: { ...body, id: crypto.randomUUID() } });
     const { data, error } = await supabase.from('magazines').insert([body]).select().single();
     if (error) throw error;
     return NextResponse.json({ magazine: data });
@@ -46,20 +37,12 @@ export async function POST(request) {
   }
 }
 
-// PUT: 매거진 수정
 export async function PUT(request) {
   try {
     const body = await request.json();
     const { id, ...updateData } = body;
-
     if (isDummyMode) return NextResponse.json({ magazine: body });
-
-    const { data, error } = await supabase
-      .from('magazines')
-      .update(updateData)
-      .eq('id', id)
-      .select()
-      .single();
+    const { data, error } = await supabase.from('magazines').update(updateData).eq('id', id).select().single();
     if (error) throw error;
     return NextResponse.json({ magazine: data });
   } catch (error) {
@@ -67,14 +50,11 @@ export async function PUT(request) {
   }
 }
 
-// DELETE: 매거진 삭제
 export async function DELETE(request) {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
-
   try {
     if (isDummyMode) return NextResponse.json({ success: true });
-
     const { error } = await supabase.from('magazines').delete().eq('id', id);
     if (error) throw error;
     return NextResponse.json({ success: true });
