@@ -86,11 +86,10 @@ export default function AdminDashboard() {
       trend: '+2.1% 상승'
     }
   ];
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-pulse text-[var(--admin-text-muted)]">데이터 분석 중...</div>
+        <div className="animate-pulse text-zinc-500">데이터 분석 중...</div>
       </div>
     );
   }
@@ -99,25 +98,25 @@ export default function AdminDashboard() {
     <div className="space-y-8 animate-in fade-in duration-500">
       {/* Welcome Header */}
       <div>
-        <h1 className="text-2xl font-black text-[var(--admin-text-main)] tracking-tighter uppercase">GOOD MORNING, AGENT</h1>
-        <p className="text-[var(--admin-text-muted)] text-sm mt-1 tracking-tight">오늘의 마케팅 엔진 가동 상태를 확인하세요.</p>
+        <h1 className="text-2xl font-black text-zinc-900 tracking-tighter uppercase">GOOD MORNING, AGENT</h1>
+        <p className="text-zinc-500 text-sm mt-1 tracking-tight">오늘의 마케팅 엔진 가동 상태를 확인하세요.</p>
       </div>
 
       {/* KPI Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {kpis.map((kpi, i) => (
-          <div key={i} className="bg-white/50 p-6 rounded-md border border-white/60 shadow-sm hover:shadow-md hover:bg-white/70 transition-all">
+          <div key={i} className="bg-white p-6 rounded-md border border-zinc-200 shadow-sm hover:shadow-md hover:bg-zinc-50 transition-all">
             <div className="flex justify-between items-start mb-4">
-              <div className={`p-3 ${kpi.bg.replace('bg-zinc-100', 'bg-white/80 border border-white')} ${kpi.color} rounded-md shadow-sm`}>
+              <div className={`p-3 ${kpi.bg.replace('bg-zinc-100', 'bg-zinc-50 border border-zinc-200')} ${kpi.color} rounded-md shadow-sm`}>
                 <kpi.icon size={24} />
               </div>
-              <span className="text-[10px] font-bold text-zinc-700 bg-white/80 border border-white shadow-sm px-2 py-1 rounded-sm flex items-center gap-1">
+              <span className="text-[10px] font-bold text-zinc-700 bg-zinc-50 border border-zinc-200 shadow-sm px-2 py-1 rounded-sm flex items-center gap-1">
                 <ArrowUpRight size={10} /> {kpi.trend}
               </span>
             </div>
             <div>
-              <p className="text-xs font-bold text-[var(--admin-text-muted)] uppercase tracking-widest">{kpi.label}</p>
-              <h3 className="text-3xl font-black text-[var(--admin-text-main)] mt-1 tracking-tighter">{kpi.value}</h3>
+              <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest">{kpi.label}</p>
+              <h3 className="text-3xl font-black text-zinc-900 mt-1 tracking-tighter">{kpi.value}</h3>
             </div>
           </div>
         ))}
@@ -125,46 +124,46 @@ export default function AdminDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Leads Table */}
-        <div className="lg:col-span-2 bg-white/50 rounded-md border border-white/60 overflow-hidden shadow-sm">
-          <div className="p-6 border-b border-white/50 flex justify-between items-center">
-            <h3 className="font-bold text-[var(--admin-text-main)] flex items-center gap-2 tracking-tight">
+        <div className="lg:col-span-2 bg-white rounded-md border border-zinc-200 overflow-hidden shadow-sm">
+          <div className="p-6 border-b border-zinc-200 flex justify-between items-center">
+            <h3 className="font-bold text-zinc-900 flex items-center gap-2 tracking-tight">
               <Clock size={18} className="text-zinc-900" /> 최근 수집된 리드
             </h3>
-            <Link href="/admin/leads" className="text-xs font-bold text-[var(--admin-primary)] hover:underline flex items-center gap-1 uppercase tracking-widest">
+            <Link href="/admin/leads" className="text-xs font-bold text-zinc-500 hover:text-zinc-900 hover:underline flex items-center gap-1 uppercase tracking-widest">
               전체보기 <ChevronRight size={14} />
             </Link>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-white/60 border-b border-white/50">
-                  <th className="px-6 py-4 text-xs font-bold text-[var(--admin-text-muted)] uppercase tracking-widest">이름</th>
-                  <th className="px-6 py-4 text-xs font-bold text-[var(--admin-text-muted)] uppercase tracking-widest">연락처/이메일</th>
-                  <th className="px-6 py-4 text-xs font-bold text-[var(--admin-text-muted)] uppercase tracking-widest">유입 캠페인</th>
-                  <th className="px-6 py-4 text-xs font-bold text-[var(--admin-text-muted)] uppercase tracking-widest">날짜</th>
+                <tr className="bg-zinc-50 border-b border-zinc-200">
+                  <th className="px-6 py-4 text-xs font-bold text-zinc-500 uppercase tracking-widest">이름</th>
+                  <th className="px-6 py-4 text-xs font-bold text-zinc-500 uppercase tracking-widest">연락처/이메일</th>
+                  <th className="px-6 py-4 text-xs font-bold text-zinc-500 uppercase tracking-widest">유입 캠페인</th>
+                  <th className="px-6 py-4 text-xs font-bold text-zinc-500 uppercase tracking-widest">날짜</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/40">
+              <tbody className="divide-y divide-zinc-200">
                 {stats.leads.length > 0 ? stats.leads.slice(0, 5).map((lead, i) => (
-                  <tr key={i} className="hover:bg-white/60 transition-colors">
+                  <tr key={i} className="hover:bg-zinc-50 transition-colors">
                     <td className="px-6 py-4">
-                      <div className="font-bold text-sm text-[var(--admin-text-main)]">{lead.name}</div>
+                      <div className="font-bold text-sm text-zinc-900">{lead.name}</div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-[var(--admin-text-muted)]">
+                    <td className="px-6 py-4 text-sm text-zinc-500">
                       {lead.email || lead.phone || '-'}
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-[10px] font-bold bg-white/80 border border-white shadow-sm text-zinc-700 px-2.5 py-1 rounded-sm uppercase tracking-widest">
+                      <span className="text-[10px] font-bold bg-zinc-50 border border-zinc-200 shadow-sm text-zinc-700 px-2.5 py-1 rounded-sm uppercase tracking-widest">
                         {lead.campaign_id || lead.magazine_id || '메인'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-xs text-[var(--admin-text-muted)]">
+                    <td className="px-6 py-4 text-xs text-zinc-500">
                       {new Date(lead.created_at).toLocaleDateString()}
                     </td>
                   </tr>
                 )) : (
                   <tr>
-                    <td colSpan="4" className="px-6 py-12 text-center text-sm text-[var(--admin-text-muted)]">
+                    <td colSpan="4" className="px-6 py-12 text-center text-sm text-zinc-500">
                       아직 수집된 리드가 없습니다.
                     </td>
                   </tr>
@@ -186,22 +185,22 @@ export default function AdminDashboard() {
             </Link>
           </div>
 
-          <div className="bg-white/50 rounded-md border border-white/60 p-6 shadow-sm">
-            <h3 className="font-bold text-[var(--admin-text-main)] mb-4 flex items-center gap-2 tracking-tight uppercase">
+          <div className="bg-white rounded-md border border-zinc-200 p-6 shadow-sm">
+            <h3 className="font-bold text-zinc-900 mb-4 flex items-center gap-2 tracking-tight uppercase">
               <CheckCircle2 size={18} className="text-zinc-900" /> 플랫폼 건전성
             </h3>
             <div className="space-y-4">
-              <div className="flex justify-between items-center text-sm border-b border-white/40 pb-3">
-                <span className="text-[var(--admin-text-muted)] font-bold tracking-widest uppercase text-xs">Supabase 연결</span>
+              <div className="flex justify-between items-center text-sm border-b border-zinc-100 pb-3">
+                <span className="text-zinc-500 font-bold tracking-widest uppercase text-xs">Supabase 연결</span>
                 <span className="font-black text-zinc-900">정상</span>
               </div>
-              <div className="flex justify-between items-center text-sm border-b border-white/40 pb-3">
-                <span className="text-[var(--admin-text-muted)] font-bold tracking-widest uppercase text-xs">SSL 보안인증</span>
+              <div className="flex justify-between items-center text-sm border-b border-zinc-100 pb-3">
+                <span className="text-zinc-500 font-bold tracking-widest uppercase text-xs">SSL 보안인증</span>
                 <span className="font-black text-zinc-900">활성</span>
               </div>
               <div className="flex justify-between items-center text-sm pb-1">
-                <span className="text-[var(--admin-text-muted)] font-bold tracking-widest uppercase text-xs">최근 빌드 성공</span>
-                <span className="text-[var(--admin-text-main)] font-medium">3시간 전</span>
+                <span className="text-zinc-500 font-bold tracking-widest uppercase text-xs">최근 빌드 성공</span>
+                <span className="text-zinc-900 font-medium">3시간 전</span>
               </div>
             </div>
           </div>
