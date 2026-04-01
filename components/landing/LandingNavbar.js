@@ -29,7 +29,7 @@ export default function LandingNavbar({ settings }) {
   return (
     <nav className={`navbar-minimal ${scrolled ? 'scrolled' : ''}`}>
       <div className="container nav-container-minimal">
-        <a href="#" className="nav-brand-minimal">
+        <a href="/" className="nav-brand-minimal">
           {brand.name || 'GIVENEEDS'}
         </a>
         

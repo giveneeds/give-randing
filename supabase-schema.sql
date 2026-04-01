@@ -61,7 +61,44 @@ CREATE POLICY "Allow anon upsert for settings" ON landing_settings
 CREATE POLICY "Allow anon update for settings" ON landing_settings
   FOR UPDATE USING (true);
 
--- 5. Ïù∏Îç±Ïä§
+-- 5. Îß§Í±∞ÏßÑ ÌÖåÏù¥Î∏î
+CREATE TABLE IF NOT EXISTS magazines (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  slug TEXT UNIQUE NOT NULL,
+  title TEXT NOT NULL,
+  category TEXT DEFAULT 'INSIGHT',
+  thumbnail_url TEXT DEFAULT '',
+  content_html TEXT DEFAULT '',
+  is_premium BOOLEAN DEFAULT false,
+  is_published BOOLEAN DEFAULT true,
+  author TEXT DEFAULT 'GIVENEEDS',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Îß§Í±∞ÏßÑ Í∂åÌïú
+ALTER TABLE magazines ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public read for magazines" ON magazines FOR SELECT USING (is_published = true);
+CREATE POLICY "Allow anon all for magazines" ON magazines FOR ALL USING (true);
+
+
+-- 6. Ïù∏Îç±Ïä§
 CREATE INDEX IF NOT EXISTS idx_sections_order ON landing_sections (order_index);
 CREATE INDEX IF NOT EXISTS idx_sections_active ON landing_sections (is_active);
 CREATE INDEX IF NOT EXISTS idx_settings_key ON landing_settings (key);
+CREATE INDEX IF NOT EXISTS idx_magazines_slug ON magazines (slug);
+
+-- 7. √§∆√ ∏ﬁΩ√¡ˆ ≈◊¿Ã∫Ì (PersistenceøÎ)
+CREATE TABLE IF NOT EXISTS chat_messages (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id TEXT,
+  session_id TEXT NOT NULL,
+  role TEXT NOT NULL,
+  content TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE chat_messages ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public all for chat" ON chat_messages FOR ALL USING (true);
+CREATE INDEX IF NOT EXISTS idx_chat_session ON chat_messages (session_id);
+

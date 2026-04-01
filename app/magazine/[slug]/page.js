@@ -4,113 +4,123 @@ import { useParams } from 'next/navigation';
 import { supabase, isDummyMode, DUMMY_MAGAZINES } from '@/lib/supabase';
 import LandingNavbar from '@/components/landing/LandingNavbar';
 import LandingFooter from '@/components/landing/LandingFooter';
-import LeadForm from '@/components/ui/LeadForm';
-import { Clock, Tag, ChevronLeft, Share2 } from 'lucide-react';
+import { ArrowLeft, Clock, Share2, Bookmark } from 'lucide-react';
+import Link from 'next/link';
+import ChatCTA from '@/components/ui/ChatCTA';
 
 export default function MagazineDetailPage() {
   const { slug } = useParams();
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [isUnlocked, setIsUnlocked] = useState(false);
 
   useEffect(() => {
-    async function fetchPost() {
+    async function loadPost() {
       try {
-        let data;
         if (isDummyMode) {
-          data = DUMMY_MAGAZINES.find(m => m.slug === slug);
+          const mag = DUMMY_MAGAZINES.find(m => m.slug === slug);
+          setPost(mag);
         } else {
-          const { data: magData, error } = await supabase
+          const { data, error } = await supabase
             .from('magazines')
             .select('*')
             .eq('slug', slug)
             .single();
           if (error) throw error;
-          data = magData;
+          setPost(data);
         }
-        setPost(data);
       } catch (e) {
         console.error(e);
       } finally {
         setLoading(false);
       }
     }
-    if (slug) fetchPost();
+    if (slug) loadPost();
   }, [slug]);
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
-  if (!post) return <div className="min-h-screen flex items-center justify-center">포스트를 찾을 수 없습니다.</div>;
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className="text-[10px] font-bold text-zinc-400 tracking-[0.3em] uppercase animate-pulse">Retrieving Content...</div>
+    </div>
+  );
 
-  const showContent = !post.is_premium || isUnlocked;
+  if (!post) return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-white p-6">
+      <h1 className="text-4xl font-black tracking-tighter text-zinc-900 mb-4 uppercase">404 - Archive Missing</h1>
+      <p className="text-zinc-500 mb-8 text-sm">요청하신 데이터가 기록되지 않았거나 삭제되었습니다.</p>
+      <Link href="/" className="text-xs font-bold text-zinc-900 border-b-2 border-zinc-900 pb-1 uppercase tracking-widest">
+        Back to Magazine
+      </Link>
+    </div>
+  );
 
   return (
     <>
       <LandingNavbar />
       
-      <article className="pt-32 pb-20 px-4 md:px-8 max-w-4xl mx-auto">
-        <a href="/" className="inline-flex items-center gap-2 text-zinc-400 hover:text-primary font-bold text-xs mb-12 transition-colors">
-          <ChevronLeft size={16} /> BACK TO MAGAZINE
-        </a>
-
-        <header className="mb-16">
-          <div className="flex items-center gap-3 mb-6">
-            <span className="px-3 py-1 bg-zinc-100 dark:bg-zinc-800 rounded-full text-[10px] font-bold tracking-widest uppercase text-zinc-500">
-              {post.category}
-            </span>
-            <span className="text-[10px] text-zinc-400 font-bold flex items-center gap-1">
-              <Clock size={12} /> {new Date(post.created_at).toLocaleDateString()}
-            </span>
-          </div>
+      <main className="bg-white min-h-screen pb-32">
+        {/* ─── Hero Header ─── */}
+        <header className="pt-40 px-6 md:px-12 max-w-screen-lg mx-auto mb-16">
+          <Link href="/" className="inline-flex items-center gap-2 text-zinc-400 hover:text-zinc-900 transition-colors mb-12 group">
+            <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+            <span className="text-[10px] font-bold tracking-widest uppercase">Archive List</span>
+          </Link>
           
-          <h1 className="text-4xl md:text-6xl font-black leading-[1.1] tracking-tighter mb-8">
-            {post.title}
-          </h1>
-
-          <div className="flex items-center justify-between py-6 border-y border-zinc-100 dark:border-zinc-800">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-zinc-200" />
-              <div>
-                <p className="text-xs font-bold">GIVENEEDS EDITORIAL</p>
-                <p className="text-[10px] text-zinc-400">Strategic Research Team</p>
-              </div>
+          <div className="space-y-6">
+            <div className="flex items-center gap-4">
+              <span className="text-[10px] font-bold tracking-[0.3em] text-zinc-400 uppercase">
+                {post.category} — ISSUE 2025.01
+              </span>
+              {post.is_premium && (
+                <span className="bg-zinc-900 text-white text-[9px] font-black px-2 py-0.5 tracking-tighter rounded-sm">PREMIUM</span>
+              )}
             </div>
-            <button className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors">
-              <Share2 size={20} />
-            </button>
+            <h1 className="text-[clamp(2.5rem,6vw,5rem)] font-black leading-[1.05] tracking-tighter text-zinc-900">
+              {post.title}
+            </h1>
+            <div className="flex flex-wrap items-center gap-x-8 gap-y-4 pt-4 border-t border-zinc-100">
+               <div className="flex items-center gap-2">
+                 <div className="w-8 h-8 rounded-full bg-zinc-100 border border-zinc-200" />
+                 <span className="text-xs font-bold text-zinc-900 uppercase tracking-tight">BY {post.author || 'GIVENEEDS Editorial'}</span>
+               </div>
+               <div className="flex items-center gap-2 text-zinc-400">
+                 <Clock size={14} />
+                 <span className="text-[10px] font-bold uppercase tracking-widest">
+                   {new Date(post.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                 </span>
+               </div>
+               <div className="flex items-center gap-3 ml-auto">
+                 <button className="p-2 text-zinc-400 hover:text-zinc-900 transition-colors"><Share2 size={18} /></button>
+                 <button className="p-2 text-zinc-400 hover:text-zinc-900 transition-colors"><Bookmark size={18} /></button>
+               </div>
+            </div>
           </div>
         </header>
 
-        <div className="relative">
-          {showContent ? (
-            <div 
-              className="prose prose-zinc prose-lg dark:prose-invert max-w-none 
-                prose-headings:font-black prose-headings:tracking-tighter
-                prose-p:leading-relaxed prose-p:text-zinc-600 dark:prose-p:text-zinc-400"
-              dangerouslySetInnerHTML={{ __html: post.content_html }}
+        {/* ─── Featured Image ─── */}
+        <section className="px-6 md:px-12 max-w-screen-xl mx-auto mb-20">
+          <div className="aspect-[21/9] overflow-hidden bg-zinc-100 rounded-sm shadow-sm border border-zinc-200">
+            <img 
+              src={post.thumbnail_url} 
+              alt={post.title} 
+              className="w-full h-full object-cover transition-transform duration-1000 hover:scale-105" 
             />
-          ) : (
-            <div className="relative">
-              {/* Blur Overlay for Gated Content */}
-              <div className="absolute inset-0 bg-gradient-to-t from-white via-white/90 to-transparent dark:from-zinc-950 dark:via-zinc-950/90 h-[400px] z-10" />
-              <div className="opacity-20 blur-sm pointer-events-none select-none h-[400px] overflow-hidden">
-                <p className="mb-8">이 콘텐츠는 기브니즈 감사의 프리미엄 리포트입니다. 브랜드의 성장을 위한 핵심 인사이트와 실제 수치 데이터가 포함되어 있습니다. 내용을 확인하시려면 아래 리드 폼을 작성해 주세요.</p>
-                <div className="w-full h-32 bg-zinc-100 rounded-2xl mb-8" />
-                <p>본문 데이터 및 상세 분석 내용이 이 위치에 표시됩니다...</p>
-              </div>
+          </div>
+        </section>
 
-              {/* Lead Form Gate */}
-              <div className="relative z-20 -mt-20 flex justify-center">
-                <LeadForm 
-                  title="Premium Content Unlocked"
-                  subtitle="리포트 전체 내용을 확인하시려면 정보를 입력해 주세요."
-                  ctaLabel="리포트 읽기"
-                  magazineId={post.id}
-                />
-              </div>
-            </div>
-          )}
-        </div>
-      </article>
+        {/* ─── Content ─── */}
+        <article className="px-6 md:px-12 max-w-screen-md mx-auto">
+          <div 
+             className="prose prose-zinc prose-lg max-w-none 
+                        prose-headings:font-black prose-headings:tracking-tighter prose-headings:uppercase 
+                        prose-p:text-zinc-600 prose-p:leading-relaxed prose-p:mb-8
+                        prose-strong:text-zinc-900 prose-strong:font-black
+                        prose-img:rounded-md prose-img:border prose-img:border-zinc-200 shadow-none"
+             dangerouslySetInnerHTML={{ __html: post.content_html }}
+          />
+          
+          <ChatCTA />
+        </article>
+      </main>
 
       <LandingFooter />
     </>

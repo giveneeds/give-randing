@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import SectionRenderer from '@/components/landing/SectionRenderer';
 import { SECTION_TYPES, SECTION_TEMPLATES, CTA_TYPES } from '@/lib/constants';
 import { 
   Plus, 
@@ -34,6 +35,7 @@ export default function SectionsPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [previewMode, setPreviewMode] = useState('desktop'); // desktop or mobile
 
   useEffect(() => { loadSections(); }, []);
 
@@ -279,29 +281,67 @@ export default function SectionsPage() {
         </div>
       )}
 
-      {/* Edit Modal (Redesigned Slide-over or centered) */}
+      {/* Edit Modal (Redesigned Split-Screen with Live Preview) */}
       {editingSection && (
-        <div className="fixed inset-0 bg-zinc-900/80 backdrop-blur-sm flex justify-end z-50 animate-in fade-in duration-300">
-          <div className="bg-white w-full max-w-3xl h-full flex flex-col shadow-2xl animate-in slide-in-from-right duration-300 ease-out border-l border-zinc-200">
-            <div className="p-8 border-b border-zinc-100 flex justify-between items-center bg-zinc-50/30">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-zinc-900 rounded-md border border-black flex items-center justify-center text-white">
+        <div className="fixed inset-0 bg-zinc-900/95 flex z-50 animate-in fade-in duration-300 overflow-hidden">
+          
+          {/* Left Side: Live Preview (Hidden on small screens) */}
+          <div className="flex-1 h-full overflow-y-auto hidden lg:flex flex-col relative bg-zinc-100 items-center">
+             <div className="w-full p-3 bg-zinc-900 text-zinc-400 text-[10px] font-bold tracking-widest uppercase flex justify-between items-center z-10 shadow-md shrink-0">
+                <span className="flex items-center gap-2"><Eye size={14} className="text-emerald-400"/> 실시간 라이브 프리뷰</span>
+                <div className="flex bg-zinc-800 rounded-md p-1 border border-zinc-700">
+                  <button 
+                    onClick={() => setPreviewMode('desktop')}
+                    className={clsx("p-1.5 rounded transition-all", previewMode === 'desktop' ? "bg-zinc-700 text-white" : "text-zinc-500 hover:text-zinc-300")}
+                  >
+                    <Monitor size={14} />
+                  </button>
+                  <button 
+                    onClick={() => setPreviewMode('mobile')}
+                    className={clsx("p-1.5 rounded transition-all", previewMode === 'mobile' ? "bg-zinc-700 text-white" : "text-zinc-500 hover:text-zinc-300")}
+                  >
+                    <Smartphone size={14} />
+                  </button>
+                </div>
+                <span className="text-zinc-500 font-mono bg-zinc-800 px-2 py-1 rounded-sm border border-zinc-700">/randing</span>
+             </div>
+             <div className={clsx(
+               "flex-1 overflow-y-auto shadow-2xl bg-white transition-all duration-500 border-x border-zinc-200 mx-auto",
+               previewMode === 'mobile' ? "max-w-[375px] my-8 rounded-[40px] border-[12px] border-zinc-900 h-[700px] shrink-0" : "w-full max-w-screen-xl"
+             )}>
+               <div className="pointer-events-none">
+                 {/* Reusing the exact SectionRenderer used in Landing Page */}
+                 <SectionRenderer 
+                    type={editingSection.type}
+                    title={editingSection.title}
+                    subtitle={editingSection.subtitle}
+                    content={editingSection.content}
+                    settings={{}} 
+                 />
+               </div>
+             </div>
+          </div>
+
+          {/* Right Side: Editor Panel */}
+          <div className="bg-white w-full lg:w-[500px] xl:w-[600px] shrink-0 h-full flex flex-col shadow-2xl animate-in slide-in-from-right duration-300 ease-out border-l border-zinc-200 z-20">
+            <div className="p-6 border-b border-zinc-100 flex justify-between items-center bg-zinc-50/50 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-zinc-900 rounded-md shadow-sm border border-black flex items-center justify-center text-white shrink-0">
                   {getIcon(editingSection.type)}
                 </div>
                 <div>
-                  <h2 className="text-xl font-black uppercase text-zinc-900 tracking-tighter">{SECTION_TYPES[editingSection.type]?.label} 편집</h2>
-                  <p className="text-xs text-zinc-500 font-medium tracking-tight">전역 섹션의 내용을 수정합니다.</p>
+                  <h2 className="text-lg font-black uppercase text-zinc-900 tracking-tighter">{SECTION_TYPES[editingSection.type]?.label} 편집</h2>
                 </div>
               </div>
               <button 
                 onClick={() => setEditingSection(null)} 
-                className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400 hover:text-slate-900"
+                className="p-2 hover:bg-zinc-200 rounded-md transition-colors text-zinc-400 hover:text-zinc-900 shrink-0"
               >
-                <X size={24} />
+                <X size={20} />
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-12 space-y-10">
+            <div className="flex-1 overflow-y-auto p-8 space-y-10 custom-scrollbar relative">
                <div className="space-y-6">
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">공통 헤더 타이틀</label>
@@ -331,7 +371,7 @@ export default function SectionsPage() {
                </div>
             </div>
 
-            <div className="p-8 border-t border-zinc-100 flex justify-end gap-3 bg-white">
+            <div className="p-6 border-t border-zinc-100 flex justify-end gap-3 bg-white shrink-0">
               <button 
                 onClick={() => setEditingSection(null)} 
                 className="px-6 py-3 border border-zinc-200 text-zinc-500 rounded-md font-bold text-sm hover:bg-zinc-50 transition-colors uppercase tracking-widest"
@@ -341,7 +381,7 @@ export default function SectionsPage() {
               <button 
                 onClick={() => handleUpdateSection(editingSection)}
                 disabled={saving}
-                className="px-10 py-3 bg-zinc-900 hover:bg-black text-white rounded-md font-bold text-sm shadow-sm transition-all hover:scale-105 flex items-center gap-2 uppercase tracking-widest"
+                className="px-8 py-3 bg-zinc-900 hover:bg-black text-white rounded-md font-bold text-sm shadow-sm transition-all hover:scale-105 flex items-center gap-2 uppercase tracking-widest"
               >
                 <CheckCircle2 size={18} /> {saving ? '저장 중...' : '섹션 정보 저장'}
               </button>
@@ -421,10 +461,50 @@ function SectionContentEditor({ type, content, onChange }) {
 
   switch (type) {
     case 'hero':
+      const words = content.words || ["안녕하세요.", "당신을 위한", "모든 마케팅을", "제공\n하겠습니다.", "GIVENEEDS\n입니다."];
       return (
         <div className="space-y-8">
-           <div className="space-y-2">
-            <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">메인 헤드라인</label>
+           <div className="space-y-4">
+            <label className="text-[10px] font-bold text-zinc-900 uppercase tracking-widest ml-1">파티클 애니메이션 텍스트 블록</label>
+            <p className="text-[10px] text-zinc-500 mb-2 leading-relaxed ml-1">
+              * 각 인풋창은 화면에 한 번에 그려질 텍스트 한 장면을 의미합니다.<br/>
+              * 입력한 텍스트가 파티클로 변환되어 화면 중앙에 역동적으로 나타납니다.
+            </p>
+            <div className="space-y-2">
+              {words.map((word, i) => (
+                <div key={i} className="flex gap-2 items-center bg-zinc-50 p-3 rounded-md border border-zinc-200">
+                  <span className="text-zinc-400 font-bold text-xs w-6 text-center">{i + 1}</span>
+                  <input 
+                    className="flex-1 p-2 bg-white border border-zinc-200 rounded-md font-bold text-sm outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 transition-all shadow-sm" 
+                    value={word.replace('\n', ' ')} // 어드민 창에서는 수정하기 편하게 한 줄로 보임
+                    placeholder="파티클 텍스트 입력..."
+                    onChange={e => {
+                      const rawText = e.target.value.trimStart();
+                      const newWords = [...words];
+                      newWords[i] = rawText;
+                      updateContent('words', newWords);
+                    }} 
+                  />
+                  <button onClick={() => {
+                    const newWords = [...words];
+                    newWords.splice(i, 1);
+                    updateContent('words', newWords);
+                  }} className="p-2 text-zinc-400 hover:text-red-500 hover:bg-zinc-100 rounded-md transition-all">
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              ))}
+            </div>
+            <button 
+              onClick={() => updateContent('words', [...words, '새 문장'])}
+              className="w-full py-3 border-2 border-dashed border-zinc-200 rounded-md text-[10px] font-bold text-zinc-400 hover:border-zinc-500 hover:text-zinc-900 transition-all uppercase tracking-widest flex items-center justify-center gap-2 mt-2"
+            >
+              <Plus size={14} /> 텍스트 씬 추가
+            </button>
+          </div>
+
+           <div className="space-y-2 pt-6 border-t border-zinc-100">
+            <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">하단 서브 헤드라인 (파티클 클릭 시 이동할 타겟용)</label>
             <textarea 
               className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-md font-bold text-xl outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 transition-all resize-none h-32" 
               value={content.headline || ''} 
@@ -432,7 +512,7 @@ function SectionContentEditor({ type, content, onChange }) {
             />
           </div>
           <div className="space-y-2">
-            <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">상세 설명</label>
+            <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">하단 상세 설명</label>
             <textarea 
               className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-md text-sm outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 transition-all h-24" 
               value={content.description || ''} 
