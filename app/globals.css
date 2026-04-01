@@ -9,6 +9,18 @@
   --border: #e5e5e5;
   --color-primary: #8b5cf6;
   
+  /* Admin Phase 2 Tokens - Synced with Landing Page Aesthetic */
+  --admin-primary: #18181b;       /* zinc-900 */
+  --admin-primary-hover: #000000; /* black */
+  --admin-bg: #f4f4f5;            /* zinc-100 */
+  --admin-card-bg: #ffffff;
+  --admin-sidebar-bg: #ffffff;
+  --admin-text-main: #09090b;     /* zinc-950 */
+  --admin-text-muted: #71717a;    /* zinc-500 */
+  --admin-border: #e4e4e7;        /* zinc-200 */
+  --admin-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  --admin-radius: 4px;
+  
   --bg-card: #f9f9f9;
   --bg-hover: #f3f4f6;
   --bg-alt: #fcfcfc;
@@ -23,6 +35,16 @@
   --muted: #888888;
   --border: #333333;
   --color-primary: #a78bfa;
+
+  /* Admin Phase 2 Dark Tokens (Optional/Placeholder) */
+  --admin-primary: #818cf8;
+  --admin-primary-hover: #6366f1;
+  --admin-bg: #0f172a;
+  --admin-card-bg: #1e293b;
+  --admin-sidebar-bg: #1e293b;
+  --admin-text-main: #f1f5f9;
+  --admin-text-muted: #94a3b8;
+  --admin-border: #334155;
   
   --bg-card: #050505;
   --bg-hover: #0a0a0a;
