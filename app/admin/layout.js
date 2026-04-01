@@ -4,7 +4,6 @@ import { useRouter, usePathname } from 'next/navigation';
 import Sidebar from '@/components/admin/Sidebar';
 import AdminHeader from '@/components/admin/AdminHeader';
 import { Lock, Mail, Loader2 } from 'lucide-react';
-import Spline from '@splinetool/react-spline/next';
 
 const AuthContext = createContext();
 
@@ -66,75 +65,106 @@ export default function AdminLayout({ children }) {
 
   if (isLoading) {
     return (
-      <div className="h-screen w-full flex items-center justify-center bg-[var(--admin-bg)]">
-        <Loader2 className="animate-spin text-[var(--admin-primary)]" size={32} />
+      <div className="h-screen w-full flex items-center justify-center bg-zinc-50">
+        <Loader2 className="animate-spin text-zinc-900" size={28} />
       </div>
     );
   }
 
   if (!isAuthenticated) {
     return (
-      <div className="relative min-h-screen w-full flex items-center justify-center p-6 overflow-hidden">
-        <div className="fixed inset-0 z-0">
-          <Spline scene="https://prod.spline.design/6Wq1Q7YGyM-iab9I/scene.splinecode" />
-        </div>
-        <div className="relative z-10 max-w-md w-full bg-white/70 backdrop-blur-3xl rounded-3xl shadow-2xl p-10 border border-white/60">
-          <div className="text-center mb-10">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-[var(--admin-primary)] rounded-md text-white mb-6 shadow-md">
-              <Lock size={28} />
+      <div className="min-h-screen w-full flex bg-zinc-50">
+        {/* Left decorative panel */}
+        <div className="hidden lg:flex w-1/2 bg-zinc-900 flex-col justify-between p-16 relative overflow-hidden">
+          {/* Subtle grid pattern */}
+          <div className="absolute inset-0 opacity-10"
+            style={{
+              backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)',
+              backgroundSize: '40px 40px'
+            }}
+          />
+          <div className="relative z-10">
+            <div className="flex items-center gap-3 mb-16">
+              <div className="w-8 h-8 bg-white rounded-sm flex items-center justify-center text-zinc-900 font-black text-sm">G</div>
+              <span className="text-white font-bold tracking-tight">GIVENEEDS</span>
             </div>
-            <h1 className="text-2xl font-black text-[var(--admin-text-main)] tracking-tighter mb-2 uppercase drop-shadow-sm">Giveneeds Admin</h1>
-            <p className="text-sm text-[var(--admin-text-muted)] tracking-tight">통합 마케팅 관리 센터에 로그인하세요.</p>
+            <div>
+              <p className="text-zinc-400 text-xs font-bold tracking-[0.3em] uppercase mb-4">Admin Console</p>
+              <h1 className="text-white text-4xl font-black leading-tight tracking-tighter mb-6">
+                통합 마케팅<br/>관리 시스템
+              </h1>
+              <p className="text-zinc-400 text-sm leading-relaxed max-w-sm">
+                캠페인, 매거진, 리드 데이터를 한 곳에서. 데이터 기반으로 마케팅 성과를 극대화하세요.
+              </p>
+            </div>
           </div>
+          <div className="relative z-10">
+            <div className="flex items-center gap-6 text-zinc-600 text-xs">
+              <span>© 2026 Giveneeds</span>
+              <span>All rights reserved</span>
+            </div>
+          </div>
+        </div>
 
-          <form onSubmit={handleLogin} className="space-y-6">
-            {error && (
-              <div className="p-4 bg-red-500/10 backdrop-blur-md border border-red-200 text-red-600 rounded-xl text-xs font-semibold text-center">
-                {error}
-              </div>
-            )}
-            
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-[var(--admin-text-main)] uppercase tracking-wider pl-1 drop-shadow-sm">Email Address</label>
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
-                <input
-                  type="email"
-                  className="w-full pl-12 pr-4 py-3.5 bg-white/50 backdrop-blur-md border border-white/60 rounded-md focus:ring-2 focus:ring-zinc-900/20 focus:bg-white/80 outline-none transition-all text-sm shadow-inner"
-                  value={id}
-                  onChange={(e) => setId(e.target.value)}
-                  placeholder="admin@giveneeds.com"
-                  required
-                />
-              </div>
+        {/* Right login panel */}
+        <div className="flex-1 flex items-center justify-center p-8">
+          <div className="w-full max-w-sm">
+            {/* Mobile logo */}
+            <div className="lg:hidden flex items-center gap-3 mb-12">
+              <div className="w-8 h-8 bg-zinc-900 rounded-sm flex items-center justify-center text-white font-black text-sm">G</div>
+              <span className="text-zinc-900 font-bold tracking-tight">GIVENEEDS</span>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-[var(--admin-text-main)] uppercase tracking-wider pl-1 drop-shadow-sm">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
-                <input
-                  type="password"
-                  className="w-full pl-12 pr-4 py-3.5 bg-white/50 backdrop-blur-md border border-white/60 rounded-md focus:ring-2 focus:ring-zinc-900/20 focus:bg-white/80 outline-none transition-all text-sm shadow-inner"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                />
-              </div>
+            <div className="mb-10">
+              <h2 className="text-2xl font-black text-zinc-900 tracking-tighter mb-2">로그인</h2>
+              <p className="text-sm text-zinc-500">어드민 계정으로 로그인하세요.</p>
             </div>
 
-            <button
-              type="submit"
-              className="w-full py-4 bg-[var(--admin-primary)]/90 backdrop-blur-md hover:bg-[var(--admin-primary)] text-white font-bold rounded-md shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all uppercase tracking-widest text-sm"
-            >
-              로그인하기
-            </button>
-          </form>
-          
-          <p className="mt-8 text-center text-xs text-zinc-600 drop-shadow-sm">
-            © 2026 Giveneeds Platform. All rights reserved.
-          </p>
+            <form onSubmit={handleLogin} className="space-y-5">
+              {error && (
+                <div className="p-4 bg-red-50 border border-red-200 text-red-600 rounded-lg text-xs font-medium">
+                  {error}
+                </div>
+              )}
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-zinc-700 uppercase tracking-wider">Email</label>
+                <div className="relative">
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" size={16} />
+                  <input
+                    type="email"
+                    className="w-full pl-10 pr-4 py-3 bg-white border border-zinc-200 rounded-lg focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 outline-none transition-all text-sm text-zinc-900 placeholder:text-zinc-400"
+                    value={id}
+                    onChange={(e) => setId(e.target.value)}
+                    placeholder="admin@giveneeds.com"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-zinc-700 uppercase tracking-wider">Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" size={16} />
+                  <input
+                    type="password"
+                    className="w-full pl-10 pr-4 py-3 bg-white border border-zinc-200 rounded-lg focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 outline-none transition-all text-sm text-zinc-900 placeholder:text-zinc-400"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    required
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-3.5 bg-zinc-900 hover:bg-black text-white font-bold rounded-lg transition-colors text-sm tracking-wide mt-2"
+              >
+                로그인
+              </button>
+            </form>
+          </div>
         </div>
       </div>
     );
@@ -142,18 +172,13 @@ export default function AdminLayout({ children }) {
 
   return (
     <AuthContext.Provider value={{ handleLogout }}>
-      <div className="relative min-h-screen overflow-hidden">
-        <div className="fixed inset-0 z-0">
-          <Spline scene="https://prod.spline.design/6Wq1Q7YGyM-iab9I/scene.splinecode" />
-        </div>
-        <div className="relative z-10 flex min-h-screen bg-white/20 backdrop-blur-[2px]">
-          <Sidebar handleLogout={handleLogout} />
-          <div className="flex-1 ml-64 flex flex-col min-h-screen">
-            <AdminHeader />
-            <main className="flex-1 m-6 p-8 bg-white/60 backdrop-blur-xl rounded-2xl border border-white/50 shadow-2xl overflow-y-auto max-h-[calc(100vh-100px)]">
-              {children}
-            </main>
-          </div>
+      <div className="flex bg-zinc-50 min-h-screen">
+        <Sidebar handleLogout={handleLogout} />
+        <div className="flex-1 ml-64 flex flex-col min-h-screen">
+          <AdminHeader />
+          <main className="flex-1 p-8">
+            {children}
+          </main>
         </div>
       </div>
     </AuthContext.Provider>
