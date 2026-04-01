@@ -1,13 +1,19 @@
 import { NextResponse } from 'next/server';
 import { supabase, isDummyMode, DUMMY_SECTIONS } from '@/lib/supabase';
 
+// In-memory state for dummy mode to persist changes locally
+let inMemoryDummySections = null;
+
 // GET: 모든 활성 섹션 가져오기
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const all = searchParams.get('all'); // admin에서 전체 조회 시
 
   if (isDummyMode) {
-    const sections = all ? DUMMY_SECTIONS : DUMMY_SECTIONS.filter(s => s.is_active);
+    if (!inMemoryDummySections) {
+      inMemoryDummySections = JSON.parse(JSON.stringify(DUMMY_SECTIONS));
+    }
+    const sections = all ? inMemoryDummySections : inMemoryDummySections.filter(s => s.is_active);
     return NextResponse.json({ sections });
   }
 
@@ -55,6 +61,12 @@ export async function POST(request) {
 export async function PUT(request) {
   if (isDummyMode) {
     const body = await request.json();
+    if (inMemoryDummySections) {
+      const index = inMemoryDummySections.findIndex(s => s.id === body.id);
+      if (index !== -1) {
+        inMemoryDummySections[index] = { ...inMemoryDummySections[index], ...body };
+      }
+    }
     return NextResponse.json({ section: body });
   }
 
