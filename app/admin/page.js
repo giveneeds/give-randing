@@ -106,12 +106,12 @@ export default function AdminDashboard() {
       {/* KPI Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {kpis.map((kpi, i) => (
-          <div key={i} className="bg-white p-6 rounded-md border border-[var(--admin-border)] shadow-sm hover:border-zinc-400 transition-colors">
+          <div key={i} className="bg-white/50 p-6 rounded-md border border-white/60 shadow-sm hover:shadow-md hover:bg-white/70 transition-all">
             <div className="flex justify-between items-start mb-4">
-              <div className={`p-3 ${kpi.bg} ${kpi.color} rounded-md`}>
+              <div className={`p-3 ${kpi.bg.replace('bg-zinc-100', 'bg-white/80 border border-white')} ${kpi.color} rounded-md shadow-sm`}>
                 <kpi.icon size={24} />
               </div>
-              <span className="text-[10px] font-bold text-zinc-600 bg-zinc-100 border border-zinc-200 px-2 py-1 rounded-sm flex items-center gap-1">
+              <span className="text-[10px] font-bold text-zinc-700 bg-white/80 border border-white shadow-sm px-2 py-1 rounded-sm flex items-center gap-1">
                 <ArrowUpRight size={10} /> {kpi.trend}
               </span>
             </div>
@@ -125,8 +125,8 @@ export default function AdminDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Leads Table */}
-        <div className="lg:col-span-2 bg-white rounded-md border border-[var(--admin-border)] overflow-hidden shadow-sm">
-          <div className="p-6 border-b border-[var(--admin-border)] flex justify-between items-center">
+        <div className="lg:col-span-2 bg-white/50 rounded-md border border-white/60 overflow-hidden shadow-sm">
+          <div className="p-6 border-b border-white/50 flex justify-between items-center">
             <h3 className="font-bold text-[var(--admin-text-main)] flex items-center gap-2 tracking-tight">
               <Clock size={18} className="text-zinc-900" /> 최근 수집된 리드
             </h3>
@@ -137,16 +137,16 @@ export default function AdminDashboard() {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-zinc-50 border-b border-zinc-100">
+                <tr className="bg-white/60 border-b border-white/50">
                   <th className="px-6 py-4 text-xs font-bold text-[var(--admin-text-muted)] uppercase tracking-widest">이름</th>
                   <th className="px-6 py-4 text-xs font-bold text-[var(--admin-text-muted)] uppercase tracking-widest">연락처/이메일</th>
                   <th className="px-6 py-4 text-xs font-bold text-[var(--admin-text-muted)] uppercase tracking-widest">유입 캠페인</th>
                   <th className="px-6 py-4 text-xs font-bold text-[var(--admin-text-muted)] uppercase tracking-widest">날짜</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[var(--admin-border)]">
+              <tbody className="divide-y divide-white/40">
                 {stats.leads.length > 0 ? stats.leads.slice(0, 5).map((lead, i) => (
-                  <tr key={i} className="hover:bg-slate-50 transition-colors">
+                  <tr key={i} className="hover:bg-white/60 transition-colors">
                     <td className="px-6 py-4">
                       <div className="font-bold text-sm text-[var(--admin-text-main)]">{lead.name}</div>
                     </td>
@@ -154,7 +154,7 @@ export default function AdminDashboard() {
                       {lead.email || lead.phone || '-'}
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-[10px] font-bold bg-zinc-100 border border-zinc-200 text-zinc-600 px-2.5 py-1 rounded-sm uppercase tracking-widest">
+                      <span className="text-[10px] font-bold bg-white/80 border border-white shadow-sm text-zinc-700 px-2.5 py-1 rounded-sm uppercase tracking-widest">
                         {lead.campaign_id || lead.magazine_id || '메인'}
                       </span>
                     </td>
@@ -176,7 +176,7 @@ export default function AdminDashboard() {
 
         {/* Quick Actions & Status */}
         <div className="space-y-6">
-          <div className="bg-zinc-900 rounded-md p-6 text-white shadow-sm border border-black">
+          <div className="bg-zinc-900/80 backdrop-blur-md rounded-md p-6 text-white shadow-xl border border-zinc-800/50">
             <h3 className="font-black text-lg mb-2 tracking-tighter uppercase">캠페인 즉시 생성</h3>
             <p className="text-zinc-400 text-xs mb-6 leading-relaxed">
               광고 매체별로 최적화된 새로운 랜딩페이지를 몇 번의 클릭만으로 생성할 수 있습니다.
@@ -186,16 +186,16 @@ export default function AdminDashboard() {
             </Link>
           </div>
 
-          <div className="bg-white rounded-md border border-[var(--admin-border)] p-6 shadow-sm">
+          <div className="bg-white/50 rounded-md border border-white/60 p-6 shadow-sm">
             <h3 className="font-bold text-[var(--admin-text-main)] mb-4 flex items-center gap-2 tracking-tight uppercase">
               <CheckCircle2 size={18} className="text-zinc-900" /> 플랫폼 건전성
             </h3>
             <div className="space-y-4">
-              <div className="flex justify-between items-center text-sm border-b border-zinc-100 pb-3">
+              <div className="flex justify-between items-center text-sm border-b border-white/40 pb-3">
                 <span className="text-[var(--admin-text-muted)] font-bold tracking-widest uppercase text-xs">Supabase 연결</span>
                 <span className="font-black text-zinc-900">정상</span>
               </div>
-              <div className="flex justify-between items-center text-sm border-b border-zinc-100 pb-3">
+              <div className="flex justify-between items-center text-sm border-b border-white/40 pb-3">
                 <span className="text-[var(--admin-text-muted)] font-bold tracking-widest uppercase text-xs">SSL 보안인증</span>
                 <span className="font-black text-zinc-900">활성</span>
               </div>

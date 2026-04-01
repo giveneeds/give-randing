@@ -31,7 +31,7 @@ export default function Sidebar({ handleLogout }) {
   ];
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-64 bg-[var(--admin-sidebar-bg)] border-r border-[var(--admin-border)] flex flex-col z-30">
+    <aside className="fixed left-0 top-0 h-screen w-64 bg-white/40 backdrop-blur-3xl border-r border-white/50 flex flex-col z-30 shadow-xl">
       <div className="p-6">
         <Link href="/admin" className="flex items-center gap-2 group">
           <div className="w-8 h-8 bg-[var(--admin-primary)] rounded-sm flex items-center justify-center text-white font-bold group-hover:scale-105 transition-transform">
@@ -55,8 +55,8 @@ export default function Sidebar({ handleLogout }) {
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-all duration-200",
                 isActive 
-                  ? "bg-[var(--admin-bg)] text-[var(--admin-primary)] border border-zinc-200" 
-                  : "text-[var(--admin-text-muted)] hover:bg-[var(--admin-bg)] hover:text-[var(--admin-text-main)] border border-transparent"
+                  ? "bg-white/80 text-[var(--admin-primary)] border border-white shadow-sm" 
+                  : "text-[var(--admin-text-main)] hover:bg-white/50 border border-transparent"
               )}
             >
               <Icon size={18} className={cn(isActive ? "text-[var(--admin-primary)]" : "text-[var(--admin-text-muted)]")} />
@@ -66,18 +66,18 @@ export default function Sidebar({ handleLogout }) {
         })}
       </nav>
 
-      <div className="p-4 mt-auto border-t border-[var(--admin-border)] space-y-1">
+      <div className="p-4 mt-auto border-t border-white/50 space-y-1">
         <a 
           href="/" 
           target="_blank" 
-          className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-[var(--admin-text-muted)] hover:bg-[var(--admin-bg)] hover:text-[var(--admin-text-main)] transition-colors"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-[var(--admin-text-main)] hover:bg-white/50 transition-colors"
         >
           <ExternalLink size={18} />
           내 사이트 보기
         </a>
         <button 
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-red-500 hover:bg-red-50 transition-colors"
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-red-600 hover:bg-red-500/10 transition-colors"
         >
           <LogOut size={18} />
           로그아웃
