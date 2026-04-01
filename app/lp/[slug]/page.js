@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import SectionRenderer from '@/components/landing/SectionRenderer';
 import { supabase, isDummyMode, DUMMY_CAMPAIGNS, DUMMY_SECTIONS } from '@/lib/supabase';
-import ParticleTextEffect from '@/components/ui/particle-text-effect';
+import { ParticleTextEffect } from '@/components/ui/particle-text-effect';
 
 import LeadForm from '@/components/ui/LeadForm';
 
