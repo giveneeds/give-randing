@@ -2,6 +2,10 @@
 -- GIVENEEDS 통합 마케팅 플랫폼 - 마스터 스키마 (최종 병합본)
 -- =============================================
 
+-- 기존 테이블이 있다면 삭제하고 새로 생성 (최종 구조 반영 위함)
+DROP TABLE IF EXISTS landing_settings CASCADE;
+DROP TABLE IF EXISTS landing_sections CASCADE;
+
 -- 1. 랜딩 페이지 글로벌 설정 (Brand, SEO, Navbar, Footer)
 CREATE TABLE IF NOT EXISTS landing_settings (
     id BIGINT PRIMARY KEY DEFAULT 1,
