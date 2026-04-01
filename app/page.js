@@ -1,38 +1,68 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { supabase, isDummyMode, DUMMY_MAGAZINES, DUMMY_SETTINGS } from '@/lib/supabase';
+import { supabase, isDummyMode, DUMMY_MAGAZINES, DUMMY_SETTINGS, DUMMY_SECTIONS } from '@/lib/supabase';
 import LandingNavbar from '@/components/landing/LandingNavbar';
 import LandingFooter from '@/components/landing/LandingFooter';
+import MagazineCard from '@/components/landing/MagazineCard';
+import SectionRenderer from '@/components/landing/SectionRenderer';
 import ChatCTA from '@/components/ui/ChatCTA';
+import { MoveRight } from 'lucide-react';
 
-export default function MagazineListPage() {
+export default function HomePage() {
   const [magazines, setMagazines] = useState([]);
   const [settings, setSettings] = useState({});
+  const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadData() {
       try {
-        let magData, setData;
         if (isDummyMode) {
-          magData = DUMMY_MAGAZINES;
-          setData = DUMMY_SETTINGS;
-        } else {
-          const [mRes, sRes] = await Promise.all([
-            supabase.from('magazines').select('*').order('created_at', { ascending: false }),
-            supabase.from('landing_settings').select('*').single(),
-          ]);
-          magData = mRes.data || [];
-          setData = sRes.data || {};
+          setMagazines(DUMMY_MAGAZINES);
+          setSettings(DUMMY_SETTINGS);
+          setSections(DUMMY_SECTIONS);
+          setLoading(false);
+          return;
         }
+
+        // 실서버 데이터 로드 (실패 시 개별적으로 더미 데이터 폴백)
+        const [mRes, sRes, secRes] = await Promise.all([
+          supabase.from('magazines').select('*').eq('is_active', true).order('created_at', { ascending: false }),
+          supabase.from('landing_settings').select('*').single(),
+          supabase.from('global_sections').select('*').eq('is_active', true)
+        ]);
+
+        // 매거진 데이터 (없으면 더미)
+        const magData = (mRes.data && mRes.data.length > 0) ? mRes.data : DUMMY_MAGAZINES;
+        
+        // 설정 데이터 (구조 변환: single row JSON -> 컴포넌트 기대 구조)
+        let setData = DUMMY_SETTINGS;
+        if (sRes.data) {
+          setData = {
+            brand: sRes.data.brand || DUMMY_SETTINGS.brand,
+            cta_global: sRes.data.cta_global || DUMMY_SETTINGS.cta_global,
+            seo: sRes.data.seo || DUMMY_SETTINGS.seo,
+            navbar: sRes.data.navbar || DUMMY_SETTINGS.navbar,
+            footer: sRes.data.footer || DUMMY_SETTINGS.footer
+          };
+        }
+
+        // 섹션 데이터 (없으면 더미)
+        const secData = (secRes.data && secRes.data.length > 0) ? secRes.data : DUMMY_SECTIONS;
+
         setMagazines(magData);
         setSettings(setData);
+        setSections(secData);
       } catch (error) {
-        console.error('Failed to load data:', error);
+        console.error('데이터 로드 중 오류 발생 (더미 모드 전환):', error);
+        setMagazines(DUMMY_MAGAZINES);
+        setSettings(DUMMY_SETTINGS);
+        setSections(DUMMY_SECTIONS);
       } finally {
         setLoading(false);
       }
     }
+
     loadData();
   }, []);
 
@@ -48,7 +78,7 @@ export default function MagazineListPage() {
   return (
     <>
       <LandingNavbar settings={settings} />
-
+      
       <main>
         {/* ─── Masthead ─── */}
         <section className="pt-40 pb-16 px-6 md:px-12 max-w-screen-xl mx-auto">
@@ -113,39 +143,31 @@ export default function MagazineListPage() {
           </section>
         )}
 
-        {/* ─── More Issues ─── */}
-        {rest.length > 0 && (
-          <section className="px-6 md:px-12 max-w-screen-xl mx-auto mb-32">
-            <div className="flex items-center gap-6 mb-10">
-              <span className="text-[10px] font-bold tracking-[0.3em] text-zinc-400 uppercase">More Issues</span>
-              <div className="flex-1 h-px bg-zinc-200" />
-            </div>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-px bg-zinc-200 border border-zinc-200">
-              {rest.map((post) => (
-                <a key={post.id} href={`/magazine/${post.slug}`}
-                  className="group block bg-white p-8 hover:bg-zinc-50 transition-colors duration-200">
-                  <div className="aspect-[3/2] overflow-hidden bg-zinc-100 mb-6">
-                    <img
-                      src={post.thumbnail_url}
-                      alt={post.title}
-                      className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105"
-                    />
-                  </div>
-                  <span className="text-[10px] font-bold tracking-[0.3em] text-zinc-400 uppercase mb-3 block">
-                    {post.category}
-                  </span>
-                  <h3 className="text-lg font-bold leading-tight text-zinc-900 mb-4 group-hover:text-zinc-500 transition-colors tracking-tight">
-                    {post.title}
-                  </h3>
-                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest group-hover:text-zinc-900 transition-colors flex items-center gap-2">
-                    Read <MoveRight size={10} />
-                  </span>
-                </a>
-              ))}
-            </div>
-          </section>
-        )}
+        {/* ─── Magazine Grid ─── */}
+        <section className="px-6 md:px-12 max-w-screen-xl mx-auto mb-32">
+          <div className="flex items-center gap-6 mb-10">
+            <span className="text-[10px] font-bold tracking-[0.3em] text-zinc-400 uppercase">More Issues</span>
+            <div className="flex-1 h-px bg-zinc-200" />
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-px bg-zinc-200 border border-zinc-200">
+            {rest.map((post) => (
+              <MagazineCard key={post.id} post={post} />
+            ))}
+          </div>
+        </section>
 
+        {/* ─── Global Sections ─── */}
+        {sections.map(section => (
+          <div key={section.id} className="mb-32">
+            <SectionRenderer
+              type={section.type}
+              title={section.title}
+              subtitle={section.subtitle}
+              content={section.content}
+            />
+          </div>
+        ))}
+        
         {/* ─── AI 상담 유도 블록 ─── */}
         <ChatCTA />
       </main>
