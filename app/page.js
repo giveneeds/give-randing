@@ -70,8 +70,6 @@ export default function HomePage() {
 
   return (
     <>
-      <LandingNavbar settings={settings} />
-      
       <main className="bg-white">
         {/* 1. HeroSection (Static) */}
         <section id="hero" className="border-b border-zinc-100">
@@ -93,45 +91,7 @@ export default function HomePage() {
           ))}
         </section>
 
-        {/* 5. 매거진 프리뷰 */}
-        <section id="magazine" className="px-6 md:px-12 max-w-screen-xl mx-auto mb-32">
-          <div className="flex items-center gap-6 mb-16">
-            <span className="text-[10px] font-bold tracking-[0.3em] text-zinc-400 uppercase">Magazine Preview</span>
-            <div className="flex-1 h-px bg-zinc-100" />
-          </div>
-          
-          {/* Featured */}
-          {featured && (
-            <a href={`/magazine/${featured.slug}`} className="group block mb-12 border border-zinc-100 overflow-hidden hover:border-zinc-900 transition-colors">
-              <div className="grid md:grid-cols-2 gap-0">
-                <div className="aspect-[4/3] md:aspect-auto overflow-hidden bg-zinc-50 relative">
-                  <img src={featured.thumbnail_url} alt={featured.title} className="object-cover w-full h-full transition-transform duration-700 group-hover:scale-105" />
-                  {featured.is_premium && <span className="absolute top-4 left-4 bg-zinc-900 text-white text-[9px] font-bold px-2 py-1 tracking-tighter">PREMIUM</span>}
-                </div>
-                <div className="p-12 flex flex-col justify-between">
-                  <div>
-                    <span className="text-[10px] font-bold tracking-[0.3em] text-zinc-400 uppercase">{featured.category}</span>
-                    <h2 className="text-3xl font-black tracking-tighter text-zinc-900 mt-4 mb-6">{featured.title}</h2>
-                    <p className="text-sm text-zinc-400 leading-relaxed">기브니즈가 제안하는 데이터 기반의 최신 마케팅 인사이트를 확인하세요.</p>
-                  </div>
-                  <div className="flex items-center justify-between pt-8 border-t border-zinc-50 mt-8">
-                     <span className="text-xs text-zinc-400">{new Date(featured.created_at).toLocaleDateString('ko-KR')}</span>
-                     <span className="text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 group-hover:gap-4 transition-all">Read More <MoveRight size={10}/></span>
-                  </div>
-                </div>
-              </div>
-            </a>
-          )}
-
-          {/* Grid */}
-          <div className="grid md:grid-cols-3 gap-px bg-zinc-100 border border-zinc-100 mt-2">
-            {rest.map((post) => (
-              <MagazineCard key={post.id} post={post} />
-            ))}
-          </div>
-        </section>
-
-        {/* 6. AI 챗봇 유도 섹션 */}
+        {/* 5. AI 챗봇 유도 섹션 */}
         <section id="chatbot">
           <ChatCTA />
         </section>
