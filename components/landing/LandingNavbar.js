@@ -22,8 +22,8 @@ export default function LandingNavbar({ settings }) {
   }, []);
 
   const handleCTA = () => {
-    if (ctaGlobal.kakao_url) window.open(ctaGlobal.kakao_url, '_blank');
-    else window.location.href = `tel:${ctaGlobal.phone || '010-1234-5678'}`;
+    // 📺 사용자 요청사항: 헤더 링크 유튜브로 연결
+    window.open('https://www.youtube.com/@GIVENEEDS', '_blank');
   };
 
   return (
