@@ -16,7 +16,21 @@ export default function HomePage() {
         if (isDummyMode) {
           setSections([
             { id: 1, type: 'hero', title: '모든 마케팅을 데이터로', subtitle: '기브니즈가 제안하는 데이터 기반 성장 솔루션', is_active: true },
-            { id: 2, type: 'services', title: 'Our Services', subtitle: '핵심 마케팅 솔루션', is_active: true }
+            { 
+              id: 2, 
+              type: 'services', 
+              title: 'Our Services', 
+              subtitle: '핵심 마케팅 솔루션', 
+              is_active: true,
+              content: {
+                items: [
+                  { title: '퍼포먼스 마케팅', description: '데이터 기반의 효율적인 매체 운영', label: 'Growth' },
+                  { title: '브랜딩 기획', description: '지속 가능한 브랜드 아이덴티티 구축', label: 'Brand' },
+                  { title: '콘텐츠 제작', description: '고관여 유도를 위한 전문 콘텐츠 제작', label: 'Creative' },
+                  { title: '데이터 분석', description: '정교한 성과 추적 및 비즈니스 인사이트', label: 'Data' }
+                ]
+              }
+            }
           ]);
           setSettings(DUMMY_SETTINGS);
           setLoading(false);

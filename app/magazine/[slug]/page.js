@@ -1,7 +1,7 @@
-'use client';
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { supabase, isDummyMode, DUMMY_MAGAZINES } from '@/lib/supabase';
+import { motion } from 'framer-motion';
+import { supabase, isDummyMode, DUMMY_MAGAZINES, DUMMY_SETTINGS } from '@/lib/supabase';
 import LandingNavbar from '@/components/landing/LandingNavbar';
 import LandingFooter from '@/components/landing/LandingFooter';
 import ChatbotBlock from '@/components/landing/ChatbotBlock';
