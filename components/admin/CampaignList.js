@@ -46,7 +46,7 @@ export default function CampaignList({ campaigns, searchQuery, setSearchQuery, o
                     {camp.status || 'draft'}
                   </span>
                 </div>
-                <p className="text-xs text-zinc-400 font-mono mt-1">/lp/{camp.slug}</p>
+                <p className="text-xs text-zinc-400 font-mono mt-1">/landing/{camp.slug}</p>
               </div>
             </div>
             
@@ -58,7 +58,7 @@ export default function CampaignList({ campaigns, searchQuery, setSearchQuery, o
                 </div>
               </div>
               <button onClick={() => onEdit(camp)} className="p-2.5 hover:bg-zinc-100 rounded-md text-zinc-400 hover:text-zinc-900 transition-all"><Edit3 size={18} /></button>
-              <a href={`/lp/${camp.slug}`} target="_blank" className="p-2.5 hover:bg-zinc-100 rounded-md text-zinc-400 hover:text-zinc-900 transition-all"><ExternalLink size={18} /></a>
+              <a href={`/landing/${camp.slug}`} target="_blank" className="p-2.5 hover:bg-zinc-100 rounded-md text-zinc-400 hover:text-zinc-900 transition-all"><ExternalLink size={18} /></a>
             </div>
           </div>
         ))}

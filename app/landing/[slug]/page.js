@@ -88,7 +88,13 @@ export default function CampaignLandingPage() {
           {campaign.hero_type === 'B' ? (
             <div className="flex flex-col lg:flex-row items-center justify-center min-h-screen text-center lg:text-left px-4 md:px-8 max-w-7xl mx-auto gap-12 py-20">
               <div className="flex-1">
-                <span className="text-xs font-bold tracking-[0.3em] text-primary uppercase mb-4 block">EXCLUSIVELY FOR GROWTH</span>
+                <div className="flex items-center gap-3 mb-6">
+                  <span className="text-[10px] font-bold tracking-[0.3em] text-zinc-400 uppercase">
+                    {campaign.category || 'CAMPAIGN'}
+                  </span>
+                  <div className="h-px w-8 bg-zinc-200" />
+                  <span className="text-xs font-bold tracking-[0.3em] text-primary uppercase">EXCLUSIVELY FOR GROWTH</span>
+                </div>
                 <h1 className="text-5xl md:text-7xl font-black leading-tight mb-8 whitespace-pre-line tracking-tighter">
                   {campaign.hero_content.headline}
                 </h1>
