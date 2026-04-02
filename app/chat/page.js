@@ -101,7 +101,12 @@ export default function ChatPage() {
 
               {showGate && (
                 <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="pt-8 max-w-screen-sm mx-auto">
-                   <LeadForm title="심층 진단 리포트 신청" subtitle="입력하신 정보를 바탕으로 영업일 기준 24시간 이내에 분석본을 보내드립니다." ctaLabel="무료 진단 신청하기" />
+                   <LeadForm 
+                     title="심층 진단 리포트 신청" 
+                     subtitle="입력하신 정보를 바탕으로 영업일 기준 24시간 이내에 분석본을 보내드립니다." 
+                     ctaLabel="무료 진단 신청하기" 
+                     category="chatbot"
+                   />
                 </motion.div>
               )}
             </AnimatePresence>

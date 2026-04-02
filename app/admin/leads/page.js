@@ -174,6 +174,9 @@ export default function AdminLeads() {
                       </div>
                     </div>
                   </td>
+                  <td className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-zinc-400">
+                    {lead.category || 'organic'}
+                  </td>
                   <td className="px-8 py-6">
                     {getStatusBadge(lead.status || 'new')}
                   </td>

@@ -38,9 +38,22 @@ export default function AdminCampaigns() {
   }, []);
 
   const handleSave = async (updated) => {
-    // 실서버 저장 로직 생략 (Update supabase.from('campaigns').upsert(updated))
-    setCampaigns(prev => prev.map(c => c.id === updated.id ? updated : c));
-    setIsEditing(false);
+    try {
+      if (!isDummyMode) {
+        const { error } = await supabase
+          .from('campaigns')
+          .upsert({
+            ...updated,
+            updated_at: new Date().toISOString(),
+          });
+        if (error) throw error;
+      }
+      setCampaigns(prev => prev.map(c => c.id === updated.id ? updated : c));
+      setIsEditing(false);
+    } catch (e) {
+      console.error('Failed to save campaign:', e);
+      alert('저장 도중 오류가 발생했습니다: ' + e.message);
+    }
   };
 
   const handleCreate = () => {

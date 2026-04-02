@@ -1,16 +1,33 @@
-'use client';
-import { useState } from 'react';
-import { MessageCircle, Download, CheckCircle2 } from 'lucide-react';
+import { supabase, isDummyMode } from '@/lib/supabase';
 
-export default function LeadForm({ title, subtitle, ctaLabel, campaignId, magazineId }) {
+export default function LeadForm({ title, subtitle, ctaLabel, campaignId, magazineId, category = 'organic' }) {
   const [submitted, setSubmitted] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '', phone: '' });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // API Call to /api/leads (DB insert) logic here
-    console.log('Lead Captured:', { ...formData, campaignId, magazineId });
-    setSubmitted(true);
+    
+    try {
+      if (!isDummyMode) {
+        const { error } = await supabase
+          .from('leads')
+          .insert([{
+            name: formData.name,
+            email: formData.email,
+            phone: formData.phone,
+            campaign_id: campaignId,
+            magazine_id: magazineId,
+            category: category
+          }]);
+        if (error) throw error;
+      } else {
+        console.log('Dummy Lead Captured:', { ...formData, campaignId, magazineId, category });
+      }
+      setSubmitted(true);
+    } catch (err) {
+      console.error('Lead submission failed:', err);
+      alert('신청 처리 중 오류가 발생했습니다. 다시 시도해 주세요.');
+    }
   };
 
   if (submitted) {

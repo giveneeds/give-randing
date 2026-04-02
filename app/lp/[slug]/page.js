@@ -36,11 +36,20 @@ export default function CampaignLandingPage() {
           return;
         }
 
+        // 🚨 승인 상태 체크 (Admin이 아닐 경우 published만 허용)
+        // 실제로는 세션 체크 로직이 필요하지만, 여기서는 기본적인 가드만 구현
+        if (campaignData.status !== 'published' && !isDummyMode) {
+          setError('이 캠페인은 아직 준비 중이거나 비공개 상태입니다.');
+          return;
+        }
+
         setCampaign(campaignData);
 
-        // 선택된 글로벌 섹션들 로드
+        // 선택된 글로벌 섹션들 로드 및 정렬
         if (isDummyMode) {
-          const selected = DUMMY_SECTIONS.filter(s => campaignData.selected_sections.includes(s.id));
+          const selected = campaignData.selected_sections
+            .map(id => DUMMY_SECTIONS.find(s => s.id === id))
+            .filter(Boolean);
           setSections(selected);
         } else {
           const { data: sectionData, error: secError } = await supabase
@@ -48,7 +57,12 @@ export default function CampaignLandingPage() {
             .select('*')
             .in('id', campaignData.selected_sections);
           if (secError) throw secError;
-          setSections(sectionData);
+          
+          // 🚨 Supabase .in()은 순서를 보장하지 않으므로 수동 정렬
+          const sorted = campaignData.selected_sections
+            .map(id => sectionData.find(s => s.id === id))
+            .filter(Boolean);
+          setSections(sorted);
         }
 
       } catch (err) {
