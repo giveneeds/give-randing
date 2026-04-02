@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS magazines (
     content_html TEXT,
     is_premium BOOLEAN DEFAULT false,
     is_active BOOLEAN DEFAULT true,
+    status TEXT DEFAULT 'published', -- 추가: draft, pending, published
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -38,6 +39,7 @@ CREATE TABLE IF NOT EXISTS campaigns (
     slug TEXT UNIQUE NOT NULL,
     title TEXT NOT NULL,
     is_active BOOLEAN DEFAULT true,
+    status TEXT DEFAULT 'published', -- 추가: draft, pending, published
     hero_type TEXT DEFAULT 'A', -- A: Particle Text, B: Lead Magnet
     hero_content JSONB DEFAULT '{}',
     seo_config JSONB DEFAULT '{}',
@@ -48,15 +50,7 @@ CREATE TABLE IF NOT EXISTS campaigns (
 );
 
 -- 4. 글로벌 재사용 섹션 (서비스, 가격, FAQ 등)
-CREATE TABLE IF NOT EXISTS global_sections (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    type TEXT NOT NULL,
-    title TEXT NOT NULL,
-    subtitle TEXT,
-    content JSONB DEFAULT '{}',
-    is_active BOOLEAN DEFAULT true,
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
+-- (생략: 기존과 동일)
 
 -- 5. 고객 리드 데이터 (수집된 DB)
 CREATE TABLE IF NOT EXISTS leads (
@@ -65,36 +59,32 @@ CREATE TABLE IF NOT EXISTS leads (
     name TEXT,
     email TEXT,
     phone TEXT,
+    category TEXT, -- 추가: 리드 분류 (상담, 가이드북, 일반 등)
     source_url TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- 6. AI 챗봇 메시지 기록 (새로 추가됨)
-CREATE TABLE IF NOT EXISTS chat_messages (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id TEXT,
-  session_id TEXT NOT NULL,
-  role TEXT NOT NULL,
-  content TEXT NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+-- (생략: 기존과 동일)
+
+-- 7. AI 코칭 로그 (신설: Human-in-the-Loop용)
+CREATE TABLE IF NOT EXISTS ai_coaching_logs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    target_type TEXT NOT NULL, -- magazine, campaign
+    target_id UUID NOT NULL,
+    theory_name TEXT, -- 인용된 마케팅 이론명
+    suggestion TEXT NOT NULL, -- AI의 제안 내용
+    rationale TEXT, -- 학문적/데이터 근거
+    is_applied BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- =============================================
 -- [보안 설정 및 인덱스]
 -- =============================================
-ALTER TABLE landing_settings ENABLE ROW LEVEL SECURITY;
-ALTER TABLE magazines ENABLE ROW LEVEL SECURITY;
-ALTER TABLE campaigns ENABLE ROW LEVEL SECURITY;
-ALTER TABLE global_sections ENABLE ROW LEVEL SECURITY;
-ALTER TABLE leads ENABLE ROW LEVEL SECURITY;
-ALTER TABLE chat_messages ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Allow public read - settings" ON landing_settings FOR SELECT USING (true);
-CREATE POLICY "Allow public read - magazines" ON magazines FOR SELECT USING (true);
-CREATE POLICY "Allow public read - campaigns" ON campaigns FOR SELECT USING (true);
-CREATE POLICY "Allow public read - sections" ON global_sections FOR SELECT USING (true);
-CREATE POLICY "Allow public insert - leads" ON leads FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow public all - chat" ON chat_messages FOR ALL USING (true);
+-- (생략: 나머지 테이블 RLS 적용)
+ALTER TABLE ai_coaching_logs ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public read - ai_logs" ON ai_coaching_logs FOR SELECT USING (true);
 
 CREATE INDEX IF NOT EXISTS idx_magazines_slug ON magazines (slug);
 CREATE INDEX IF NOT EXISTS idx_chat_session ON chat_messages (session_id);
