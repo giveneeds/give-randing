@@ -41,28 +41,22 @@ export default function LandingNavbar({ settings }) {
           ))}
         </div>
         
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+        <div className="flex items-center gap-4">
           {mounted && (
             <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'var(--foreground)',
-                padding: '8px'
-              }}
+              className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors text-zinc-500 dark:text-zinc-400"
               aria-label="Toggle theme"
             >
-              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
             </button>
           )}
 
           {navbar.show_cta !== false && (
-            <button onClick={handleCTA} className="btn btn-primary" style={{ padding: '8px 16px', fontSize: '0.9rem' }}>
+            <button 
+              onClick={handleCTA} 
+              className="bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-5 py-2 rounded-md font-bold text-xs tracking-widest uppercase hover:scale-[1.02] active:scale-[0.98] transition-all"
+            >
               상담하기
             </button>
           )}
