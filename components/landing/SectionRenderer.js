@@ -8,7 +8,6 @@ import GallerySection from './GallerySection';
 import TextSection from './TextSection';
 import VideoSection from './VideoSection';
 import ProductsSection from './ProductsSection';
-import MagazineList from './MagazineList';
 
 export default function SectionRenderer({ type, content, settings, title, subtitle }) {
   const commonProps = { title, subtitle, content, settings };
@@ -34,8 +33,6 @@ export default function SectionRenderer({ type, content, settings, title, subtit
       return <VideoSection {...commonProps} />;
     case 'products':
       return <ProductsSection {...commonProps} />;
-    case 'magazine-list':
-      return <MagazineList {...commonProps} />;
     default:
       return (
         <div style={{ padding: '50px', textAlign: 'center', color: '#888' }}>
