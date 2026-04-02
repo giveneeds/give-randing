@@ -62,9 +62,14 @@ export default function LandingNavbar({ settings }) {
           )}
 
           {navbar.show_cta !== false && (
-            <button onClick={handleCTA} className="btn btn-primary" style={{ padding: '8px 16px', fontSize: '0.9rem' }}>
+            <a 
+              href="https://www.youtube.com/@GIVENEEDS" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="bg-zinc-900 text-white px-5 py-2.5 rounded-full text-[11px] font-black uppercase tracking-widest hover:bg-zinc-800 transition-all flex items-center justify-center shadow-md dark:bg-white dark:text-zinc-900"
+            >
               상담하기
-            </button>
+            </a>
           )}
         </div>
       </div>

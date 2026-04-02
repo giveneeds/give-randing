@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { supabase, isDummyMode } from '@/lib/supabase';
+import { CheckCircle2, MessageCircle, Download } from 'lucide-react';
 
 export default function LeadForm({ title, subtitle, ctaLabel, campaignId, magazineId, category = 'organic' }) {
   const [submitted, setSubmitted] = useState(false);
