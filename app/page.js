@@ -48,12 +48,27 @@ export default function HomePage() {
           };
         }
 
-        // 섹션 데이터 (없으면 더미)
-        const secData = (secRes.data && secRes.data.length > 0) ? secRes.data : DUMMY_SECTIONS;
+        // 섹션 데이터 (DB 데이터와 더미 데이터 병합: DB에 없으면 더미 사용)
+        let secData = DUMMY_SECTIONS;
+        if (secRes.data && secRes.data.length > 0) {
+          // DB에 있는 섹션들로 더미 데이터를 업데이트하거나 덮어씀
+          const dbSectionsMap = new Map(secRes.data.map(s => [s.id, s]));
+          secData = DUMMY_SECTIONS.map(dummy => {
+            if (dbSectionsMap.has(dummy.id)) {
+              return { ...dummy, ...dbSectionsMap.get(dummy.id) };
+            }
+            return dummy;
+          });
+          
+          // DB에만 새로 추가된 섹션이 있다면 뒤에 붙여줌
+          const dummyIds = new Set(DUMMY_SECTIONS.map(s => s.id));
+          const newDbSections = secRes.data.filter(s => !dummyIds.has(s.id));
+          secData = [...secData, ...newDbSections];
+        }
 
         setMagazines(magData);
         setSettings(setData);
-        setSections(secData);
+        setSections(secData.filter(s => s.is_active));
       } catch (error) {
         console.error('데이터 로드 중 오류 발생 (더미 모드 전환):', error);
         setMagazines(DUMMY_MAGAZINES);

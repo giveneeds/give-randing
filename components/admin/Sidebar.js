@@ -23,11 +23,12 @@ export default function Sidebar({ handleLogout }) {
 
   const navItems = [
     { href: '/admin', icon: LayoutDashboard, label: '대시보드' },
-    { label: '캠페인(LP) 관리', href: '/admin/campaigns', icon: Rocket },
-    { label: '매거진 관리', href: '/admin/magazines', icon: BookOpen },
-    { href: '/admin/sections', icon: Component, label: '글로벌 섹션' },
-    { href: '/admin/leads', icon: Users, label: '리드(DB) 조회' },
-    { href: '/admin/settings', icon: Settings, label: '설정' },
+    { href: '/admin/sections', icon: Component, label: '웹사이트 수정(HOME)' },
+    { href: '/admin/services', icon: Rocket, label: '상품/솔루션 관리' },
+    { href: '/admin/campaigns', icon: Component, label: '랜딩페이지 빌더' },
+    { href: '/admin/magazines', icon: BookOpen, label: '매거진 콘텐츠' },
+    { href: '/admin/leads', icon: Users, label: '고객 리드 조회' },
+    { href: '/admin/settings', icon: Settings, label: '시스템 설정' },
   ];
 
   return (
