@@ -22,7 +22,19 @@ export default function CinematicHeader() {
   const listItemsRef = useRef([]);
 
   useGSAP(() => {
-    // 🎨 1. GIVENEEDS 시네마틱 '뒤로 멀어지기' (원근법)
+    const vh = (v) => (v * window.innerHeight) / 100;
+
+    // 🧱 1. Pinning - 컨테이너를 800vh 동안 고정 (이게 핵심!)
+    ScrollTrigger.create({
+      trigger: container.current,
+      start: "top top",
+      end: "+=800vh",
+      pin: true,
+      pinSpacing: true, // 다음 섹션이 800vh 뒤에 오도록 공간 확보
+      scrub: true,
+    });
+
+    // 🎨 2. GIVENEEDS 로고 멀어지기 (150vh 구간)
     gsap.fromTo(heroTextRef.current, 
       { scale: 1, opacity: 1, filter: 'blur(0px)' },
       {
@@ -30,46 +42,35 @@ export default function CinematicHeader() {
         opacity: 0,
         filter: 'blur(20px)',
         scrollTrigger: {
-          trigger: "main",
+          trigger: container.current,
           start: "top top",
-          end: "150vh",
+          end: `+=${vh(150)}`,
           scrub: true,
         }
       }
     );
 
-    // 🌟 마지막 단계: 애니메이션이 끝나면 전체 컨테이너 숨기기 (하위 섹션 가독성 확보)
-    gsap.to(container.current, {
-      autoAlpha: 0,
-      scrollTrigger: {
-        trigger: "main",
-        start: "400vh",
-        end: "450vh",
-        scrub: true,
-      }
-    });
-
-    // 🚀 2. 검색 팔레트 '멀리서 다가오기' (투시 효과)
+    // 🚀 3. 검색 팔레트 다가오기 (100vh ~ 250vh 구간)
     gsap.fromTo(searchBarRef.current, 
-      { scale: 0.7, opacity: 0, y: 10, visibility: 'hidden' },
+      { scale: 0.7, opacity: 0, y: 10, autoAlpha: 0 },
       { 
         scale: 1, 
         opacity: 1, 
         y: 0,
-        visibility: 'visible',
+        autoAlpha: 1,
         scrollTrigger: {
-          trigger: "main",
-          start: "100vh",
-          end: "250vh",
+          trigger: container.current,
+          start: `+=${vh(100)}`,
+          end: `+=${vh(250)}`,
           scrub: true,
         }
       }
     );
 
-    // 📋 3. 항목 순차 노출 (리스트업)
+    // 📋 4. 상품 리스트 순차 노출 (250vh ~ 750vh 구간)
     MARKETING_PRODUCTS.forEach((_, index) => {
-      const startPos = 250 + index * 100;
-      const endPos = 350 + index * 100;
+      const startPos = vh(250 + index * 100);
+      const endPos = vh(350 + index * 100);
 
       gsap.fromTo(listItemsRef.current[index],
         { opacity: 0, x: -10, filter: 'blur(5px)' },
@@ -78,42 +79,58 @@ export default function CinematicHeader() {
           x: 0,
           filter: 'blur(0px)',
           scrollTrigger: {
-            trigger: "main",
-            start: `${startPos}vh`,
-            end: `${startPos + 40}vh`,
+            trigger: container.current,
+            start: `+=${startPos}`,
+            end: `+=${startPos + vh(50)}`,
             scrub: true,
           }
         }
       );
 
       ScrollTrigger.create({
-        trigger: "main",
-        start: `${startPos}vh`,
-        end: `${endPos}vh`,
+        trigger: container.current,
+        start: `+=${startPos}`,
+        end: `+=${endPos}`,
         onToggle: (self) => {
           if (self.isActive) {
             gsap.to(listItemsRef.current[index], {
-              backgroundColor: 'rgba(255, 255, 255, 0.08)',
-              borderColor: 'rgba(255, 255, 255, 0.15)',
-              transform: 'scale(1.01)',
+              backgroundColor: 'rgba(59, 130, 246, 0.1)',
+              borderColor: 'rgba(59, 130, 246, 0.3)',
+              scale: 1.02,
               duration: 0.4,
             });
           } else {
             gsap.to(listItemsRef.current[index], {
               backgroundColor: 'transparent',
               borderColor: 'transparent',
-              transform: 'scale(1)',
+              scale: 1,
               duration: 0.4,
             });
           }
         }
       });
     });
+
+    // 🌟 5. 마지막 페이드 아웃 (750vh ~ 800vh)
+    gsap.to(container.current, {
+      opacity: 0,
+      scale: 0.95,
+      scrollTrigger: {
+        trigger: container.current,
+        start: `+=${vh(750)}`,
+        end: `+=${vh(800)}`,
+        scrub: true,
+      }
+    });
+
   }, { scope: container });
 
   return (
-    <div ref={container} className="fixed inset-0 pointer-events-none z-40 flex items-center justify-center overflow-hidden bg-white dark:bg-zinc-950 transition-colors duration-700">
-      <div className="relative flex items-center justify-center w-full h-full">
+    <div 
+      ref={container} 
+      className="w-full h-screen relative flex items-center justify-center overflow-hidden bg-white dark:bg-zinc-950 transition-colors duration-700 z-40"
+    >
+      <div className="relative flex items-center justify-center w-full h-full pointer-events-none">
         {/* GIVENEEDS 브랜드 로고 */}
         <h1 
           ref={heroTextRef}
@@ -151,7 +168,7 @@ export default function CinematicHeader() {
                 ref={(el) => {
                   listItemsRef.current[i] = el;
                 }}
-                className="group flex items-center justify-between px-3 py-3 rounded-xl border border-transparent transition-all duration-500 transform"
+                className="group flex items-center justify-between px-3 py-3 rounded-xl border border-transparent transition-all duration-500 transform opacity-0"
               >
                 <div className="flex items-center space-x-3">
                   <div className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-white/5 flex items-center justify-center group-hover:bg-zinc-200 dark:group-hover:bg-blue-500/20 transition-colors">

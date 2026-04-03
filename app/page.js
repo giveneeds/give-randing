@@ -80,14 +80,11 @@ export default function HomePage() {
     <>
       <LandingNavbar settings={settings} />
       
-      {/* 🔮 Cinematic GSAP Background */}
-      <CinematicHeader />
+      <main className="relative z-10 w-full overflow-x-hidden">
+        {/* 🔮 Cinematic GSAP Background (Pinnable Section) */}
+        <CinematicHeader />
 
-      <main className="relative z-10 w-full">
-        {/* 🚀 First Phase: Scroll Spacer for GSAP Cinematic */}
-        <div className="h-[500vh] pointer-events-none" />
-
-        {/* ─── Global Sections (Content starts after animation) ─── */}
+        {/* ─── Global Sections (Content starts after cinematic phase) ─── */}
         <div className="bg-white dark:bg-zinc-950 relative z-20">
           {sections.map(section => (
             <div key={section.id} className="mb-32">
