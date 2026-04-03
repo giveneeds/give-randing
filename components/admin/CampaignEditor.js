@@ -53,16 +53,47 @@ export default function CampaignEditor({ campaign, sections, onSave, onClose }) 
                     <input className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-md text-sm outline-none font-mono" value={current.slug} onChange={e => setCurrent({...current, slug: e.target.value})} />
                   </div>
                 </section>
-                <section className="space-y-4">
+                <section className="space-y-6">
                   <h3 className="text-xs font-black tracking-widest uppercase">Hero Module Type</h3>
                   <div className="grid grid-cols-2 gap-4">
-                    {['A', 'B'].map(t => (
-                      <button key={t} onClick={() => setCurrent({...current, hero_type: t})} className={`p-6 border-2 text-left rounded-md transition-all ${current.hero_type === t ? 'border-zinc-900 bg-zinc-50' : 'border-zinc-100'}`}>
-                        <div className={`w-8 h-8 rounded-full mb-4 flex items-center justify-center ${current.hero_type === t ? 'bg-zinc-900 text-white' : 'bg-zinc-100 text-zinc-400'}`}><Rocket size={16} /></div>
-                        <p className="text-xs font-black uppercase tracking-widest">{t === 'A' ? 'Editorial SPA' : 'Lead Magnet'}</p>
+                    {[
+                      { id: 'A', label: 'Particle (애니메이션)', icon: <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" /> },
+                      { id: 'B', label: 'Lead Magnet (신청폼)', icon: <Rocket size={16} /> }
+                    ].map(t => (
+                      <button key={t.id} onClick={() => setCurrent({...current, hero_type: t.id})} className={`p-6 border-2 text-left rounded-md transition-all ${current.hero_type === t.id ? 'border-zinc-900 bg-zinc-50' : 'border-zinc-100'}`}>
+                        <div className={`w-8 h-8 rounded-full mb-4 flex items-center justify-center ${current.hero_type === t.id ? 'bg-zinc-900 text-white' : 'bg-zinc-100 text-zinc-400'}`}>{t.icon}</div>
+                        <p className="text-xs font-black uppercase tracking-widest">{t.label}</p>
                       </button>
                     ))}
                   </div>
+
+                  {/* 🎭 Particle Text Editor (Type A 전용) */}
+                  {current.hero_type === 'A' && (
+                    <div className="p-6 bg-zinc-50 border border-zinc-100 rounded-md space-y-4 animate-in slide-in-from-top-2 duration-300">
+                      <div className="flex justify-between items-center">
+                        <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Particle Words (줄바꿈으로 구분)</label>
+                        <span className="text-[9px] text-zinc-300 uppercase font-bold tracking-tight">Newline (\n) = Sequence</span>
+                      </div>
+                      <textarea 
+                        className="w-full p-4 bg-white border border-zinc-200 rounded-md text-sm outline-none font-bold min-h-[120px] leading-relaxed" 
+                        value={current.hero_content.particle_text || ''} 
+                        placeholder={"안녕하세요.\n기브니즈입니다.\n무엇을 도와드릴까요?"}
+                        onChange={e => setCurrent({
+                          ...current, 
+                          hero_content: { ...current.hero_content, particle_text: e.target.value } 
+                        })} 
+                      />
+                      <p className="text-[11px] text-zinc-400 font-medium">줄바꿈을 하면 화면에 순차적으로 나타나는 자막이 됩니다.</p>
+                    </div>
+                  )}
+
+                  {/* 폼 설정 (Type B 전용 또는 공통) */}
+                  {current.hero_type === 'B' && (
+                    <div className="space-y-4">
+                      <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Headline</label>
+                      <input className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-md text-sm outline-none font-bold" value={current.hero_content.headline} onChange={e => setCurrent({...current, hero_content: {...current.hero_content, headline: e.target.value}})} />
+                    </div>
+                  )}
                 </section>
               </div>
             )}

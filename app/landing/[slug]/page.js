@@ -113,7 +113,9 @@ export default function CampaignLandingPage() {
             </div>
           ) : (
             <div className="relative h-screen w-full">
-              <ParticleTextEffect words={[campaign.hero_content.headline]} />
+              <ParticleTextEffect 
+                words={(campaign.hero_content.particle_text || campaign.hero_content.headline || '').split('\n')} 
+              />
             </div>
           )}
         </section>

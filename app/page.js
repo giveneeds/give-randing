@@ -20,7 +20,7 @@ export default function HomePage() {
         if (isDummyMode) {
           setMagazines(DUMMY_MAGAZINES);
           setSettings(DUMMY_SETTINGS);
-          setSections(DUMMY_SECTIONS);
+          setSections(DUMMY_SECTIONS.filter(s => s.is_active));
           setLoading(false);
           return;
         }
