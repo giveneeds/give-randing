@@ -6,6 +6,7 @@ import LandingFooter from '@/components/landing/LandingFooter';
 import MagazineCard from '@/components/landing/MagazineCard';
 import SectionRenderer from '@/components/landing/SectionRenderer';
 import ChatCTA from '@/components/ui/ChatCTA';
+import CinematicHeader from '@/components/landing/CinematicHeader';
 import { MoveRight } from 'lucide-react';
 
 export default function HomePage() {
@@ -67,7 +68,7 @@ export default function HomePage() {
   }, []);
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-white">
+    <div className="min-h-screen flex items-center justify-center bg-white dark:bg-zinc-950 transition-colors duration-700">
       <div className="text-xs text-zinc-400 tracking-widest uppercase animate-pulse">Loading</div>
     </div>
   );
@@ -79,24 +80,32 @@ export default function HomePage() {
     <>
       <LandingNavbar settings={settings} />
       
-      <main>
-        {/* ─── Global Sections ─── */}
-        {sections.map(section => (
-          <div key={section.id} className="mb-32">
-            <SectionRenderer
-              type={section.type}
-              title={section.title}
-              subtitle={section.subtitle}
-              content={section.content}
-            />
-          </div>
-        ))}
-        
-        {/* ─── AI 상담 유도 블록 ─── */}
-        <ChatCTA />
-      </main>
+      {/* 🔮 Cinematic GSAP Background */}
+      <CinematicHeader />
 
-      <LandingFooter settings={settings} />
+      <main className="relative z-10 w-full">
+        {/* 🚀 First Phase: Scroll Spacer for GSAP Cinematic */}
+        <div className="h-[500vh] pointer-events-none" />
+
+        {/* ─── Global Sections (Content starts after animation) ─── */}
+        <div className="bg-white dark:bg-zinc-950 relative z-20">
+          {sections.map(section => (
+            <div key={section.id} className="mb-32">
+              <SectionRenderer
+                type={section.type}
+                title={section.title}
+                subtitle={section.subtitle}
+                content={section.content}
+              />
+            </div>
+          ))}
+          
+          {/* ─── AI 상담 유도 블록 ─── */}
+          <ChatCTA />
+          
+          <LandingFooter settings={settings} />
+        </div>
+      </main>
     </>
   );
 }
