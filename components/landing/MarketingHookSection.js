@@ -10,6 +10,7 @@ gsap.registerPlugin(ScrollTrigger);
 export default function MarketingHookSection({ title, subtitle, content }) {
   const container = useRef(null);
   const bigTextRef = useRef(null);
+  const subtitleRef = useRef(null);
 
   useGSAP(() => {
     const tl = gsap.timeline({
@@ -17,18 +18,18 @@ export default function MarketingHookSection({ title, subtitle, content }) {
         trigger: container.current,
         start: 'top top',
         end: '+=150%',
-        scrub: 1,
+        scrub: 1.5,
         pin: true,
       }
     });
 
-    // 🎨 텍스트 필인 애니메이션: 배경의 거대 텍스트가 작아지며 문구 사이로 삽입됨
+    // 🎨 1. '마케팅' 글자가 거대하게 시작해서 안착 (0 ~ 1.0)
     tl.fromTo(bigTextRef.current, 
       {
-        scale: 6,
+        scale: 10,
         opacity: 0,
-        y: 100,
-        filter: 'blur(20px)',
+        y: 200,
+        filter: 'blur(30px)',
       },
       {
         scale: 1,
@@ -36,30 +37,35 @@ export default function MarketingHookSection({ title, subtitle, content }) {
         y: 0,
         filter: 'blur(0px)',
         color: '#3B82F6', // 브랜드 블루
-        duration: 1,
-        ease: 'power2.out'
+        duration: 2,
+        ease: 'power3.out'
       }
     );
+
+    // 🎨 2. '이 아닙니다.' 자막은 마케팅 글자가 어느 정도 작아졌을 때 서서히 등장
+    tl.fromTo(subtitleRef.current,
+      { opacity: 0, x: 20, filter: 'blur(10px)' },
+      { opacity: 1, x: 0, filter: 'blur(0px)', duration: 1 },
+      "-=1.5"
+    );
+
   }, { scope: container });
 
   return (
     <section ref={container} className="h-screen w-full flex flex-col items-center justify-center bg-white dark:bg-zinc-950 overflow-hidden relative">
-      <div className="relative z-10 text-center px-4 max-w-5xl">
-        {/* 상단 메인 타이틀 */}
-        <h2 className="text-4xl md:text-6xl font-black text-zinc-900 dark:text-white tracking-tighter mb-12 leading-tight">
-          {title}
-        </h2>
+      <div className="relative z-10 text-center px-4 max-w-7xl w-full translate-y-[-5%]">
+        {/* 1단: 상단 훅 타이틀 */}
+        <div className="mb-14 overflow-hidden">
+          <h2 className="text-3xl md:text-5xl font-black text-zinc-900 dark:text-white tracking-[0.1em] leading-tight opacity-40 uppercase">
+            {title}
+          </h2>
+        </div>
 
-        {/* 🎬 애니메이션 문구 구간 */}
-        <div className="flex flex-col items-center space-y-12">
-          <div className="flex flex-wrap items-center justify-center gap-x-4 text-3xl md:text-6xl font-black tracking-tighter leading-none">
-            {/* "누구나 해결할 수 있는 건" */}
-            <span className="text-zinc-900 dark:text-white">
-              {title.split(' ').slice(0, -1).join(' ')} {title.split(' ').slice(-1)}
-            </span>
-
+        {/* 2단: 핵심 애니메이션 구간 (마케팅 + 이 아닙니다.) */}
+        <div className="flex flex-col items-center">
+          <div className="flex flex-wrap items-center justify-center gap-x-6 text-5xl md:text-8xl font-black tracking-tighter leading-tight">
             {/* 마케팅 (슬롯 시스템) */}
-            <div className="relative inline-flex items-center justify-center pt-1">
+            <div className="relative inline-flex items-center justify-center">
               {/* 애니메이션 되는 실제 텍스트 */}
               <span 
                 ref={bigTextRef}
@@ -67,28 +73,33 @@ export default function MarketingHookSection({ title, subtitle, content }) {
               >
                 {content.highlight}
               </span>
-              {/* 자리를 차지하는 기준 텍스트 (투명) - 겹침 방지의 핵심 */}
+              {/* 자리를 차지하는 기준 텍스트 (투명) */}
               <span className="opacity-0 select-none pointer-events-none whitespace-nowrap">
                 {content.highlight}
               </span>
             </div>
 
-            {/* "이 아닙니다." */}
-            <span className="text-zinc-900 dark:text-white">
-              {subtitle}
+            {/* "이 아닙니다." (반드시 '이 아닙니다.'로 출력되도록 고정) */}
+            <span 
+              ref={subtitleRef}
+              className="text-zinc-900 dark:text-white"
+            >
+              이 아닙니다.
             </span>
           </div>
 
-          {/* 하단 보조 문구 */}
-          <p className="text-2xl md:text-4xl font-bold text-zinc-400 dark:text-zinc-600 tracking-tight transition-opacity duration-700">
-            {content.footer}
-          </p>
+          {/* 3단: 하단 보조 푸터 */}
+          <div className="mt-28">
+            <p className="text-xl md:text-3xl font-bold text-zinc-400 dark:text-zinc-700 tracking-[0.2em] uppercase italic border-t border-zinc-100 dark:border-white/5 pt-10 px-10 inline-block">
+              {content.footer}
+            </p>
+          </div>
         </div>
       </div>
 
       {/* 배경 장식 */}
-      <div className="absolute inset-0 pointer-events-none opacity-[0.02] dark:opacity-[0.04] flex items-center justify-center select-none overflow-hidden">
-        <span className="text-[40vw] font-black leading-none">MARKETING</span>
+      <div className="absolute inset-0 pointer-events-none opacity-[0.012] dark:opacity-[0.022] flex items-center justify-center select-none overflow-hidden">
+        <span className="text-[45vw] font-black leading-none transform -rotate-12 translate-x-32 skew-x-12">MARKETING</span>
       </div>
     </section>
   );
