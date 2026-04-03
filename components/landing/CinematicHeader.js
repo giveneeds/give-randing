@@ -38,6 +38,17 @@ export default function CinematicHeader() {
       }
     );
 
+    // 🌟 마지막 단계: 애니메이션이 끝나면 전체 컨테이너 숨기기 (하위 섹션 가독성 확보)
+    gsap.to(container.current, {
+      autoAlpha: 0,
+      scrollTrigger: {
+        trigger: "main",
+        start: "400vh",
+        end: "450vh",
+        scrub: true,
+      }
+    });
+
     // 🚀 2. 검색 팔레트 '멀리서 다가오기' (투시 효과)
     gsap.fromTo(searchBarRef.current, 
       { scale: 0.7, opacity: 0, y: 10, visibility: 'hidden' },

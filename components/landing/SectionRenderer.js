@@ -8,6 +8,10 @@ import GallerySection from './GallerySection';
 import TextSection from './TextSection';
 import VideoSection from './VideoSection';
 import ProductsSection from './ProductsSection';
+import MarketingHookSection from './MarketingHookSection';
+import StatsGridSection from './StatsGridSection';
+import BrandIdentitySection from './BrandIdentitySection';
+import ProductTabsSection from './ProductTabsSection';
 
 export default function SectionRenderer({ type, content, settings, title, subtitle }) {
   const commonProps = { title, subtitle, content, settings };
@@ -33,6 +37,14 @@ export default function SectionRenderer({ type, content, settings, title, subtit
       return <VideoSection {...commonProps} />;
     case 'products':
       return <ProductsSection {...commonProps} />;
+    case 'hook':
+      return <MarketingHookSection {...commonProps} />;
+    case 'stats':
+      return <StatsGridSection {...commonProps} />;
+    case 'identity':
+      return <BrandIdentitySection {...commonProps} />;
+    case 'product_detail':
+      return <ProductTabsSection {...commonProps} />;
     default:
       return (
         <div style={{ padding: '50px', textAlign: 'center', color: '#888' }}>
