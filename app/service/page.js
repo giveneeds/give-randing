@@ -5,7 +5,40 @@ import LandingNavbar from '@/components/landing/LandingNavbar';
 import LandingFooter from '@/components/landing/LandingFooter';
 import { DUMMY_SECTIONS, DUMMY_SETTINGS } from '@/lib/supabase';
 import { motion } from 'framer-motion';
-import { ArrowRightCircle, CheckCircle2 } from 'lucide-react';
+import { 
+  ArrowRightCircle, CheckCircle2, 
+  MessageSquare, Star, Cpu, MapPin, 
+  Layout, Target 
+} from 'lucide-react';
+
+// 커스텀 Instagram 라인 드로잉 SVG (lucide-react 1.7.0 누락 대응)
+const InstagramIcon = ({ size = 24, ...props }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...props}
+  >
+    <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+  </svg>
+);
+
+const iconMap = {
+  MessageSquare: MessageSquare,
+  Star: Star,
+  Cpu: Cpu,
+  Instagram: InstagramIcon,
+  MapPin: MapPin,
+  Layout: Layout,
+  Target: Target,
+};
 
 export default function ServicePage() {
   const serviceSection = DUMMY_SECTIONS.find(s => s.id === 'sec-product-detail');
@@ -117,12 +150,17 @@ export default function ServicePage() {
                       style={{ backgroundColor: service.color }}
                     />
                   </div>
-                  <service.icon 
-                    size={280} 
-                    strokeWidth={0.5} 
-                    className="relative z-10 transform -rotate-12 group-hover:rotate-0 transition-transform duration-700" 
-                    style={{ color: service.color }}
-                  />
+                  {(() => {
+                    const Icon = iconMap[service.icon] || Target;
+                    return (
+                      <Icon 
+                        size={280} 
+                        strokeWidth={0.5} 
+                        className="relative z-10 transform -rotate-12 group-hover:rotate-0 transition-transform duration-700" 
+                        style={{ color: service.color }}
+                      />
+                    );
+                  })()}
                 </div>
               </div>
             </motion.section>

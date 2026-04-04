@@ -6,8 +6,41 @@ import LandingNavbar from '@/components/landing/LandingNavbar';
 import LandingFooter from '@/components/landing/LandingFooter';
 import { DUMMY_SECTIONS, DUMMY_SETTINGS } from '@/lib/supabase';
 import { motion } from 'framer-motion';
-import { ArrowLeft, CheckCircle2, Zap, ArrowRightCircle } from 'lucide-react';
+import { 
+  ArrowLeft, CheckCircle2, Zap, ArrowRightCircle,
+  MessageSquare, Star, Cpu, MapPin, 
+  Layout, Target 
+} from 'lucide-react';
 import { CpuArchitecture } from '@/components/ui/cpu-architecture';
+
+// 커스텀 Instagram 라인 드로잉 SVG (lucide-react 1.7.0 누락 대응)
+const InstagramIcon = ({ size = 24, ...props }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...props}
+  >
+    <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+  </svg>
+);
+
+const iconMap = {
+  MessageSquare: MessageSquare,
+  Star: Star,
+  Cpu: Cpu,
+  Instagram: InstagramIcon,
+  MapPin: MapPin,
+  Layout: Layout,
+  Target: Target,
+};
 
 export default function ServiceDetailPage() {
   const params = useParams();
@@ -91,12 +124,17 @@ export default function ServiceDetailPage() {
                   <CpuArchitecture text="AI STRATEGY" lineMarkerSize={24} />
                 </div>
              ) : (
-                <service.icon 
-                  size={400} 
-                  strokeWidth={0.5} 
-                  className="relative z-10 text-zinc-900 dark:text-white opacity-20 dark:opacity-40 transform -rotate-12" 
-                  style={{ color: service.color }}
-                />
+                (() => {
+                  const Icon = iconMap[service.icon] || Target;
+                  return (
+                    <Icon 
+                      size={400} 
+                      strokeWidth={0.5} 
+                      className="relative z-10 text-zinc-900 dark:text-white opacity-20 dark:opacity-40 transform -rotate-12" 
+                      style={{ color: service.color }}
+                    />
+                  );
+                })()
              )}
 
              <div className="absolute bottom-12 left-12 right-12 flex flex-wrap gap-4 justify-center">
