@@ -5,7 +5,6 @@ import LandingNavbar from '@/components/landing/LandingNavbar';
 import LandingFooter from '@/components/landing/LandingFooter';
 import MagazineCard from '@/components/landing/MagazineCard';
 import SectionRenderer from '@/components/landing/SectionRenderer';
-import ChatCTA from '@/components/ui/ChatCTA';
 import CinematicHeader from '@/components/landing/CinematicHeader';
 import { MoveRight } from 'lucide-react';
 
@@ -112,8 +111,7 @@ export default function HomePage() {
             </div>
           ))}
           
-          {/* ─── AI 상담 유도 블록 ─── */}
-          <ChatCTA />
+          {/* ─── AI 상담 유도 블록 (제거됨 - 상단 AI 전략 섹션이 대체) ─── */}
           
           <LandingFooter settings={settings} />
         </div>
