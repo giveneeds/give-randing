@@ -19,9 +19,9 @@ export async function GET(request) {
 
   try {
     let query = supabase
-      .from('landing_sections')
+      .from('global_sections')
       .select('*')
-      .order('order_index', { ascending: true });
+      .order('created_at', { ascending: true }); // order_index 대신 임시로 created_at 정렬 (DB 에러 방지)
 
     if (!all) {
       query = query.eq('is_active', true);
@@ -44,9 +44,16 @@ export async function POST(request) {
 
   try {
     const body = await request.json();
+    
+    // DB 오류 방지: id가 없다면 생성 (global_sections는 TEXT id를 사용)
+    const newSection = {
+      ...body,
+      id: body.id || `sec-${Date.now()}`
+    };
+
     const { data, error } = await supabase
-      .from('landing_sections')
-      .insert(body)
+      .from('global_sections')
+      .insert(newSection)
       .select()
       .single();
 
@@ -72,10 +79,10 @@ export async function PUT(request) {
 
   try {
     const body = await request.json();
-    const { id, ...updates } = body;
+    const { id, order_index, ...updates } = body; // DB에 없을 수 있는 order_index 안전하게 제외 처리 (옵션)
 
     const { data, error } = await supabase
-      .from('landing_sections')
+      .from('global_sections')
       .update({ ...updates, updated_at: new Date().toISOString() })
       .eq('id', id)
       .select()
@@ -99,7 +106,7 @@ export async function DELETE(request) {
     const id = searchParams.get('id');
 
     const { error } = await supabase
-      .from('landing_sections')
+      .from('global_sections')
       .delete()
       .eq('id', id);
 
