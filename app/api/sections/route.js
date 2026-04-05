@@ -21,7 +21,7 @@ export async function GET(request) {
     let query = supabase
       .from('global_sections')
       .select('*')
-      .order('created_at', { ascending: true }); // order_index 대신 임시로 created_at 정렬 (DB 에러 방지)
+      .order('order_index', { ascending: true });
 
     if (!all) {
       query = query.eq('is_active', true);
@@ -79,7 +79,7 @@ export async function PUT(request) {
 
   try {
     const body = await request.json();
-    const { id, order_index, ...updates } = body; // DB에 없을 수 있는 order_index 안전하게 제외 처리 (옵션)
+    const { id, ...updates } = body; 
 
     const { data, error } = await supabase
       .from('global_sections')

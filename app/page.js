@@ -29,7 +29,7 @@ export default function HomePage() {
         const [mRes, sRes, secRes] = await Promise.all([
           supabase.from('magazines').select('*').eq('is_active', true).order('created_at', { ascending: false }),
           supabase.from('landing_settings').select('*').single(),
-          supabase.from('global_sections').select('*').eq('is_active', true)
+          supabase.from('global_sections').select('*').eq('is_active', true).order('order_index', { ascending: true })
         ]);
 
         // 매거진 데이터 (없으면 더미)
@@ -47,22 +47,10 @@ export default function HomePage() {
           };
         }
 
-        // 섹션 데이터 (DB 데이터와 더미 데이터 병합: DB에 없으면 더미 사용)
+        // DB에 있는 섹션들을 그대로 사용하고 없으면 더미 사용
         let secData = DUMMY_SECTIONS;
         if (secRes.data && secRes.data.length > 0) {
-          // DB에 있는 섹션들로 더미 데이터를 업데이트하거나 덮어씀
-          const dbSectionsMap = new Map(secRes.data.map(s => [s.id, s]));
-          secData = DUMMY_SECTIONS.map(dummy => {
-            if (dbSectionsMap.has(dummy.id)) {
-              return { ...dummy, ...dbSectionsMap.get(dummy.id) };
-            }
-            return dummy;
-          });
-          
-          // DB에만 새로 추가된 섹션이 있다면 뒤에 붙여줌
-          const dummyIds = new Set(DUMMY_SECTIONS.map(s => s.id));
-          const newDbSections = secRes.data.filter(s => !dummyIds.has(s.id));
-          secData = [...secData, ...newDbSections];
+          secData = secRes.data;
         }
 
         setMagazines(magData);

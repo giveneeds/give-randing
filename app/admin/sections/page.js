@@ -25,7 +25,8 @@ import {
   MessageSquare,
   HelpCircle,
   FileBox,
-  MousePointer2
+  MousePointer2,
+  Save
 } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -36,6 +37,7 @@ export default function SectionsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [previewMode, setPreviewMode] = useState('desktop'); // desktop or mobile
+  const [isOrderDirty, setIsOrderDirty] = useState(false);
 
   useEffect(() => { loadSections(); }, []);
 
@@ -115,7 +117,7 @@ export default function SectionsPage() {
     await handleUpdateSection(updated);
   }
 
-  async function handleMoveSection(index, direction) {
+  function handleMoveSection(index, direction) {
     const newSections = [...sections];
     const targetIndex = index + direction;
     if (targetIndex < 0 || targetIndex >= newSections.length) return;
@@ -123,11 +125,31 @@ export default function SectionsPage() {
     [newSections[index], newSections[targetIndex]] = [newSections[targetIndex], newSections[index]];
     newSections.forEach((s, i) => { s.order_index = i; });
     setSections(newSections);
+    setIsOrderDirty(true);
+  }
 
-    await Promise.all([
-      fetch('/api/sections', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newSections[index]) }),
-      fetch('/api/sections', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newSections[targetIndex]) }),
-    ]);
+  async function handleSaveOrder() {
+    setSaving(true);
+    try {
+      // 순차 업데이트를 통해 Race Condition 이슈 방지
+      for (const s of sections) {
+        await fetch('/api/sections', { 
+          method: 'PUT', 
+          headers: { 'Content-Type': 'application/json' }, 
+          body: JSON.stringify({ id: s.id, order_index: s.order_index }) 
+        });
+      }
+      setIsOrderDirty(false);
+      alert('섹션 순서 배치가 성공적으로 저장되었습니다!');
+      
+      // Iframe 프리뷰 새로고침 유도를 위해 강제 업데이트
+      setSections([...sections]); 
+    } catch (e) {
+      console.error(e);
+      alert('순서 저장 중 오류가 발생했습니다.');
+    } finally {
+      setSaving(false);
+    }
   }
 
   if (loading) {
@@ -139,113 +161,183 @@ export default function SectionsPage() {
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      {/* Header Area */}
+    <div className="flex flex-col gap-6 animate-in fade-in duration-500" style={{ minHeight: 'calc(100vh - 120px)' }}>
+
+      {/* ── 상단 헤더 바 ── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-[var(--admin-text-main)] tracking-tighter uppercase">글로벌 섹션 관리</h1>
-          <p className="text-[var(--admin-text-muted)] text-sm mt-1 tracking-tight">모든 캠페인(LP)에서 공통으로 재사용할 수 있는 핵심 블록들을 관리하세요.</p>
+          <h1 className="text-2xl font-black text-[var(--admin-text-main)] tracking-tighter uppercase">홈 섹션 관리</h1>
+          <p className="text-[var(--admin-text-muted)] text-sm mt-1 tracking-tight">왼쪽에서 섹션 순서를 변경하고 저장하면, 오른쪽 프리뷰에서 실제 홈페이지 흐름을 확인하세요.</p>
         </div>
-        <button 
-          onClick={() => setShowAddModal(true)} 
-          className="flex items-center justify-center gap-2 bg-[var(--admin-primary)] hover:bg-[var(--admin-primary-hover)] text-white px-5 py-2.5 rounded-md font-bold text-sm transition-all shadow-sm tracking-widest uppercase"
-        >
-          <Plus size={18} /> 새 섹션 추가
-        </button>
+        <div className="flex items-center gap-3">
+          {isOrderDirty && (
+            <button
+              onClick={handleSaveOrder}
+              disabled={saving}
+              className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-60 text-white px-5 py-2.5 rounded-lg font-bold text-sm transition-all shadow-sm tracking-widest uppercase"
+            >
+              <Save size={16} /> {saving ? '저장 중...' : '순서 저장 & 적용'}
+            </button>
+          )}
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center gap-2 bg-[var(--admin-primary)] hover:bg-[var(--admin-primary-hover)] text-white px-5 py-2.5 rounded-lg font-bold text-sm transition-all shadow-sm tracking-widest uppercase"
+          >
+            <Plus size={16} /> 새 섹션 추가
+          </button>
+        </div>
       </div>
 
-      {/* Section List */}
-      <div className="space-y-4">
-        {sections.length > 0 ? (
-          sections.map((section, i) => (
-            <div key={section.id} className={clsx(
-              "group bg-white rounded-md border transition-all duration-300 flex items-center p-4 gap-6 shadow-sm",
-              section.is_active ? "border-[var(--admin-border)] hover:border-zinc-400" : "border-zinc-200 opacity-60"
-            )}>
-              {/* Reordering */}
-              <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button 
-                  onClick={() => handleMoveSection(i, -1)} 
+      {/* ── 좌우 분할 메인 뷰 ── */}
+      <div className="flex gap-6" style={{ height: 'calc(100vh - 200px)', minHeight: '600px' }}>
+
+        {/* ── 왼쪽: 섹션 순서 관리 리스트 ── */}
+        <div className="w-[400px] shrink-0 flex flex-col gap-3 overflow-y-auto pr-2 custom-scrollbar">
+
+          {/* 안내 메시지 */}
+          {isOrderDirty && (
+            <div className="bg-amber-50 border border-amber-200 text-amber-700 text-xs font-bold px-4 py-3 rounded-lg flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
+              순서가 변경되었습니다. 상단 [순서 저장 & 적용] 버튼을 눌러야 홈페이지에 반영됩니다.
+            </div>
+          )}
+
+          {/* 고정: 시네마틱 헤더 */}
+          <div className="bg-zinc-50 border border-zinc-200 rounded-lg flex items-center gap-3 px-3 py-3 opacity-60 cursor-not-allowed shrink-0">
+            <div className="flex flex-col gap-0.5 opacity-30">
+              <button disabled className="p-1 rounded"><ChevronUp size={14} /></button>
+              <button disabled className="p-1 rounded"><ChevronDown size={14} /></button>
+            </div>
+            <div className="w-8 h-8 bg-zinc-900 text-white rounded-md flex items-center justify-center shrink-0">
+              <Layout size={14} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-xs font-black text-zinc-700 truncate">시네마틱 헤더</div>
+              <div className="text-[10px] text-zinc-400 uppercase tracking-widest">FIXED · 수정 불가</div>
+            </div>
+            <span className="text-[9px] bg-red-100 text-red-500 px-1.5 py-0.5 rounded font-bold uppercase shrink-0">고정</span>
+          </div>
+
+          {/* 동적 섹션 리스트 */}
+          {sections.map((section, i) => (
+            <div
+              key={section.id}
+              className={clsx(
+                'rounded-lg border flex items-center gap-3 px-3 py-3 transition-all',
+                section.is_active
+                  ? 'bg-white border-zinc-200 hover:border-zinc-400 shadow-sm'
+                  : 'bg-zinc-50 border-zinc-100 opacity-50'
+              )}
+            >
+              {/* 순서 변경 버튼: 항상 보임 */}
+              <div className="flex flex-col gap-0.5 shrink-0">
+                <button
+                  onClick={() => handleMoveSection(i, -1)}
                   disabled={i === 0}
-                  className="p-1 hover:bg-indigo-50 rounded-md text-indigo-400 disabled:opacity-20"
+                  className="p-1 rounded hover:bg-indigo-50 text-indigo-400 disabled:opacity-15 disabled:cursor-not-allowed transition-all"
+                  title="위로 이동"
                 >
-                  <ChevronUp size={16} />
+                  <ChevronUp size={14} />
                 </button>
-                <div className="h-px bg-gray-100 w-full" />
-                <button 
-                  onClick={() => handleMoveSection(i, 1)} 
+                <button
+                  onClick={() => handleMoveSection(i, 1)}
                   disabled={i === sections.length - 1}
-                  className="p-1 hover:bg-indigo-50 rounded-md text-indigo-400 disabled:opacity-20"
+                  className="p-1 rounded hover:bg-indigo-50 text-indigo-400 disabled:opacity-15 disabled:cursor-not-allowed transition-all"
+                  title="아래로 이동"
                 >
-                  <ChevronDown size={16} />
+                  <ChevronDown size={14} />
                 </button>
               </div>
 
-              {/* Icon & Info */}
+              {/* 순서 번호 */}
+              <div className="w-5 text-center text-[10px] font-black text-zinc-300 shrink-0">
+                {i + 1}
+              </div>
+
+              {/* 섹션 아이콘 */}
               <div className={clsx(
-                "w-12 h-12 flex items-center justify-center rounded-md border",
-                section.is_active ? "bg-zinc-900 text-white border-zinc-900" : "bg-zinc-50 text-zinc-400 border-zinc-200"
+                'w-8 h-8 rounded-md flex items-center justify-center shrink-0',
+                section.is_active ? 'bg-zinc-900 text-white' : 'bg-zinc-100 text-zinc-400'
               )}>
                 {getIcon(section.type)}
               </div>
 
-              <div className="flex-1 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                 <div>
-                    <h3 className="font-bold text-base text-[var(--admin-text-main)] transition-colors">
-                      {section.title}
-                    </h3>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">{section.type}</span>
-                      <span className="w-1 h-1 bg-zinc-200 rounded-full" />
-                      <span className="text-[10px] font-bold text-zinc-800 uppercase tracking-widest">
-                        {SECTION_TYPES[section.type]?.label}
-                      </span>
-                    </div>
-                </div>
+              {/* 섹션 정보 */}
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-bold text-zinc-900 truncate">{section.title}</div>
+                <div className="text-[9px] text-zinc-400 uppercase tracking-widest">{section.type}</div>
+              </div>
 
-                <div className="flex items-center gap-6">
-                  <div className="flex items-center gap-2">
-                     <span className={clsx(
-                        "text-[10px] font-bold px-2.5 py-0.5 rounded-full",
-                        section.is_active ? "bg-emerald-50 text-emerald-600" : "bg-gray-50 text-gray-400"
-                      )}>
-                        {section.is_active ? 'ACTIVE' : 'INACTIVE'}
-                      </span>
-                  </div>
-
-                  <div className="flex items-center gap-1 border-l border-gray-100 pl-6">
-                    <button 
-                      onClick={() => handleToggleActive(section)}
-                      className={clsx(
-                        "p-2.5 rounded-xl transition-all",
-                        section.is_active ? "text-emerald-500 hover:bg-emerald-50" : "text-gray-300 hover:bg-gray-50"
-                      )}
-                      title={section.is_active ? "비활성화" : "활성화"}
-                    >
-                      <CheckCircle2 size={18} />
-                    </button>
-                    <button 
-                      onClick={() => setEditingSection({ ...section })}
-                      className="p-2.5 hover:bg-indigo-50 rounded-xl text-gray-400 hover:text-indigo-600 transition-all font-bold text-xs flex items-center gap-1"
-                    >
-                      <Edit3 size={18} /> <span>편집</span>
-                    </button>
-                    <button 
-                      onClick={() => handleDeleteSection(section.id)}
-                      className="p-2.5 hover:bg-red-50 rounded-xl text-gray-400 hover:text-red-500 transition-all"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
-                </div>
+              {/* 활성/비활성 + 편집 버튼 */}
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  onClick={() => handleToggleActive(section)}
+                  className={clsx(
+                    'p-1.5 rounded transition-all',
+                    section.is_active ? 'text-emerald-500 hover:bg-emerald-50' : 'text-zinc-300 hover:bg-zinc-100'
+                  )}
+                  title={section.is_active ? '비활성화' : '활성화'}
+                >
+                  <CheckCircle2 size={14} />
+                </button>
+                <button
+                  onClick={() => setEditingSection({ ...section })}
+                  className="p-1.5 rounded text-zinc-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all"
+                  title="내용 편집"
+                >
+                  <Edit3 size={14} />
+                </button>
+                <button
+                  onClick={() => handleDeleteSection(section.id)}
+                  className="p-1.5 rounded text-zinc-400 hover:text-red-500 hover:bg-red-50 transition-all"
+                  title="삭제"
+                >
+                  <Trash2 size={14} />
+                </button>
               </div>
             </div>
-          ))
-        ) : (
-          <div className="py-24 text-center bg-white rounded-[32px] border border-dashed border-[var(--admin-border)]">
-            <p className="text-[var(--admin-text-muted)] text-sm italic">추가된 글로벌 섹션이 없습니다.</p>
+          ))}
+
+          {sections.length === 0 && (
+            <div className="py-16 text-center border border-dashed border-zinc-200 rounded-xl flex flex-col items-center gap-3">
+              <p className="text-zinc-400 text-xs">섹션이 없습니다. 우측 상단에서 추가하세요.</p>
+            </div>
+          )}
+        </div>
+
+        {/* ── 오른쪽: 전체 홈페이지 라이브 프리뷰 ── */}
+        <div className="flex-1 flex flex-col overflow-hidden rounded-2xl border-[10px] border-zinc-900 shadow-2xl bg-zinc-100">
+          {/* 상단 브라우저 바 */}
+          <div className="bg-zinc-900 px-4 py-2 flex items-center gap-3 shrink-0">
+            <div className="flex gap-1.5">
+              <span className="w-3 h-3 rounded-full bg-red-500" />
+              <span className="w-3 h-3 rounded-full bg-yellow-400" />
+              <span className="w-3 h-3 rounded-full bg-emerald-400" />
+            </div>
+            <div className="flex-1 bg-zinc-800 rounded-md px-3 py-1 text-[10px] text-zinc-400 font-mono flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+              giveneeds.kr · 홈페이지 전체 흐름 미리보기
+            </div>
+            <button
+              onClick={() => {
+                const iframe = document.getElementById('home-preview-iframe');
+                if (iframe) iframe.contentWindow.location.reload();
+              }}
+              className="text-zinc-400 hover:text-white transition-colors text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded hover:bg-zinc-700"
+              title="프리뷰 새로고침"
+            >
+              ↺ 새로고침
+            </button>
           </div>
-        )}
+          {/* iframe */}
+          <iframe
+            id="home-preview-iframe"
+            src="/"
+            className="w-full flex-1 border-none bg-white"
+            key={saving ? 'refreshed' : 'static'}
+          />
+        </div>
+
       </div>
 
       {/* Add Modal */}
