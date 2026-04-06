@@ -128,15 +128,15 @@ export default function AdminLayout({ children }) {
               )}
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-zinc-700 uppercase tracking-wider">Email</label>
+                <label className="text-xs font-bold text-zinc-700 uppercase tracking-wider">ID</label>
                 <div className="relative">
-                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" size={16} />
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" size={16} />
                   <input
-                    type="email"
+                    type="text"
                     className="w-full pl-10 pr-4 py-3 bg-white border border-zinc-200 rounded-lg focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 outline-none transition-all text-sm text-zinc-900 placeholder:text-zinc-400"
                     value={id}
                     onChange={(e) => setId(e.target.value)}
-                    placeholder="admin@giveneeds.com"
+                    placeholder="giveneeds"
                     required
                   />
                 </div>

@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase, isDummyMode } from '@/lib/supabase';
 import { 
@@ -25,8 +26,10 @@ const BUDGET_OPTIONS = [
 ];
 
 export default function ContactForm() {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [phoneError, setPhoneError] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -40,6 +43,19 @@ export default function ContactForm() {
 
   const [isMessageRequired, setIsMessageRequired] = useState(false);
 
+  // 전화번호 자동 하이픈 포맷터
+  const formatPhone = (value) => {
+    const numbers = value.replace(/[^\d]/g, '');
+    if (numbers.length <= 3) return numbers;
+    if (numbers.length <= 7) return `${numbers.slice(0, 3)}-${numbers.slice(3)}`;
+    return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7, 11)}`;
+  };
+
+  // 전화번호 유효성 검사 (010-XXXX-XXXX 형식)
+  const validatePhone = (phone) => {
+    return /^01[016789]-\d{3,4}-\d{4}$/.test(phone);
+  };
+
   useEffect(() => {
     // '정하고 선택할래요' 선택 시 메시지 입력 필수 처리
     setIsMessageRequired(formData.budget === 'undecided');
@@ -47,6 +63,12 @@ export default function ContactForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // 전화번호 최종 유효성 검사
+    if (!validatePhone(formData.phone)) {
+      setPhoneError('올바른 전화번호 형식으로 입력해주세요. (예: 010-1234-5678)');
+      return;
+    }
+    setPhoneError('');
     setLoading(true);
     
     try {
@@ -71,7 +93,10 @@ export default function ContactForm() {
         await new Promise(resolve => setTimeout(resolve, 1500)); // 시뮬레이션
       }
       setSubmitted(true);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      // 1.5초 후 이전 페이지로 이동
+      setTimeout(() => {
+        router.back();
+      }, 1500);
     } catch (err) {
       console.error('Inquiry submission failed:', err);
       alert('문의 제출 중 오류가 발생했습니다. 다시 시도해 주세요.');
@@ -139,11 +164,20 @@ export default function ContactForm() {
                   type="tel" 
                   required
                   placeholder="010-0000-0000"
-                  className="w-full pl-12 pr-6 py-4 bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-white/5 rounded-2xl focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white outline-none transition-all font-medium"
+                  className={`w-full pl-12 pr-6 py-4 bg-zinc-50 dark:bg-zinc-900 border rounded-2xl focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white outline-none transition-all font-medium
+                    ${phoneError ? 'border-rose-300 dark:border-rose-700' : 'border-zinc-100 dark:border-white/5'}`}
                   value={formData.phone}
-                  onChange={e => setFormData({...formData, phone: e.target.value})}
+                  onChange={e => {
+                    const formatted = formatPhone(e.target.value);
+                    setFormData({...formData, phone: formatted});
+                    if (phoneError) setPhoneError('');
+                  }}
+                  maxLength={13}
                 />
               </div>
+              {phoneError && (
+                <p className="text-xs text-rose-500 ml-2 font-medium">{phoneError}</p>
+              )}
             </div>
 
             <div className="space-y-2">
