@@ -118,6 +118,7 @@ export default function CampaignLandingPage() {
                         title={campaign.hero_content.file_name}
                         ctaLabel={campaign.hero_content.cta_label}
                         campaignId={campaign.id}
+                        category="campaign"
                       />
                     </div>
                   </div>
