@@ -18,7 +18,7 @@ export default function MagazineList({ title, subtitle }) {
         const { data, error } = await supabase
           .from('magazines')
           .select('*')
-          .eq('is_active', true)
+          .eq('status', 'published')
           .order('created_at', { ascending: false });
         
         if (error) throw error;
