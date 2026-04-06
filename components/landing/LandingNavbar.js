@@ -21,9 +21,14 @@ export default function LandingNavbar({ settings }) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  const router = typeof window !== 'undefined' ? require('next/navigation').useRouter() : null;
+
   const handleCTA = () => {
-    // 📺 사용자 요청: 상담하기 버튼 클릭 시 유튜브 채널로 연결
-    window.open('https://www.youtube.com/@GIVENEEDS', '_blank');
+    if (router) {
+      router.push('/contact');
+    } else {
+      window.location.href = '/contact';
+    }
   };
 
   return (
