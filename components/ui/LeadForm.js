@@ -58,7 +58,7 @@ export default function LeadForm({ title, subtitle, ctaLabel, campaignId, magazi
           <CheckCircle2 size={40} />
         </div>
         <h3 className="text-2xl font-bold mb-2">신청이 완료되었습니다!</h3>
-        <p className="text-gray-500 mb-8">영업일 기준 24시간 이내에 마케팅 전략 자료를 보내드립니다.</p>
+        <p className="text-gray-500 mb-8">영업일 기준 2일 이내에 마케팅 전략 자료를 보내드립니다.</p>
         <button onClick={() => window.location.reload()} className="text-primary font-bold hover:underline">돌아가기</button>
       </div>
     );

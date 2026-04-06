@@ -111,7 +111,7 @@ export default function ContactForm() {
         <h3 className="text-3xl md:text-4xl font-black mb-4 tracking-tighter">소중한 문의가 접수되었습니다.</h3>
         <p className="text-zinc-500 dark:text-zinc-400 mb-12 text-lg max-w-md leading-relaxed">
           마케팅 전문가가 비즈니스를 정밀 분석한 후,<br/>
-          영업일 기준 24시간 이내에 연락드리겠습니다.
+          영업일 기준 2일 이내에 연락드리겠습니다.
         </p>
         <button 
           onClick={() => window.location.href = '/'} 
