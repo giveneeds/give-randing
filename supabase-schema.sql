@@ -133,13 +133,10 @@ VALUES (
   '기브니즈만의 압도적인 마케팅 솔루션', 
   '{
     "items": [
-      { "id": "v1", "title": "Viral Marketing", "desc": "입소문이 아닌 전략적인 데이터 기반의 확산", "detail_title": "#1. Viral", "detail_desc": "카페 바이럴, 블로그 마케팅, 언론보도 송출", "detail_sub": "단순 배포가 아닌 상위 노출과 고관여 타겟의 유입을 목적으로 하는 전략적 입소문 시스템.", "icon": "MessageSquare", "slug": "viral", "color": "#ec4899" },
-      { "id": "r1", "title": "Review Management", "desc": "고객의 첫인상을 결정짓는 신뢰의 척도", "detail_title": "#2. Review", "detail_desc": "네이버 플레이스/스토어 리뷰, 구글 리뷰, 카카오맵 리뷰", "detail_sub": "부정적 여론 방어와 진정성 있는 리뷰 축적을 통해 전환율을 최대화합니다.", "icon": "Star", "slug": "review", "color": "#f59e0b" },
-      { "id": "a1", "title": "AI Automation", "desc": "초격차 기술력으로 만드는 무한한 성과의 자동화", "detail_title": "#3. AI Solution", "detail_desc": "AI 기반 브랜드 블로그, 스레드, 인스타 콘텐츠 자동 생성", "detail_sub": "단 5분 만에 기브니즈 AI로 내 비즈니스 맞춤형 전략을 알아보고 수립하세요.", "icon": "Cpu", "slug": "ai-automation", "color": "#8b5cf6" },
-      { "id": "s1", "title": "SNS Growth", "desc": "팬덤을 형성하는 브랜드 계정의 압도적 성장", "detail_title": "#4. SNS", "detail_desc": "중/일 글로벌 체험단 및 소셜 성장 패키지", "detail_sub": "단순 팔로워 증대를 넘어 진성 소통과 강력한 브랜드 인지도를 구축합니다.", "icon": "Instagram", "slug": "sns-growth", "color": "#3b82f6" },
-      { "id": "l1", "title": "Local SEO", "desc": "지역 기반 매출의 핵심 거점을 선점하는 기술", "detail_title": "#5. Local Marketing", "detail_desc": "스토어/플레이스/070서비스 최적화 및 카카오맵 노출", "detail_sub": "검색 인텐트 분석을 통해 거점 지역 내 최상단 노출을 실현합니다.", "icon": "MapPin", "slug": "local-seo", "color": "#10b981" },
-      { "id": "p1", "title": "Creative Production", "desc": "고객의 마음을 훔치는 감각적인 시각 디자인", "detail_title": "#6. Website & Production", "detail_desc": "프리미엄 웹사이트 제작 및 UX/UI 설계", "detail_sub": "비즈니스의 본질을 담은 심미적이고 기능적인 웹사이트로 고객 신뢰를 구축합니다.", "icon": "Layout", "slug": "production", "color": "#6b7280" },
-      { "id": "c1", "title": "CPC Advertising", "desc": "유의미한 클릭을 구매로 바꾸는 정교한 퍼포먼스", "detail_title": "#7. CPC", "detail_desc": "파워링크, 메타(Meta) 광고 매체 운영", "detail_sub": "클릭당 비용 중심의 검색/디스플레이 광고를 분석하여 최적의 수익률을 달성합니다.", "icon": "Target", "slug": "cpc", "color": "#ef4444" }
+      { "id": "ads", "title": "Strategic Ads", "desc": "카페 바이럴, 블로그, 언론보도, 메타 및 파워링크 최적화 운영", "detail_title": "STRATEGIC ADS", "detail_desc": "카페 바이럴, 블로그 마케팅, 언론보도 송출, Meta Ads 및 파워링크 최적화 운영", "detail_sub": "단순 배포가 아닌 상위 노출과 고관여 타겟의 유입을 목적으로 하는 전략적 광고 시스템.", "icon": "MessageSquare", "slug": "strategic-ads", "color": "#1E4181" },
+      { "id": "growth", "title": "Growth & Review", "desc": "네이버/스토어/구글/카카오 리뷰 관리 및 인스타 전용 계정 성장", "detail_title": "GROWTH & REVIEW", "detail_desc": "네이버/스토어/구글/카카오 리뷰 관리 및 인스타 전용 계정 성장", "detail_sub": "부정적 여론 방어와 진성 리뷰 축적, 브랜드 소셜 파워 구축으로 전환율을 극대화합니다.", "icon": "Star", "slug": "growth-review", "color": "#16A34A" },
+      { "id": "local", "title": "Local Optimize", "desc": "스토어, 플레이스, 070 서비스, 카카오맵 노출의 개별적 세분화 최적화", "detail_title": "LOCAL OPTIMIZE", "detail_desc": "스토어, 플레이스, 070 서비스, 카카오맵 노출의 개별적 세분화 최적화", "detail_sub": "내 주변 검색 시 최상단 노출을 점령하는 지역 기반 검색 최적화 토탈 솔루션.", "icon": "MapPin", "slug": "local-optimize", "color": "#71717A" },
+      { "id": "tech", "title": "Tech / Creative", "desc": "마케팅 전용 AI 엔진 가동 및 프리미엄 웹/UI/UX 프로덕션", "detail_title": "TECH / CREATIVE", "detail_desc": "마케팅 전용 AI 엔진 가동 및 프리미엄 웹/UI/UX 프로덕션", "detail_sub": "초격차 AI 기술력과 감각적 디자인의 결합으로 브랜드 가치를 극대화합니다.", "icon": "Cpu", "slug": "tech-creative", "color": "#18181B" }
     ]
   }', 
   true
