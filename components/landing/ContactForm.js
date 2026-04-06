@@ -85,13 +85,14 @@ export default function ContactForm() {
         body: JSON.stringify(payload),
       });
       
-      if (!res.ok) throw new Error('제출 실패');
+      const resData = await res.json();
+      if (!res.ok) throw new Error(resData.error || '제출 실패');
 
       setSubmitted(true);
       setTimeout(() => { router.back(); }, 1500);
     } catch (err) {
       console.error('Inquiry submission failed:', err);
-      alert('문의 제출 중 오류가 발생했습니다. 다시 시도해 주세요.');
+      alert(`문의 제출 중 오류가 발생했습니다: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -217,9 +218,9 @@ export default function ContactForm() {
               <div className="relative group">
                 <Globe className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-300 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors" size={18} />
                 <input 
-                  type="url" 
+                  type="text" 
                   required
-                  placeholder="https://www.your-brand.com"
+                  placeholder="www.your-brand.com (또는 상품 링크)"
                   className="w-full pl-12 pr-6 py-4 bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-white/5 rounded-2xl focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white outline-none transition-all font-medium"
                   value={formData.website_url}
                   onChange={e => setFormData({...formData, website_url: e.target.value})}

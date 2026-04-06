@@ -57,7 +57,7 @@ export async function POST(request) {
     return NextResponse.json({ success: true, message: '리드가 성공적으로 등록되었습니다.' });
   } catch (error) {
     console.error('Lead Capture Error:', error);
-    return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 });
+    return NextResponse.json({ error: `서버 오류: ${error.message || '알 수 없는 오류'}` }, { status: 500 });
   }
 }
 
