@@ -22,19 +22,20 @@ export default function CampaignLandingPage() {
     async function fetchCampaign() {
       try {
         let campaignData;
+        let settingsData = DUMMY_SETTINGS;
         
-        if (isDummyMode) {
-          campaignData = DUMMY_CAMPAIGNS.find(c => c.slug === slug);
-          setSettings(DUMMY_SETTINGS);
-        } else {
-          const [cRes, sRes] = await Promise.all([
-            supabase.from('campaigns').select('*').eq('slug', slug).single(),
-            supabase.from('landing_settings').select('*').single()
-          ]);
-          if (cRes.error) throw cRes.error;
-          campaignData = cRes.data;
-          setSettings(sRes.data || DUMMY_SETTINGS);
-        }
+        const [cRes, sRes] = await Promise.all([
+          fetch(`/api/campaigns?slug=${slug}`).then(r => r.json()),
+          fetch(`/api/sections?all=true`).then(r => r.json())
+        ]);
+
+        if (cRes.error) throw new Error(cRes.error);
+        if (!cRes.campaign) throw new Error('Not found');
+
+        campaignData = cRes.campaign;
+
+        // Sections API returns an array or object
+        const availableSections = sRes.sections || [];
 
         if (!campaignData) {
           setError('캠페인을 찾을 수 없습니다.');
@@ -48,26 +49,14 @@ export default function CampaignLandingPage() {
 
         setCampaign(campaignData);
 
-        if (isDummyMode) {
-          const selected = campaignData.selected_sections
-            .map(id => DUMMY_SECTIONS.find(s => s.id === id))
-            .filter(Boolean);
-          setSections(selected);
-        } else {
-          const { data: sectionData, error: secError } = await supabase
-            .from('global_sections')
-            .select('*')
-            .in('id', campaignData.selected_sections);
-          if (secError) throw secError;
-          
-          const sorted = campaignData.selected_sections
-            .map(id => sectionData.find(s => s.id === id))
-            .filter(Boolean);
-          setSections(sorted);
-        }
+        // Get selected sections
+        const selected = (campaignData.selected_sections || [])
+          .map(id => availableSections.find(s => s.id === id))
+          .filter(Boolean);
+        setSections(selected);
 
       } catch (err) {
-        console.error('Error fetching campaign:', err);
+        console.error('API fetch failed, falling back:', err);
         setError('데이터를 불러오는 중 오류가 발생했습니다.');
       } finally {
         setLoading(false);
@@ -85,40 +74,57 @@ export default function CampaignLandingPage() {
       <LandingNavbar settings={settings} />
       <main className="lp-container pt-20">
         {/* 1. Hero Module */}
-        <section className="lp-hero relative overflow-hidden mb-24">
-          {campaign.hero_type === 'B' ? (
-            <div className="flex flex-col lg:flex-row items-center justify-center min-h-screen text-center lg:text-left px-4 md:px-8 max-w-7xl mx-auto gap-12 py-20">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-6">
-                  <span className="text-[10px] font-bold tracking-[0.3em] text-zinc-400 uppercase">
-                    {campaign.category || 'CAMPAIGN'}
-                  </span>
-                  <div className="h-px w-8 bg-zinc-200" />
-                  <span className="text-xs font-bold tracking-[0.3em] text-primary uppercase">EXCLUSIVELY FOR GROWTH</span>
-                </div>
-                <h1 className="text-5xl md:text-7xl font-black leading-tight mb-8 whitespace-pre-line tracking-tighter">
-                  {campaign.hero_content.headline}
-                </h1>
-                <p className="text-xl md:text-2xl text-zinc-500 mb-12 max-w-2xl font-medium leading-relaxed">
-                  {campaign.hero_content.description}
-                </p>
-              </div>
-              
-              <div className="flex-1 w-full max-w-md">
-                <LeadForm 
-                  title={campaign.hero_content.file_name}
-                  ctaLabel={campaign.hero_content.cta_label}
-                  campaignId={campaign.id}
-                />
-              </div>
-            </div>
-          ) : (
-            <div className="relative h-screen w-full">
-              <ParticleTextEffect 
-                words={(campaign.hero_content.particle_text || campaign.hero_content.headline || '').split('\n')} 
-              />
-            </div>
-          )}
+        <section className="lp-hero relative overflow-hidden">
+          {/* 하위 호환: hero_type이 있으면 그걸로, 없으면 새 플래그 사용 */}
+          {(() => {
+            const showParticle = campaign.show_particle !== undefined
+              ? campaign.show_particle
+              : campaign.hero_type !== 'B';
+            const showLeadForm = campaign.show_lead_form !== undefined
+              ? campaign.show_lead_form
+              : campaign.hero_type === 'B';
+
+            return (
+              <>
+                {/* 파티클 블록 */}
+                {showParticle && (
+                  <div className={`relative w-full ${showLeadForm ? 'h-[60vh]' : 'h-screen'}`}>
+                    <ParticleTextEffect
+                      words={(campaign.hero_content.particle_text || campaign.hero_content.headline || '').split('\n').filter(Boolean)}
+                    />
+                  </div>
+                )}
+
+                {/* 리드 마그넷 폼 블록 */}
+                {showLeadForm && (
+                  <div className="flex flex-col lg:flex-row items-center justify-center min-h-screen text-center lg:text-left px-4 md:px-8 max-w-7xl mx-auto gap-12 py-20">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-6">
+                        <span className="text-[10px] font-bold tracking-[0.3em] text-zinc-400 uppercase">
+                          {campaign.category || 'CAMPAIGN'}
+                        </span>
+                        <div className="h-px w-8 bg-zinc-200" />
+                        <span className="text-xs font-bold tracking-[0.3em] text-primary uppercase">EXCLUSIVELY FOR GROWTH</span>
+                      </div>
+                      <h1 className="text-5xl md:text-7xl font-black leading-tight mb-8 whitespace-pre-line tracking-tighter">
+                        {campaign.hero_content.headline}
+                      </h1>
+                      <p className="text-xl md:text-2xl text-zinc-500 mb-12 max-w-2xl font-medium leading-relaxed">
+                        {campaign.hero_content.description}
+                      </p>
+                    </div>
+                    <div className="flex-1 w-full max-w-md">
+                      <LeadForm
+                        title={campaign.hero_content.file_name}
+                        ctaLabel={campaign.hero_content.cta_label}
+                        campaignId={campaign.id}
+                      />
+                    </div>
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </section>
 
         {/* 2. Selected Sections */}

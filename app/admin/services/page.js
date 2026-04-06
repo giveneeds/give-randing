@@ -6,7 +6,7 @@ import {
   MessageSquare, Star, Cpu, MapPin, 
   Layout, Target, Save, X
 } from 'lucide-react';
-import { DUMMY_SECTIONS } from '@/lib/supabase';
+import { DUMMY_SERVICE_PRODUCTS } from '@/lib/supabase';
 
 // 커스텀 Instagram 라인 드로잉 SVG (lucide-react 1.7.0 누락 대응)
 const InstagramIcon = ({ size = 24, ...props }) => (
@@ -38,8 +38,7 @@ const iconMap = {
 };
 
 export default function AdminServicesPage() {
-  const serviceSection = DUMMY_SECTIONS.find(s => s.id === 'sec-product-detail');
-  const [services, setServices] = useState(serviceSection?.content?.items || []);
+  const [services, setServices] = useState(DUMMY_SERVICE_PRODUCTS || []);
   const [isEditing, setIsEditing] = useState(null);
 
   return (

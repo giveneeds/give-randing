@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase, isDummyMode, DUMMY_CAMPAIGNS, DUMMY_SECTIONS } from '@/lib/supabase';
 import CampaignList from '@/components/admin/CampaignList';
-import CampaignEditor from '@/components/admin/CampaignEditor';
+import CampaignEditorUnified from '@/components/admin/CampaignEditorUnified';
 
 export default function AdminCampaigns() {
   const [campaigns, setCampaigns] = useState([]);
@@ -15,21 +15,17 @@ export default function AdminCampaigns() {
   useEffect(() => {
     async function loadData() {
       try {
-        if (isDummyMode) {
-          setCampaigns(DUMMY_CAMPAIGNS);
-          setSections(DUMMY_SECTIONS);
-          return;
-        }
         const [cRes, sRes] = await Promise.all([
-          supabase.from('campaigns').select('*').order('created_at', { ascending: false }),
-          supabase.from('global_sections').select('*').eq('is_active', true)
+          fetch('/api/campaigns').then(res => res.json()),
+          fetch('/api/sections?all=true').then(res => res.json())
         ]);
-        setCampaigns(cRes.data || []);
-        setSections(sRes.data || []);
+        setCampaigns(cRes.campaigns || []);
+        // Sections API returns sections
+        setSections(sRes.sections || []);
       } catch (e) {
         console.error(e);
-        setCampaigns(DUMMY_CAMPAIGNS);
-        setSections(DUMMY_SECTIONS);
+        setCampaigns(isDummyMode ? DUMMY_CAMPAIGNS : []);
+        setSections(isDummyMode ? DUMMY_SECTIONS : []);
       } finally {
         setLoading(false);
       }
@@ -39,16 +35,22 @@ export default function AdminCampaigns() {
 
   const handleSave = async (updated) => {
     try {
-      if (!isDummyMode) {
-        const { error } = await supabase
-          .from('campaigns')
-          .upsert({
-            ...updated,
-            updated_at: new Date().toISOString(),
-          });
-        if (error) throw error;
-      }
-      setCampaigns(prev => prev.map(c => c.id === updated.id ? updated : c));
+      const isNew = !campaigns.find(c => c.id === updated.id);
+      
+      const res = await fetch('/api/campaigns', {
+        method: isNew ? 'POST' : 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated)
+      });
+      
+      if (!res.ok) throw new Error('Failed to save via API');
+      
+      const { campaign } = await res.json();
+      
+      setCampaigns(prev => {
+        if (isNew) return [campaign, ...prev];
+        return prev.map(c => c.id === campaign.id || c.slug === campaign.slug ? campaign : c);
+      });
       setIsEditing(false);
     } catch (e) {
       console.error('Failed to save campaign:', e);
@@ -64,7 +66,17 @@ export default function AdminCampaigns() {
       is_active: true,
       status: 'draft',
       hero_type: 'B',
-      hero_content: { headline: '', description: '', cta_label: '지금 신청하기' },
+      show_particle: true,
+      show_lead_form: true,
+      show_ai_block: false,
+      show_magazine_block: false,
+      hero_content: {
+        headline: '',
+        description: '',
+        particle_text: 'GIVENEEDS\nSTRATEGIC\nMARKETING\nPARTNER',
+        cta_label: '지금 신청하기',
+        file_name: ''
+      },
       tracking_scripts: { pixel_id: '', ga_id: '' },
       selected_sections: []
     });
@@ -88,7 +100,7 @@ export default function AdminCampaigns() {
       />
 
       {isEditing && (
-        <CampaignEditor 
+        <CampaignEditorUnified 
           campaign={currentCampaign} 
           sections={sections} 
           onSave={handleSave} 

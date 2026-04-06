@@ -174,7 +174,7 @@ const COLOR_PALETTE = [
   { r: 16, g: 185, b: 129 },  // Emerald 500
 ];
 
-export function ParticleTextEffect({ words = DEFAULT_WORDS }) {
+export function ParticleTextEffect({ words = DEFAULT_WORDS, compact = false }) {
   const canvasRef = useRef(null);
   const animationRef = useRef();
   const particlesRef = useRef([]);
@@ -457,7 +457,7 @@ export function ParticleTextEffect({ words = DEFAULT_WORDS }) {
       style={{
         width: "100%",
         height: "100%",
-        minHeight: "100vh",
+        minHeight: compact ? "100%" : "100vh",
         position: "relative",
         overflow: "hidden",
         display: "flex",

@@ -4,42 +4,19 @@ import { useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import LandingNavbar from '@/components/landing/LandingNavbar';
 import LandingFooter from '@/components/landing/LandingFooter';
-import { DUMMY_SECTIONS, DUMMY_SETTINGS } from '@/lib/supabase';
+import { DUMMY_SERVICE_PRODUCTS, DUMMY_SETTINGS } from '@/lib/supabase';
 import { motion } from 'framer-motion';
 import { 
   ArrowLeft, CheckCircle2, Zap, ArrowRightCircle,
   MessageSquare, Star, Cpu, MapPin, 
-  Layout, Target 
+  Layout, Target, ShieldCheck, FileText, BarChart3
 } from 'lucide-react';
 import { CpuArchitecture } from '@/components/ui/cpu-architecture';
 
-// 커스텀 Instagram 라인 드로잉 SVG (lucide-react 1.7.0 누락 대응)
-const InstagramIcon = ({ size = 24, ...props }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    {...props}
-  >
-    <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
-    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
-  </svg>
-);
+import AiSolutionBlock from '@/components/ui/AiSolutionBlock';
 
 const iconMap = {
-  MessageSquare: MessageSquare,
-  Star: Star,
-  Cpu: Cpu,
-  Instagram: InstagramIcon,
-  MapPin: MapPin,
-  Layout: Layout,
-  Target: Target,
+  MessageSquare, Star, Cpu, MapPin, Layout, Target, CheckCircle2
 };
 
 export default function ServiceDetailPage() {
@@ -47,13 +24,12 @@ export default function ServiceDetailPage() {
   const router = useRouter();
   const slug = params.slug;
 
-  const serviceSection = DUMMY_SECTIONS.find(s => s.id === 'sec-product-detail');
-  const services = serviceSection?.content?.items || [];
+  const services = DUMMY_SERVICE_PRODUCTS;
   const service = useMemo(() => services.find(s => s.slug === slug), [services, slug]);
 
   if (!service) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-zinc-950">
         <div className="text-center">
           <h1 className="text-4xl font-black mb-4">서비스를 찾을 수 없습니다.</h1>
           <button onClick={() => router.push('/service')} className="text-blue-500 font-bold">서비스 목록으로 돌아가기</button>
@@ -63,154 +39,183 @@ export default function ServiceDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-black text-zinc-900 dark:text-white selection:bg-blue-500 selection:text-white">
+    <div className="min-h-screen bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white selection:bg-blue-500 selection:text-white">
       <LandingNavbar settings={DUMMY_SETTINGS} />
       
-      <main className="pt-32 pb-24">
+      <main className="pt-32 pb-40">
         {/* Navigation & Header */}
-        <div className="container mx-auto px-4 mb-20">
+        <header className="container mx-auto px-4 mb-32">
           <button 
             onClick={() => router.push('/service')}
-            className="flex items-center space-x-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors mb-12 group"
+            className="flex items-center space-x-2 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors mb-20 group"
           >
             <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
-            <span className="font-bold">서비스 목록으로 돌아가기</span>
+            <span className="font-bold">Back to Services</span>
           </button>
 
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
-            <div className="max-w-3xl">
-              <motion.span 
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-12">
+            <div className="max-w-4xl">
+              <motion.div 
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="inline-block px-4 py-1.5 rounded-full font-black text-[10px] tracking-widest uppercase mb-6 text-white"
-                style={{ backgroundColor: service.color }}
+                className="flex items-center space-x-4 mb-10"
               >
-                {service.detail_title}
-              </motion.span>
+                <span 
+                  className="px-4 py-1.5 rounded-full font-black text-[10px] tracking-widest uppercase text-white shadow-lg shadow-current/20"
+                  style={{ backgroundColor: service.color }}
+                >
+                  {service.category}
+                </span>
+                <span className="w-2 h-2 rounded-full bg-zinc-300" />
+                <span className="font-black text-zinc-400 text-xs tracking-widest uppercase">
+                  {service.detail_title}
+                </span>
+              </motion.div>
+
               <motion.h1 
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="text-5xl md:text-8xl font-black tracking-tighter mb-8 leading-none"
+                className="text-6xl md:text-[8rem] font-black tracking-[-0.05em] mb-12 leading-[0.85] uppercase"
               >
                 {service.title}
               </motion.h1>
+              
               <motion.p 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="text-2xl md:text-3xl font-bold text-zinc-500 dark:text-zinc-400 tracking-tight"
+                className="text-2xl md:text-4xl font-bold text-zinc-400 leading-tight"
               >
-                {service.detail_desc}
+                {service.desc}
               </motion.p>
             </div>
+            
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.3 }}
+              className="flex-shrink-0"
+            >
+               {service.icon === 'Cpu' ? (
+                 <CpuArchitecture text="AI CORE" lineMarkerSize={16} />
+               ) : (
+                 (() => {
+                   const Icon = iconMap[service.icon] || Target;
+                   return (
+                     <Icon 
+                       size={180} 
+                       strokeWidth={0.5} 
+                       className="opacity-10 dark:opacity-20 animate-pulse" 
+                       style={{ color: service.color }}
+                     />
+                   );
+                 })()
+               )}
+            </motion.div>
           </div>
-        </div>
+        </header>
 
-        {/* Hero Visual Area */}
-        <div className="container mx-auto px-4 mb-32">
-           <motion.div 
-             initial={{ opacity: 0, scale: 0.95 }}
-             animate={{ opacity: 1, scale: 1 }}
-             className="relative h-[400px] md:h-[600px] rounded-[3.5rem] overflow-hidden flex items-center justify-center"
-             style={{ backgroundColor: `${service.color}10` }}
-           >
-             <div className="absolute inset-0 opacity-30 pointer-events-none">
-               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-gradient-to-br from-transparent via-white/5 to-transparent dark:via-zinc-800/10" />
-             </div>
-             
-             {service.icon === 'Cpu' ? (
-                <div className="w-full max-w-[800px] transform scale-110">
-                  <CpuArchitecture text="AI STRATEGY" lineMarkerSize={24} />
-                </div>
-             ) : (
-                (() => {
-                  const Icon = iconMap[service.icon] || Target;
-                  return (
-                    <Icon 
-                      size={400} 
-                      strokeWidth={0.5} 
-                      className="relative z-10 text-zinc-900 dark:text-white opacity-20 dark:opacity-40 transform -rotate-12" 
-                      style={{ color: service.color }}
-                    />
-                  );
-                })()
-             )}
+        {/* 1. Onboarding (Process) Section */}
+        <section className="container mx-auto px-4 mb-60">
+          <div className="flex items-center space-x-6 mb-16">
+            <span className="w-16 h-[2px] bg-zinc-900 dark:bg-white" />
+            <h2 className="text-3xl md:text-5xl font-black tracking-tighter uppercase italic">
+              01/ Onboarding Process
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            {[
+              { step: '01', title: 'Intent Insight', desc: '데이터와 시장 흐름을 분석하여 비즈니스의 핵심 결핍을 진단합니다.' },
+              { step: '02', title: 'Strategic Setup', desc: '타겟 고객의 심리를 관통하는 초정밀 마케팅 로직을 설계합니다.' },
+              { step: '03', title: 'Expert Execution', desc: '기브니즈의 각 분야 전문가들이 최상의 퀄리티로 솔루션을 실행합니다.' },
+              { step: '04', title: 'Performance Scale', desc: '성과를 데이터로 증명하고, 다음 성장을 위한 리포트를 발행합니다.' }
+            ].map((item, i) => (
+              <motion.div 
+                key={i}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                className="p-10 rounded-[3rem] bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-white/5 hover:border-zinc-300 dark:hover:border-white/20 transition-all group"
+              >
+                <span className="text-5xl font-black opacity-10 group-hover:opacity-30 transition-opacity mb-8 block" style={{ color: service.color }}>{item.step}</span>
+                <h4 className="text-2xl font-black mb-6 uppercase tracking-tighter italic">{item.title}</h4>
+                <p className="text-zinc-500 dark:text-zinc-400 font-bold leading-relaxed">{item.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </section>
 
-             <div className="absolute bottom-12 left-12 right-12 flex flex-wrap gap-4 justify-center">
-                 {service.detail_desc.split(',').map((tag, i) => (
-                   <span key={i} className="px-6 py-3 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border border-white/20 rounded-2xl font-bold text-lg shadow-xl">
-                      {tag.trim()}
-                   </span>
-                 ))}
-             </div>
-           </motion.div>
-        </div>
-
-        {/* Detailed Content */}
-        <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-20">
-          <div className="md:col-span-2 space-y-20">
-            {/* 핵심 가치 */}
-            <section>
-              <h3 className="text-3xl font-black tracking-tighter mb-10 flex items-center space-x-3">
-                <div className="w-2 h-8 bg-blue-500 rounded-full" style={{ backgroundColor: service.color }} />
-                <span>솔루션 개요</span>
-              </h3>
-              <p className="text-xl md:text-2xl text-zinc-600 dark:text-zinc-300 leading-relaxed font-medium">
-                {service.detail_sub} 기브니즈의 {service.title} 솔루션은 단순히 실행 지표를 달성하는 것에 멈추지 않습니다. 
-                비즈니스의 지속 가능한 성장을 위해 시장의 흐름을 읽고, 타겟의 결핍을 찾아 최적의 인터랙션을 설계합니다.
-              </p>
-            </section>
-
-            {/* 프로세스 (더미) */}
-            <section>
-              <h3 className="text-3xl font-black tracking-tighter mb-10 flex items-center space-x-3">
-                <div className="w-2 h-8 bg-blue-500 rounded-full" style={{ backgroundColor: service.color }} />
-                <span>진행 프로세스</span>
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {[
-                  { step: '01', title: '인텐트 분석', desc: '고객의 구매 의도와 시장 내 경쟁 구조를 정밀하게 분석합니다.' },
-                  { step: '02', title: '맞춤형 설계', desc: '분석된 데이터를 기반으로 최적의 성과를 낼 수 있는 전략을 수립합니다.' },
-                  { step: '03', step: '03', title: '정교한 실행', desc: '각 분야의 전문가들이 협업하여 초격차 퀄리티의 결과물을 만들어냅니다.' },
-                  { step: '04', title: '최적화 및 리포트', desc: '실행 결과를 실시간으로 모니터링하고 다음 스택을 제안합니다.' }
-                ].map((item, i) => (
-                  <div key={i} className="p-8 rounded-3xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-white/5 group hover:border-zinc-300 dark:hover:border-white/20 transition-all">
-                    <span className="text-4xl font-black opacity-10 mb-6 block" style={{ color: service.color }}>{item.step}</span>
-                    <h4 className="text-xl font-black mb-4">{item.title}</h4>
-                    <p className="text-zinc-500 dark:text-zinc-400 font-medium leading-relaxed">{item.desc}</p>
+        {/* 2. Policy & Regulation Section */}
+        <section className="container mx-auto px-4 mb-60">
+          <div className="flex items-center space-x-6 mb-16">
+            <span className="w-16 h-[2px] bg-zinc-900 dark:bg-white" />
+            <h2 className="text-3xl md:text-5xl font-black tracking-tighter uppercase italic">
+              02/ Execution Policy
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+            {[
+              { icon: ShieldCheck, title: 'Branding Safeguard', desc: '모든 마케팅 집행은 브랜드의 고유한 가치를 훼손하지 않는 범위 내에서 투명하게 진행됩니다.' },
+              { icon: FileText, title: 'Quality Standard', desc: '단순한 숫자 채우기가 아닌, 실제 전환으로 이어지는 유의미한 지표와 퀄리티를 최우선으로 합니다.' },
+              { icon: Zap, title: 'Real-time Response', desc: '알고리즘 변화나 시장 이슈 발생 시 24시간 이내에 즉각적인 대응 전략을 수립합니다.' },
+              { icon: MessageSquare, title: 'Direct Communication', desc: '상시 열려있는 채널을 통해 담당 전문가와 실시간으로 방향성을 조율할 수 있습니다.' }
+            ].map((policy, i) => {
+              const Icon = policy.icon;
+              return (
+                <div key={i} className="flex space-x-8 p-10 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-[3.5rem]">
+                  <div className="flex-shrink-0 w-16 h-16 bg-white/10 dark:bg-zinc-900/10 rounded-full flex items-center justify-center">
+                    <Icon size={32} style={{ color: service.color }} />
                   </div>
-                ))}
-              </div>
-            </section>
+                  <div>
+                    <h4 className="text-2xl font-black uppercase tracking-tighter mb-4 italic">{policy.title}</h4>
+                    <p className="text-lg opacity-60 font-bold leading-relaxed">{policy.desc}</p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
+        </section>
 
-          {/* Sidebar Area (Why Giveneeds) */}
-          <div className="space-y-8">
-            <div className="sticky top-32 p-10 rounded-[2.5rem] bg-zinc-900 dark:bg-white text-white dark:text-zinc-900">
-               <Zap className="mb-6 animate-pulse" style={{ color: service.color }} />
-               <h3 className="text-2xl font-black mb-6 tracking-tighter">Why GIVENEEDS?</h3>
-               <ul className="space-y-6">
-                 {[
-                   '데이터 기반의 의사결정',
-                   '업계 최고의 시각적 퀄리티',
-                   '실시간 성과 모니터링',
-                   '비즈니스 무한 스케일업'
-                 ].map((txt, i) => (
-                   <li key={i} className="flex items-center space-x-3 font-bold text-sm">
-                      <CheckCircle2 size={18} style={{ color: service.color }} />
-                      <span>{txt}</span>
-                   </li>
-                 ))}
-               </ul>
-               <button 
-                onClick={() => window.open('https://www.youtube.com/@GIVENEEDS', '_blank')}
-                className="w-full mt-12 py-5 rounded-2xl bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white font-black text-lg transition-transform hover:scale-[1.03]"
-               >
-                 상담하기
-               </button>
-            </div>
+        {/* 3. Reference (Success Cases) */}
+        <section className="container mx-auto px-4">
+          <div className="flex items-center space-x-6 mb-16">
+            <span className="w-16 h-[2px] bg-zinc-900 dark:bg-white" />
+            <h2 className="text-3xl md:text-5xl font-black tracking-tighter uppercase italic">
+              03/ Success Reference
+            </h2>
           </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              { company: 'IT Enterprise A', tag: 'ROAS 450%', desc: '대규모 검색 키워드 최적화를 통해 CPA 30% 절감.' },
+              { company: 'Luxury Brand B', tag: 'Top Tier Exp.', 'desc': '글로벌 체험단 운영을 통한 일본 내 인지도 급상승.' },
+              { company: 'Food Tech C', tag: 'Viral King', desc: '카페/커뮤니티 확산 전략으로 초기 유입량 5배 폭증.' }
+            ].map((ref, i) => (
+              <div key={i} className="group relative aspect-[4/5] bg-zinc-100 dark:bg-zinc-900 rounded-[3.5rem] overflow-hidden p-12 flex flex-col justify-end">
+                <div className="absolute top-12 right-12 w-16 h-16 border border-zinc-200 dark:border-zinc-800 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                  <BarChart3 size={24} style={{ color: service.color }} />
+                </div>
+                <div className="relative z-10 transition-transform duration-500 group-hover:-translate-y-4">
+                  <span className="inline-block px-4 py-1.5 rounded-full bg-white dark:bg-zinc-800 text-xs font-black mb-6 uppercase" style={{ color: service.color }}>
+                    {ref.tag}
+                  </span>
+                  <h4 className="text-3xl font-black text-zinc-900 dark:text-white mb-6 uppercase italic">
+                    {ref.company}
+                  </h4>
+                  <p className="text-zinc-500 dark:text-zinc-400 font-bold leading-tight line-clamp-2">
+                    {ref.desc}
+                  </p>
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-t from-zinc-200/50 dark:from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Dynamic CTA */}
+        <div className="container mx-auto px-4 mt-60">
+           <AiSolutionBlock />
         </div>
       </main>
 
