@@ -26,7 +26,8 @@ import {
   HelpCircle,
   FileBox,
   MousePointer2,
-  Save
+  Save,
+  BookOpen
 } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -62,6 +63,7 @@ export default function SectionsPage() {
       case 'video': return <Video size={20} />;
       case 'text': return <Type size={20} />;
       case 'products': return <Layers size={20} />;
+      case 'magazine': return <BookOpen size={20} />;
       default: return <Settings size={20} />;
     }
   };
@@ -680,6 +682,37 @@ function SectionContentEditor({ type, content, onChange }) {
             onChange={e => updateContent('body', e.target.value)}
             placeholder="# 제목\n본문 내용을 자유롭게 작성하세요..."
           />
+        </div>
+      );
+    
+    case 'magazine':
+      return (
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">매거진 섹션 메인 타이틀</label>
+            <input 
+              className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-md font-bold text-xl outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 transition-all shadow-sm" 
+              value={content.headline || ''} 
+              onChange={e => updateContent('headline', e.target.value)} 
+              placeholder="예: Latest Insight"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">매거진 섹션 서브 타이틀</label>
+            <textarea 
+              className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-md text-sm outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 transition-all h-24 shadow-sm" 
+              value={content.subtitle || ''} 
+              onChange={e => updateContent('subtitle', e.target.value)}
+              placeholder="뉴스레터의 성격이나 최신 아티클에 대한 설명을 입력하세요."
+            />
+          </div>
+          <div className="bg-amber-50 border border-amber-200 p-4 rounded-md flex items-start gap-3">
+            <Layers size={16} className="text-amber-500 shrink-0 mt-0.5" />
+            <p className="text-[10px] text-amber-700 leading-relaxed font-medium">
+              * 이 섹션은 <strong>[published]</strong> 상태인 최신 매거진 아티클들을 자동으로 불러와 그리드 형태로 표시합니다.<br/>
+              * 매거진 아티클 자체의 내용은 <strong>[매거진 관리]</strong> 메뉴에서 개별적으로 수정해 주세요.
+            </p>
+          </div>
         </div>
       );
 

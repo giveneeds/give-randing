@@ -8,6 +8,13 @@
    
 3. **Wait for user confirmation** or proceed only after you have clearly summarized the guide to demonstrate understanding. This is a hard requirement from the project owner.
 
+## 🚨 DATA INTEGRITY & CONFLICT PREVENTION (CRITICAL)
+**Before any database-related action (SQL, Seeding, Migration):**
+1. **Pre-check mandatory**: Always perform a `SELECT` first to verify if existing data (especially user-modified content) will be affected.
+2. **Never overwrite blindly**: Favor `ON CONFLICT DO NOTHING` over `DO UPDATE` unless explicitly requested. 
+3. **Manual Backup**: Before running modifying scripts, extract current data to a temporary file of the workspace and notify the user.
+4. **Risk Disclosure**: Explicitly warn the user if a script has the potential to overwrite or delete their manual modifications in the Admin UI/Supabase Dashboard.
+
 ## 📌 PROJECT MISSION
 To build an integrated high-conversion marketing portal for 'Giveneeds', featuring a Magazine B-style editorial site and a dynamic campaign landing page system.
 
