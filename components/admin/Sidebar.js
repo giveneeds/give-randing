@@ -23,7 +23,7 @@ export default function Sidebar({ handleLogout }) {
 
   const navItems = [
     { href: '/admin', icon: LayoutDashboard, label: '대시보드' },
-    { href: '/admin/sections', icon: Component, label: '웹사이트 수정(HOME)' },
+    { href: '/admin/sections', icon: Component, label: '웹사이트 수정' },
     { href: '/admin/services', icon: Rocket, label: '상품/솔루션 관리' },
     { href: '/admin/campaigns', icon: Component, label: '랜딩페이지 빌더' },
     { href: '/admin/magazines', icon: BookOpen, label: '매거진 콘텐츠' },
@@ -32,14 +32,14 @@ export default function Sidebar({ handleLogout }) {
   ];
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-64 bg-white border-r border-zinc-200 flex flex-col z-30">
+    <aside className="fixed left-0 top-0 h-screen w-64 bg-white border-r border-zinc-200 flex flex-col z-30 transition-colors duration-300">
       <div className="p-6">
         <Link href="/admin" className="flex items-center gap-2 group">
-          <div className="w-8 h-8 bg-[var(--admin-primary)] rounded-sm flex items-center justify-center text-white font-bold group-hover:scale-105 transition-transform">
+          <div className="w-8 h-8 bg-zinc-900 rounded-sm flex items-center justify-center text-white font-bold group-hover:scale-105 transition-transform shadow-sm">
             G
           </div>
-          <span className="font-bold text-lg text-[var(--admin-text-main)] tracking-tight">
-            Giveneeds Admin
+          <span className="font-black text-lg text-zinc-950 tracking-tighter">
+            Giveneeds
           </span>
         </Link>
       </div>
@@ -54,13 +54,13 @@ export default function Sidebar({ handleLogout }) {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-all duration-200",
+                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 uppercase tracking-tight",
                 isActive 
-                  ? "bg-zinc-50 text-zinc-900 border border-zinc-200 font-bold" 
+                  ? "bg-zinc-100 text-zinc-900 border border-zinc-200 shadow-sm" 
                   : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900 border border-transparent"
               )}
             >
-              <Icon size={18} className={cn(isActive ? "text-[var(--admin-primary)]" : "text-[var(--admin-text-muted)]")} />
+              <Icon size={18} className={cn(isActive ? "text-zinc-900" : "text-zinc-400")} />
               {item.label}
             </Link>
           );
@@ -71,14 +71,14 @@ export default function Sidebar({ handleLogout }) {
         <a 
           href="/" 
           target="_blank" 
-          className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900 transition-colors"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-bold text-zinc-500 hover:bg-zinc-50 transition-all uppercase tracking-tight"
         >
           <ExternalLink size={18} />
           내 사이트 보기
         </a>
         <button 
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-red-500 hover:bg-red-50 transition-colors"
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-bold text-red-500 hover:bg-red-50 transition-all uppercase tracking-tight"
         >
           <LogOut size={18} />
           로그아웃

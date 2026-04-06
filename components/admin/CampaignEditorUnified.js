@@ -1,5 +1,5 @@
 'use client';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   X, BarChart3, CheckCircle2, Save, Eye, Sparkles,
   ClipboardList, Zap, Layout, Monitor, Smartphone, MessageSquare,
@@ -21,20 +21,26 @@ import MagazineList from '@/components/landing/MagazineList';
 function ConfigCard({ title, icon, children, accent = false, rightSlot }) {
   return (
     <div className={clsx(
-      'rounded-2xl border overflow-hidden shadow-sm',
-      accent ? 'border-violet-200 bg-violet-50/30' : 'bg-white border-zinc-200'
+      'rounded-2xl border overflow-hidden shadow-sm transition-colors',
+      accent 
+        ? 'border-violet-200 bg-violet-50/30' 
+        : 'bg-white border-zinc-200'
     )}>
       <div className={clsx(
-        'px-6 py-4 border-b flex items-center justify-between',
-        accent ? 'border-violet-100 bg-violet-50/50' : 'border-zinc-100 bg-zinc-50/50'
+        'px-6 py-4 border-b flex items-center justify-between transition-colors',
+        accent 
+          ? 'border-violet-100 bg-violet-50/50' 
+          : 'border-zinc-100 bg-zinc-50/50'
       )}>
         <div className="flex items-center gap-3">
-          <div className={clsx('w-7 h-7 rounded-lg flex items-center justify-center shadow-sm',
-            accent ? 'bg-white text-violet-500 border border-violet-100' : 'bg-white text-zinc-500 border border-zinc-200'
+          <div className={clsx('w-7 h-7 rounded-lg flex items-center justify-center shadow-sm transition-colors',
+            accent 
+              ? 'bg-white text-violet-500 border border-violet-100' 
+              : 'bg-white text-zinc-500 border border-zinc-200'
           )}>
             {icon}
           </div>
-          <h3 className={clsx('text-[11px] font-black uppercase tracking-[0.25em]',
+          <h3 className={clsx('text-[11px] font-black uppercase tracking-[0.25em] transition-colors',
             accent ? 'text-violet-700' : 'text-zinc-900'
           )}>{title}</h3>
         </div>
@@ -47,20 +53,32 @@ function ConfigCard({ title, icon, children, accent = false, rightSlot }) {
 
 function Toggle({ on, onToggle, icon, title, desc, color = 'zinc' }) {
   const styles = {
-    zinc: { on: 'bg-zinc-900 border-zinc-900 text-white', off: 'bg-white border-zinc-200 text-zinc-500 hover:border-zinc-400' },
-    blue: { on: 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-100', off: 'bg-white border-zinc-200 text-zinc-500 hover:border-blue-300' },
-    violet: { on: 'bg-violet-600 border-violet-600 text-white shadow-md shadow-violet-100', off: 'bg-white border-zinc-200 text-zinc-500 hover:border-violet-300' },
-    teal: { on: 'bg-teal-600 border-teal-600 text-white shadow-md shadow-teal-100', off: 'bg-white border-zinc-200 text-zinc-500 hover:border-teal-300' },
+    zinc: { 
+      on: 'bg-zinc-900 border-zinc-900 text-white shadow-md', 
+      off: 'bg-white border-zinc-200 text-zinc-500 hover:border-zinc-400 shadow-sm' 
+    },
+    blue: { 
+      on: 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-100', 
+      off: 'bg-white border-zinc-200 text-zinc-500 hover:border-blue-300 shadow-sm' 
+    },
+    violet: { 
+      on: 'bg-violet-600 border-violet-600 text-white shadow-md shadow-violet-100', 
+      off: 'bg-white border-zinc-200 text-zinc-500 hover:border-violet-300 shadow-sm' 
+    },
+    teal: { 
+      on: 'bg-teal-600 border-teal-600 text-white shadow-md shadow-teal-100', 
+      off: 'bg-white border-zinc-200 text-zinc-500 hover:border-teal-300 shadow-sm' 
+    },
   };
   const s = styles[color];
   return (
     <button onClick={onToggle} className={clsx('w-full p-4 rounded-xl border-2 flex items-center gap-3 transition-all text-left group', on ? s.on : s.off)}>
-      <div className={clsx('w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-all', on ? 'bg-white/20' : 'bg-zinc-100')}>
+      <div className={clsx('w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-all shadow-sm', on ? 'bg-white/20' : 'bg-zinc-100')}>
         <span className={on ? 'text-white' : 'text-zinc-400'}>{icon}</span>
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-[11px] font-black uppercase tracking-widest">{title}</p>
-        {desc && <p className={clsx('text-[10px] mt-0.5 leading-snug', on ? 'opacity-65' : 'opacity-40')}>{desc}</p>}
+        {desc && <p className={clsx('text-[10px] mt-0.5 leading-snug font-bold', on ? 'opacity-75' : 'opacity-40')}>{desc}</p>}
       </div>
       <div className={clsx('w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all',
         on ? 'border-white bg-white/30' : 'border-zinc-300'
@@ -71,7 +89,6 @@ function Toggle({ on, onToggle, icon, title, desc, color = 'zinc' }) {
   );
 }
 
-// 드래그용 아이템 래퍼
 function DraggableItem({ index, type, dragState, onDragStart, onDragOver, onDrop, onDragEnd, children, className }) {
   const isDragging = dragState?.type === type && dragState?.index === index;
   const isDragOver = dragState?.overIndex === index && dragState?.type === type;
@@ -94,9 +111,6 @@ function DraggableItem({ index, type, dragState, onDragStart, onDragOver, onDrop
   );
 }
 
-// ─────────────────────────────────────────────
-// 🖊️ Inline Section Editor 
-// ─────────────────────────────────────────────
 function SectionEditor({ section, overrides = {}, onChange }) {
   const merged = { ...section, ...overrides };
   const [imgPreview, setImgPreview] = useState(merged.image_url || '');
@@ -110,12 +124,12 @@ function SectionEditor({ section, overrides = {}, onChange }) {
   };
 
   return (
-    <div className="mt-3 pt-4 border-t border-zinc-100 space-y-4 animate-in slide-in-from-top-2 duration-200">
+    <div className="mt-3 pt-4 border-t border-zinc-100 space-y-4">
       <div className="grid grid-cols-1 gap-3">
         <div className="space-y-1.5">
           <label className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.25em] px-1">섹션 타이틀</label>
           <input
-            className="w-full px-3 py-2.5 bg-zinc-50 border border-zinc-200 rounded-lg text-sm font-bold outline-none focus:ring-2 focus:ring-zinc-900/10"
+            className="w-full px-3 py-2.5 bg-zinc-50 border border-zinc-200 rounded-lg text-sm font-bold outline-none focus:ring-2 focus:ring-zinc-900/10 text-zinc-900 placeholder:text-zinc-300"
             value={merged.title || ''}
             onChange={e => onChange('title', e.target.value)}
           />
@@ -123,19 +137,18 @@ function SectionEditor({ section, overrides = {}, onChange }) {
         <div className="space-y-1.5">
           <label className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.25em] px-1">서브타이틀</label>
           <input
-            className="w-full px-3 py-2.5 bg-zinc-50 border border-zinc-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-zinc-900/10"
+            className="w-full px-3 py-2.5 bg-zinc-50 border border-zinc-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-zinc-900/10 text-zinc-900 placeholder:text-zinc-300"
             value={merged.subtitle || ''}
             onChange={e => onChange('subtitle', e.target.value)}
           />
         </div>
       </div>
 
-      {/* 이미지 업로드 */}
       <div className="space-y-2">
         <label className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.25em] px-1">섹션 이미지</label>
         <div className="flex gap-2">
           <input
-            className="flex-1 px-3 py-2.5 bg-zinc-50 border border-zinc-200 rounded-lg text-xs font-mono outline-none focus:ring-2 focus:ring-zinc-900/10"
+            className="flex-1 px-3 py-2.5 bg-zinc-50 border border-zinc-200 rounded-lg text-xs font-mono outline-none focus:ring-2 focus:ring-zinc-900/10 text-zinc-900 placeholder:text-zinc-300"
             placeholder="https://... 이미지 URL 붙여넣기"
             value={typeof imgPreview === 'string' && !imgPreview.startsWith('data:') ? imgPreview : ''}
             onChange={e => { setImgPreview(e.target.value); onChange('image_url', e.target.value); }}
@@ -155,13 +168,12 @@ function SectionEditor({ section, overrides = {}, onChange }) {
         )}
       </div>
 
-      {/* 콘텐츠 텍스트 */}
       <div className="space-y-1.5">
         <label className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.25em] px-1 flex items-center gap-2">
           본문 내용 <span className="text-zinc-300 font-normal normal-case tracking-normal">JSON 구조 직접 편집 (고급)</span>
         </label>
         <textarea
-          className="w-full px-3 py-2.5 bg-zinc-50 border border-zinc-200 rounded-lg text-xs font-mono outline-none focus:ring-2 focus:ring-zinc-900/10 min-h-[80px] leading-relaxed resize-none"
+          className="w-full px-3 py-2.5 bg-zinc-50 border border-zinc-200 rounded-lg text-xs font-mono outline-none focus:ring-2 focus:ring-zinc-900/10 min-h-[80px] leading-relaxed resize-none text-zinc-900 placeholder:text-zinc-300"
           value={typeof merged.content === 'string' ? merged.content : JSON.stringify(merged.content || {}, null, 2)}
           onChange={e => {
             try { onChange('content', JSON.parse(e.target.value)); }
@@ -193,9 +205,12 @@ export default function CampaignEditorUnified({ campaign, sections, onSave, onCl
   const [expandedSectionId, setExpandedSectionId] = useState(null);
   const [dragState, setDragState] = useState({ type: null, index: null, overIndex: null });
 
-  // ── helpers
+  // ── helpers (Using functional updates for stability)
   const set = (patch) => setCurrent(p => ({ ...p, ...patch }));
-  const setHero = (patch) => set({ hero_content: { ...current.hero_content, ...patch } });
+  const setHero = (patch) => setCurrent(p => ({ 
+    ...p, 
+    hero_content: { ...(p.hero_content || {}), ...patch } 
+  }));
 
   // ── DnD handlers
   const onDragStart = (type, index) => setDragState({ type, index, overIndex: null });
@@ -220,11 +235,15 @@ export default function CampaignEditorUnified({ campaign, sections, onSave, onCl
 
   const moveItem = (arr, idx, dir) => reorder(arr, idx, Math.max(0, Math.min(arr.length - 1, idx + dir)));
 
-  // ── Section override helpers
   const updateSectionOverride = (id, key, val) =>
-    set({ section_overrides: { ...current.section_overrides, [id]: { ...(current.section_overrides?.[id] || {}), [key]: val } } });
+    setCurrent(p => ({ 
+      ...p, 
+      section_overrides: { 
+        ...p.section_overrides, 
+        [id]: { ...(p.section_overrides?.[id] || {}), [key]: val } 
+      } 
+    }));
 
-  // ── derived data
   const liveSections = (current.selected_sections || []).map(id => {
     const base = sections.find(s => s.id === id);
     if (!base) return null;
@@ -233,7 +252,6 @@ export default function CampaignEditorUnified({ campaign, sections, onSave, onCl
 
   const particleWords = (current.hero_content?.particle_text || 'GIVENEEDS\nMARKETING').split('\n').filter(Boolean);
 
-  // ── Hero blocks meta
   const heroCfg = {
     particle: {
       key: 'show_particle',
@@ -251,7 +269,6 @@ export default function CampaignEditorUnified({ campaign, sections, onSave, onCl
     },
   };
 
-  // ── Booster blocks meta
   const boosterCfg = {
     ai_block: {
       key: 'show_ai_block',
@@ -269,51 +286,21 @@ export default function CampaignEditorUnified({ campaign, sections, onSave, onCl
     },
   };
 
-  // ─────────────────────────────────────────
-  // LEFT PANEL BUILDER BLOCKS
-  // ─────────────────────────────────────────
-  const HeroParticleConfig = () => current.hero_block_order[0] === 'particle' && current.show_particle ? (
-    <div className="ml-5 pl-5 border-l-2 border-zinc-200 space-y-3 animate-in slide-in-from-top-2 duration-200 py-1">
-      <textarea
-        className="w-full p-3.5 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-mono focus:ring-2 focus:ring-zinc-900/10 min-h-[110px] outline-none leading-loose"
-        value={current.hero_content?.particle_text || ''}
-        placeholder={"장면 1\n장면 2\n장면 3"}
-        onChange={e => setHero({ particle_text: e.target.value })}
-      />
-      <p className="text-[10px] text-zinc-400 leading-relaxed">💡 줄바꿈(Enter) = 한 장면. 약 3초 간격으로 전환됩니다.</p>
-    </div>
-  ) : null;
-
-  const HeroLeadConfig = () => current.show_lead_form ? (
-    <div className="ml-5 pl-5 border-l-2 border-blue-100 space-y-4 animate-in slide-in-from-top-2 duration-200 py-1">
-      <div><label className="lbl">헤드라인</label>
-        <textarea className="inp h-20 resize-none font-bold" value={current.hero_content?.headline || ''} onChange={e => setHero({ headline: e.target.value })} />
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        <div><label className="lbl">CTA 버튼 텍스트</label><input className="inp font-bold" value={current.hero_content?.cta_label || ''} onChange={e => setHero({ cta_label: e.target.value })} /></div>
-        <div><label className="lbl">제공 자료명</label><input className="inp font-mono text-xs" value={current.hero_content?.file_name || ''} onChange={e => setHero({ file_name: e.target.value })} /></div>
-      </div>
-    </div>
-  ) : null;
-
-  const heroConfigMap = { particle: <HeroParticleConfig key="particle" />, lead_form: <HeroLeadConfig key="lead_form" /> };
-
   return (
-    <div className="fixed inset-0 bg-zinc-100 z-50 flex flex-col overflow-hidden" style={{ fontFamily: 'var(--font-inter, Inter, sans-serif)' }}>
+    <div className="fixed inset-0 bg-zinc-100 z-50 flex flex-col overflow-hidden transition-colors duration-300" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>
       <style jsx global>{`
         .lbl { display:block; font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:.2em; color:#a1a1aa; margin-bottom:6px; }
-        .inp { width:100%; padding:12px 14px; background:#fafafa; border:1px solid #e4e4e7; border-radius:12px; font-size:14px; outline:none; transition:box-shadow .15s; }
+        .inp { width:100%; padding:12px 14px; background:#fafafa; border:1px solid #e4e4e7; border-radius:12px; font-size:14px; outline:none; transition:box-shadow .15s; color: #09090b; }
         .inp:focus { box-shadow: 0 0 0 2px rgba(0,0,0,0.08); border-color:#71717a; }
         .scr::-webkit-scrollbar{width:4px} .scr::-webkit-scrollbar-track{background:transparent} .scr::-webkit-scrollbar-thumb{background:#e4e4e7;border-radius:10px}
       `}</style>
 
-      {/* ── TOP BAR */}
-      <header className="h-14 bg-white border-b border-zinc-200 px-6 flex items-center justify-between shrink-0 z-30">
+      <header className="h-14 bg-white border-b border-zinc-200 px-6 flex items-center justify-between shrink-0 z-30 transition-colors">
         <div className="flex items-center gap-3">
           <button onClick={onClose} className="p-2 hover:bg-zinc-100 rounded-lg text-zinc-400 transition-colors"><X size={18} /></button>
           <div className="h-4 w-px bg-zinc-200" />
           <div>
-            <p className="text-sm font-black tracking-tighter uppercase text-zinc-900 flex items-center gap-2">Campaign Command Center</p>
+            <p className="text-sm font-black tracking-tighter uppercase text-zinc-900 flex items-center gap-2">Campaign Editor</p>
             <p className="text-[9px] text-zinc-400 font-bold uppercase tracking-widest">
               giveneeds.kr/landing/<span className="text-zinc-700">{current.slug || '—'}</span>
               <span className="mx-2">·</span>
@@ -326,25 +313,18 @@ export default function CampaignEditorUnified({ campaign, sections, onSave, onCl
         </button>
       </header>
 
-      {/* ── MAIN AREA */}
       <main className="flex-1 flex overflow-hidden">
-
-        {/* ═══════════════════════════════════════
-            LEFT: Scrollable Config Panel (60%)
-        ═══════════════════════════════════════ */}
-        <aside className="w-[60%] bg-zinc-50 overflow-y-auto scr border-r border-zinc-200">
+        <aside className="w-[60%] bg-zinc-50 overflow-y-auto scr border-r border-zinc-200 transition-colors">
           <div className="max-w-2xl mx-auto px-8 py-10 space-y-8 pb-40">
 
-            {/* ── [1] Basic Info */}
             <ConfigCard title="기본 정보" icon={<Layout size={14} />}>
               <div className="grid grid-cols-2 gap-5">
-                <div>
+                <div className="space-y-1.5">
                   <label className="lbl">캠페인 타이틀</label>
                   <input className="inp font-bold" value={current.title || ''} onChange={e => set({ title: e.target.value })} />
                 </div>
-                <div>
+                <div className="space-y-1.5">
                   <label className="lbl">URL Slug</label>
-                  {/* ✅ FIX: flex approach — prefix outside input prevents overlap */}
                   <div className="flex items-stretch bg-zinc-50 border border-zinc-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-zinc-900/10 focus-within:border-zinc-500 transition-all">
                     <span className="px-3 py-3 bg-zinc-100 border-r border-zinc-200 text-[11px] font-mono font-bold text-zinc-400 flex items-center shrink-0 whitespace-nowrap">/landing/</span>
                     <input
@@ -358,7 +338,6 @@ export default function CampaignEditorUnified({ campaign, sections, onSave, onCl
               </div>
             </ConfigCard>
 
-            {/* ── [2] Hero Module (with draggable/reorderable blocks) */}
             <ConfigCard title="히어로 모듈" icon={<Sparkles size={14} />}
               rightSlot={<span className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-1"><ArrowUpDown size={10} /> 드래그로 순서 변경</span>}
             >
@@ -370,12 +349,12 @@ export default function CampaignEditorUnified({ campaign, sections, onSave, onCl
                     <DraggableItem key={blockId} index={idx} type="hero" dragState={dragState}
                       onDragStart={onDragStart} onDragOver={onDragOver} onDrop={onDrop} onDragEnd={onDragEnd}
                     >
-                      <div className={clsx('rounded-xl border-2 transition-all', isOn ? 'border-zinc-900' : 'border-zinc-200')}>
+                      <div className={clsx('rounded-xl border-2 transition-all', isOn ? 'border-zinc-900' : 'border-zinc-200 bg-white')}>
                         <div className="flex items-center gap-2 p-1.5">
                           <div className="p-2 cursor-grab text-zinc-300 hover:text-zinc-500 active:cursor-grabbing">
                             <GripVertical size={14} />
                           </div>
-                          <div className="flex-1">
+                          <div className="flex-1 text-sm font-bold">
                             <Toggle on={isOn} onToggle={() => set({ [cfg.key]: !current[cfg.key] })}
                               icon={cfg.icon} title={`${idx + 1}. ${cfg.title}`} desc={cfg.desc} color={cfg.color}
                             />
@@ -385,25 +364,45 @@ export default function CampaignEditorUnified({ campaign, sections, onSave, onCl
                             <button onClick={() => set({ hero_block_order: moveItem(current.hero_block_order, idx, 1) })} disabled={idx === current.hero_block_order.length - 1} className="p-1 text-zinc-300 hover:text-zinc-700 disabled:opacity-20 transition-all"><ChevronDown size={14} /></button>
                           </div>
                         </div>
-                        {isOn && <div className="px-5 pb-4">{heroConfigMap[blockId]}</div>}
+                        {isOn && (
+                          <div className="px-5 pb-4">
+                            {blockId === 'particle' && (
+                              <div className="ml-5 pl-5 border-l-2 border-zinc-200 hide-scrollbar space-y-3 py-1">
+                                <textarea
+                                  className="w-full p-3.5 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-mono focus:ring-2 focus:ring-zinc-900/10 outline-none leading-loose text-zinc-900 placeholder:text-zinc-300"
+                                  value={current.hero_content?.particle_text || ''}
+                                  placeholder={"장면 1\n장면 2\n장면 3"}
+                                  onChange={e => setHero({ particle_text: e.target.value })}
+                                />
+                                <p className="text-[10px] text-zinc-400 leading-relaxed">💡 줄바꿈(Enter) = 한 장면. 약 3초 간격으로 전환됩니다.</p>
+                              </div>
+                            )}
+                            {blockId === 'lead_form' && (
+                              <div className="ml-5 pl-5 border-l-2 border-blue-100 space-y-4 py-1">
+                                <div className="space-y-1.5"><label className="lbl">헤드라인</label>
+                                  <textarea className="inp h-20 resize-none font-bold" value={current.hero_content?.headline || ''} onChange={e => setHero({ headline: e.target.value })} />
+                                </div>
+                                <div className="space-y-1.5"><label className="lbl">세부 설명</label>
+                                  <textarea className="inp h-24 resize-none" placeholder="선착순 100명에게만 공개되는..." value={current.hero_content?.description || ''} onChange={e => setHero({ description: e.target.value })} />
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div className="space-y-1.5"><label className="lbl">CTA 버튼 텍스트</label><input className="inp font-bold" value={current.hero_content?.cta_label || ''} onChange={e => setHero({ cta_label: e.target.value })} /></div>
+                                  <div className="space-y-1.5"><label className="lbl">제공 자료명</label><input className="inp font-mono text-xs" value={current.hero_content?.file_name || ''} onChange={e => setHero({ file_name: e.target.value })} /></div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </DraggableItem>
                   );
                 })}
-
-                {!current.show_particle && !current.show_lead_form && (
-                  <p className="text-[11px] text-amber-600 bg-amber-50 border border-amber-200 rounded-lg p-3 font-medium">
-                    ⚠️ 히어로 블록이 모두 비활성화되어 있습니다.
-                  </p>
-                )}
               </div>
             </ConfigCard>
 
-            {/* ── [3] Page Builder (Drag & Drop + Inline Editor) */}
             <ConfigCard title="페이지 빌더" icon={<Layout size={14} />}
               rightSlot={<span className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-1"><ArrowUpDown size={10} /> 드래그로 순서 변경</span>}
             >
-              {/* Current page flow */}
               <div className="space-y-2">
                 {liveSections.length === 0 ? (
                   <div className="py-10 text-center border-2 border-dashed border-zinc-200 rounded-xl bg-zinc-50">
@@ -460,7 +459,6 @@ export default function CampaignEditorUnified({ campaign, sections, onSave, onCl
                 )}
               </div>
 
-              {/* Section Library */}
               <div>
                 <p className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.25em] mb-3 flex items-center gap-2">
                   <Plus size={10} /> 섹션 라이브러리 — 클릭하여 추가
@@ -486,7 +484,6 @@ export default function CampaignEditorUnified({ campaign, sections, onSave, onCl
               </div>
             </ConfigCard>
 
-            {/* ── [4] Growth Boosters (ordered) */}
             <ConfigCard title="Growth Boosters" icon={<Zap size={14} />} accent
               rightSlot={<span className="text-[9px] font-bold text-violet-400 uppercase tracking-widest flex items-center gap-1"><ArrowUpDown size={10} /> 드래그로 순서 변경</span>}
             >
@@ -499,7 +496,7 @@ export default function CampaignEditorUnified({ campaign, sections, onSave, onCl
                     <DraggableItem key={blockId} index={idx} type="booster" dragState={dragState}
                       onDragStart={onDragStart} onDragOver={onDragOver} onDrop={onDrop} onDragEnd={onDragEnd}
                     >
-                      <div className={clsx('rounded-xl border-2 transition-all', isOn ? 'border-violet-300' : 'border-zinc-200 bg-white')}>
+                      <div className={clsx('rounded-xl border-2 transition-all', isOn ? 'border-violet-300 bg-white' : 'border-zinc-200 bg-white')}>
                         <div className="flex items-center gap-2 p-1.5">
                           <div className="p-2 cursor-grab text-zinc-300 hover:text-violet-400 active:cursor-grabbing">
                             <GripVertical size={14} />
@@ -521,7 +518,6 @@ export default function CampaignEditorUnified({ campaign, sections, onSave, onCl
               </div>
             </ConfigCard>
 
-            {/* ── [5] Analytics */}
             <ConfigCard title="Analytics" icon={<BarChart3 size={14} />}>
               <div>
                 <label className="lbl">Google Analytics 4 ID</label>
@@ -535,18 +531,13 @@ export default function CampaignEditorUnified({ campaign, sections, onSave, onCl
           </div>
         </aside>
 
-        {/* ═══════════════════════════════════════
-            RIGHT: Sticky Insight Panel (40%)
-        ═══════════════════════════════════════ */}
         <section className="w-[40%] bg-white border-l border-zinc-100 flex flex-col shrink-0 overflow-hidden">
-
-          {/* Panel Header */}
           <div className="h-12 border-b border-zinc-100 flex bg-zinc-50/50 p-1.5 gap-1 shrink-0">
             <button onClick={() => setActiveInsight('preview')}
               className={clsx('flex-1 flex items-center justify-center gap-1.5 text-[11px] font-black uppercase tracking-widest rounded-lg transition-all',
                 activeInsight === 'preview' ? 'bg-white text-zinc-900 shadow-sm border border-zinc-200' : 'text-zinc-400 hover:text-zinc-600'
               )}>
-              <Eye size={13} /> Live Preview
+              <Eye size={13} /> Preview
             </button>
             <button onClick={() => setActiveInsight('coaching')}
               className={clsx('flex-1 flex items-center justify-center gap-1.5 text-[11px] font-black uppercase tracking-widest rounded-lg transition-all',
@@ -556,10 +547,8 @@ export default function CampaignEditorUnified({ campaign, sections, onSave, onCl
             </button>
           </div>
 
-          {/* ── LIVE PREVIEW */}
           {activeInsight === 'preview' && (
             <div className="flex-1 flex flex-col overflow-hidden animate-in fade-in duration-200">
-              {/* View mode bar */}
               <div className="h-10 bg-white border-b border-zinc-100 flex items-center justify-between px-4 shrink-0">
                 <div className="flex gap-1.5">
                   <button onClick={() => setPreviewMode('desktop')} className={clsx('px-3 py-1.5 rounded-lg text-[10px] font-black uppercase flex items-center gap-1.5 transition-all',
@@ -572,20 +561,15 @@ export default function CampaignEditorUnified({ campaign, sections, onSave, onCl
                 <div className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">Real-time</div>
               </div>
 
-              {/* Preview Canvas — Scaled via CSS zoom */}
               <div className={clsx('flex-1 overflow-y-auto scr p-4', previewMode === 'mobile' ? 'bg-zinc-200 flex justify-center' : 'bg-zinc-100')}>
-                
-                {/* ── Desktop: zoom scale 0.45, width 222% so it fills panel */}
                 {previewMode === 'desktop' && (
                   <div style={{ zoom: 0.45, width: '222%', minHeight: '100%', background: 'white', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 2px 20px rgba(0,0,0,0.08)' }}>
                     <PreviewContent current={current} liveSections={liveSections} particleWords={particleWords} />
                   </div>
                 )}
 
-                {/* ── Mobile: 390px frame */}
                 {previewMode === 'mobile' && (
                   <div className="relative" style={{ width: '390px', minHeight: '840px', background: 'white', borderRadius: '40px', overflow: 'hidden', border: '8px solid #18181b', boxShadow: '0 12px 40px rgba(0,0,0,0.25)', flexShrink: 0 }}>
-                    {/* notch */}
                     <div style={{ position: 'absolute', top: 10, left: '50%', transform: 'translateX(-50%)', width: 80, height: 20, background: '#18181b', borderRadius: 20, zIndex: 10 }} />
                     <div style={{ paddingTop: 40, overflow: 'auto', height: '100%' }}>
                       <PreviewContent current={current} liveSections={liveSections} particleWords={particleWords} isMobile />
@@ -596,22 +580,17 @@ export default function CampaignEditorUnified({ campaign, sections, onSave, onCl
             </div>
           )}
 
-          {/* ── AI COACHING */}
           {activeInsight === 'coaching' && (
-            <div className="flex-1 overflow-y-auto scr p-6 animate-in slide-in-from-right-4 duration-200">
+            <div className="flex-1 overflow-y-auto scr p-6">
               <AiCoachingPanel campaign={current} onApply={() => {}} />
             </div>
           )}
-
         </section>
       </main>
     </div>
   );
 }
 
-// ─────────────────────────────────────────────────
-// 🖼️ PreviewContent — separated for clean rendering
-// ─────────────────────────────────────────────────
 function PreviewContent({ current, liveSections, particleWords, isMobile }) {
   const heroOrder = current.hero_block_order || ['particle', 'lead_form'];
 
@@ -627,7 +606,7 @@ function PreviewContent({ current, liveSections, particleWords, isMobile }) {
       return (
         <section key="lead_form" className="border-t border-zinc-100 bg-white">
           <div className={`flex ${isMobile ? 'flex-col' : 'flex-col lg:flex-row'} items-center gap-10 px-8 py-16 max-w-5xl mx-auto`}>
-            <div className="flex-1 pointer-events-none">
+            <div className="flex-1">
               <h1 className="text-3xl font-black tracking-tighter leading-tight mb-4 whitespace-pre-line">{current.hero_content?.headline || '헤드라인'}</h1>
               <p className="text-base text-zinc-500">{current.hero_content?.description || ''}</p>
             </div>
@@ -644,10 +623,10 @@ function PreviewContent({ current, liveSections, particleWords, isMobile }) {
   const boosterOrder = current.booster_order || ['ai_block', 'magazine'];
   const renderBooster = (blockId) => {
     if (blockId === 'ai_block' && current.show_ai_block) {
-      return <div key="ai" className="pointer-events-none py-12 px-6"><AiSolutionBlock /></div>;
+      return <div key="ai" className="py-12 px-6"><AiSolutionBlock /></div>;
     }
     if (blockId === 'magazine' && current.show_magazine_block) {
-      return <div key="magazine" className="pointer-events-none py-16 px-6 border-t border-zinc-100"><MagazineList title="관련 서비스 인사이트" subtitle="성공적인 비즈니스를 위한 데이터 마케팅 매거진" /></div>;
+      return <div key="magazine" className="py-16 px-6 border-t border-zinc-100"><MagazineList title="관련 서비스 인사이트" subtitle="성공적인 비즈니스를 위한 데이터 마케팅 매거진" /></div>;
     }
     return null;
   };
@@ -658,7 +637,7 @@ function PreviewContent({ current, liveSections, particleWords, isMobile }) {
 
       <div className="py-16 space-y-20 px-2">
         {liveSections.map(sec => (
-          <div key={sec.id} className="pointer-events-none relative">
+          <div key={sec.id} className="relative">
             <SectionRenderer {...sec} />
           </div>
         ))}

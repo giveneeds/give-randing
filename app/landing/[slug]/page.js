@@ -106,7 +106,7 @@ export default function CampaignLandingPage() {
                         <div className="h-px w-8 bg-zinc-200" />
                         <span className="text-xs font-bold tracking-[0.3em] text-primary uppercase">EXCLUSIVELY FOR GROWTH</span>
                       </div>
-                      <h1 className="text-5xl md:text-7xl font-black leading-tight mb-8 whitespace-pre-line tracking-tighter">
+                      <h1 className="text-5xl md:text-7xl font-black leading-snug mb-8 whitespace-pre-line tracking-tighter">
                         {campaign.hero_content.headline}
                       </h1>
                       <p className="text-xl md:text-2xl text-zinc-500 mb-12 max-w-2xl font-medium leading-relaxed">
