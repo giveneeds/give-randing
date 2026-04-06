@@ -62,7 +62,7 @@ export default function LandingNavbar({ settings }) {
               onClick={handleCTA} 
               className="bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-5 py-2 rounded-md font-bold text-xs tracking-widest uppercase hover:scale-[1.02] active:scale-[0.98] transition-all"
             >
-              상담하기
+              문의하기
             </button>
           )}
         </div>
