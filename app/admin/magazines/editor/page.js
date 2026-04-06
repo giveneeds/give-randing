@@ -5,6 +5,7 @@ import {
   ArrowLeft, Save, Eye, Trash2, Monitor, Smartphone, CheckCircle2, ChevronRight
 } from 'lucide-react';
 import { clsx } from 'clsx';
+import AiSolutionBlock from '@/components/ui/AiSolutionBlock';
 
 const CATEGORY_OPTIONS = ['INSIGHT', 'STRATEGY', 'ANALYSIS', 'CASE STUDY', 'TREND'];
 
@@ -16,7 +17,8 @@ export default function MagazineEditor() {
   const [magazine, setMagazine] = useState({
     title: '', slug: '', category: 'INSIGHT', thumbnail_url: '', content_html: '',
     excerpt: '', author: 'GIVENEEDS', tags: [],
-    is_premium: false, is_published: true, is_featured: false, sort_order: 0
+    is_premium: false, is_published: true, is_featured: false, sort_order: 0,
+    show_ai_block: true
   });
 
   const [saving, setSaving] = useState(false);
@@ -135,6 +137,7 @@ export default function MagazineEditor() {
               <button onClick={() => setMagazine({ ...magazine, is_featured: !magazine.is_featured })} className={clsx("w-full p-4 rounded-xl border flex items-center justify-between transition-all", magazine.is_featured ? "bg-blue-50 border-blue-200 text-blue-600" : "bg-white border-zinc-200 text-zinc-500")}><span className="text-[10px] font-black uppercase tracking-widest">Featured (대형 카드)</span>{magazine.is_featured && <CheckCircle2 size={16} />}</button>
               <button onClick={() => setMagazine({ ...magazine, is_premium: !magazine.is_premium })} className={clsx("w-full p-4 rounded-xl border flex items-center justify-between transition-all", magazine.is_premium ? "bg-zinc-900 border-zinc-900 text-white" : "bg-white border-zinc-200 text-zinc-500")}><span className="text-[10px] font-black uppercase tracking-widest">Premium Content</span>{magazine.is_premium && <CheckCircle2 size={16} />}</button>
               <button onClick={() => setMagazine({ ...magazine, is_published: !magazine.is_published })} className={clsx("w-full p-4 rounded-xl border flex items-center justify-between transition-all", magazine.is_published ? "bg-emerald-50 border-emerald-200 text-emerald-600" : "bg-white border-zinc-200 text-zinc-500")}><span className="text-[10px] font-black uppercase tracking-widest">Publish Instantly</span>{magazine.is_published && <CheckCircle2 size={16} />}</button>
+              <button onClick={() => setMagazine({ ...magazine, show_ai_block: !magazine.show_ai_block })} className={clsx("w-full p-4 rounded-xl border flex items-center justify-between transition-all", magazine.show_ai_block ? "bg-violet-50 border-violet-200 text-violet-600" : "bg-white border-zinc-200 text-zinc-500")}><span className="text-[10px] font-black uppercase tracking-widest">⚡ AI 솔루션 블록 표시</span>{magazine.show_ai_block && <CheckCircle2 size={16} />}</button>
            </div>
         </aside>
 
@@ -175,6 +178,25 @@ function PreviewContent({ post }) {
        </div>
        {post.thumbnail_url && <div className="px-8 max-w-screen-md mx-auto mb-12"><div className="aspect-[16/9] bg-zinc-50 border border-zinc-100 rounded-xl overflow-hidden"><img src={post.thumbnail_url} className="w-full h-full object-cover" /></div></div>}
        <article className="px-8 max-w-screen-md mx-auto prose prose-zinc prose-lg max-w-none prose-p:text-zinc-600 prose-headings:font-black prose-headings:tracking-tighter" dangerouslySetInnerHTML={{ __html: post.content_html }} />
+       
+       {/* AI 솔루션 블록 프리뷰 */}
+       {post.show_ai_block && (
+         <div className="px-8 max-w-screen-md mx-auto mt-16 mb-8">
+           <div className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+             <span className="w-2 h-2 rounded-full bg-violet-400 animate-pulse" />
+             AI 솔루션 블록 (활성화됨)
+           </div>
+           <AiSolutionBlock />
+         </div>
+       )}
+       {!post.show_ai_block && (
+         <div className="px-8 max-w-screen-md mx-auto mt-16 mb-8">
+           <div className="text-[9px] font-black text-zinc-300 uppercase tracking-widest flex items-center gap-2 border border-dashed border-zinc-200 rounded-xl p-4 justify-center">
+             <span className="w-2 h-2 rounded-full bg-zinc-300" />
+             AI 솔루션 블록 꺼짐
+           </div>
+         </div>
+       )}
     </div>
   );
 }

@@ -7,7 +7,7 @@ import LandingFooter from '@/components/landing/LandingFooter';
 import MagazineCard from '@/components/landing/MagazineCard';
 import { ArrowLeft, Clock, Share2, Bookmark } from 'lucide-react';
 import Link from 'next/link';
-import ChatCTA from '@/components/ui/ChatCTA';
+import AiSolutionBlock from '@/components/ui/AiSolutionBlock';
 
 export default function MagazineDetailPage() {
   const { slug } = useParams();
@@ -151,7 +151,9 @@ export default function MagazineDetailPage() {
              dangerouslySetInnerHTML={{ __html: post.content_html }}
           />
           
-          <ChatCTA />
+          <div className="mt-20">
+            <AiSolutionBlock />
+          </div>
         </article>
 
         {/* ─── Related Archives ─── */}
