@@ -8,6 +8,7 @@ import LandingFooter from '@/components/landing/LandingFooter';
 import { supabase, isDummyMode, DUMMY_CAMPAIGNS, DUMMY_SECTIONS, DUMMY_SETTINGS } from '@/lib/supabase';
 import { ParticleTextEffect } from '@/components/ui/particle-text-effect';
 import LeadForm from '@/components/ui/LeadForm';
+import AiSolutionBlock from '@/components/ui/AiSolutionBlock';
 
 export default function CampaignLandingPage() {
   const { slug } = useParams();
@@ -134,7 +135,12 @@ export default function CampaignLandingPage() {
         </div>
 
         {/* 3. 🛡️ 롤백 요청 사항: 아티클(매거진) 강제 노출 */}
-        <section className="py-32 border-t border-zinc-100 mt-32">
+        <section className={`${campaign.show_ai_block ? 'pt-32' : 'py-32'} border-t border-zinc-100 mt-32 px-6 md:px-12 max-w-7xl mx-auto`}>
+          {campaign.show_ai_block && (
+            <div className="mb-32 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
+               <AiSolutionBlock />
+            </div>
+          )}
           <MagazineList title="관련 서비스 인사이트" subtitle="성공적인 비즈니스를 위한 데이터 마케팅 매거진" />
         </section>
 

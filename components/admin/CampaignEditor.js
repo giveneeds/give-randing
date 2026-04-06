@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { X, Layout, Rocket, BarChart3, CheckCircle2, AlertCircle, Save, Send } from 'lucide-react';
 import AdminLPBuilder from './AdminLPBuilder';
 import AiCoachingPanel from './AiCoachingPanel';
+import { clsx } from 'clsx';
 
 export default function CampaignEditor({ campaign, sections, onSave, onClose }) {
   const [activeTab, setActiveTab] = useState('build');
@@ -138,6 +139,22 @@ export default function CampaignEditor({ campaign, sections, onSave, onClose }) 
                   <BarChart3 size={14} /> Tracking Pixel
                </h4>
                <input className="w-full p-4 bg-zinc-50 border border-zinc-100 text-xs font-mono rounded" placeholder="G-XXXXXXXX" value={current.tracking_scripts.ga_id} onChange={e => setCurrent({...current, tracking_scripts: {...current.tracking_scripts, ga_id: e.target.value}})} />
+            </section>
+
+            <section className="space-y-4 p-8 border border-zinc-100 rounded-md bg-violet-50/30">
+               <h4 className="text-[10px] font-black tracking-widest text-violet-600 uppercase flex items-center gap-2">
+                  <Rocket size={14} /> Conversion Boosters
+               </h4>
+               <button 
+                 onClick={() => setCurrent({ ...current, show_ai_block: !current.show_ai_block })} 
+                 className={clsx(
+                   "w-full p-4 rounded-xl border flex items-center justify-between transition-all font-bold text-[10px] uppercase tracking-widest",
+                   current.show_ai_block ? "bg-violet-600 border-violet-600 text-white shadow-lg shadow-violet-200" : "bg-white border-zinc-200 text-zinc-500"
+                 )}
+               >
+                 <span>⚡ AI 솔루션 블록 표시</span>
+                 {current.show_ai_block && <CheckCircle2 size={16} />}
+               </button>
             </section>
           </div>
         </div>
