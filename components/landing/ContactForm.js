@@ -63,7 +63,6 @@ export default function ContactForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // 전화번호 최종 유효성 검사
     if (!validatePhone(formData.phone)) {
       setPhoneError('올바른 전화번호 형식으로 입력해주세요. (예: 010-1234-5678)');
       return;
@@ -72,31 +71,24 @@ export default function ContactForm() {
     setLoading(true);
     
     try {
-      if (!isDummyMode) {
-        const { error } = await supabase
-          .from('leads')
-          .insert([{
-            name: formData.name,
-            phone: formData.phone,
-            email: formData.email,
-            company_name: formData.company_name,
-            website_url: formData.website_url,
-            budget: formData.budget,
-            message: formData.message,
-            inquiry_type: formData.inquiry_type,
-            category: 'consultation',
-            source_url: typeof window !== 'undefined' ? window.location.href : ''
-          }]);
-        if (error) throw error;
-      } else {
-        console.log('Dummy Lead Captured (Inquiry Page):', formData);
-        await new Promise(resolve => setTimeout(resolve, 1500)); // 시뮬레이션
-      }
+      const payload = {
+        ...formData,
+        lead_type: 'consultation',
+        source_page: typeof window !== 'undefined' ? window.location.pathname : '/contact',
+        source_referrer: typeof document !== 'undefined' ? document.referrer : '',
+        click_element: 'contact_form_cta',
+      };
+
+      const res = await fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      
+      if (!res.ok) throw new Error('제출 실패');
+
       setSubmitted(true);
-      // 1.5초 후 이전 페이지로 이동
-      setTimeout(() => {
-        router.back();
-      }, 1500);
+      setTimeout(() => { router.back(); }, 1500);
     } catch (err) {
       console.error('Inquiry submission failed:', err);
       alert('문의 제출 중 오류가 발생했습니다. 다시 시도해 주세요.');

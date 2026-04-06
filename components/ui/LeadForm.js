@@ -1,30 +1,49 @@
 import { useState } from 'react';
-import { supabase, isDummyMode } from '@/lib/supabase';
 import { CheckCircle2, MessageCircle, Download } from 'lucide-react';
+import { isDummyMode } from '@/lib/supabase';
 
 export default function LeadForm({ title, subtitle, ctaLabel, campaignId, magazineId, category = 'organic' }) {
   const [submitted, setSubmitted] = useState(false);
+  const [phoneError, setPhoneError] = useState('');
   const [formData, setFormData] = useState({ name: '', email: '', phone: '' });
+
+  const formatPhone = (value) => {
+    const numbers = value.replace(/[^\d]/g, '');
+    if (numbers.length <= 3) return numbers;
+    if (numbers.length <= 7) return `${numbers.slice(0, 3)}-${numbers.slice(3)}`;
+    return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7, 11)}`;
+  };
+
+  const validatePhone = (phone) => {
+    return /^01[016789]-\d{3,4}-\d{4}$/.test(phone);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!validatePhone(formData.phone)) {
+      setPhoneError('올바른 전화번호 형식으로 입력해주세요. (예: 010-1234-5678)');
+      return;
+    }
+    setPhoneError('');
     
     try {
-      if (!isDummyMode) {
-        const { error } = await supabase
-          .from('leads')
-          .insert([{
-            name: formData.name,
-            email: formData.email,
-            phone: formData.phone,
-            campaign_id: campaignId,
-            magazine_id: magazineId,
-            category: category
-          }]);
-        if (error) throw error;
-      } else {
-        console.log('Dummy Lead Captured:', { ...formData, campaignId, magazineId, category });
-      }
+      const payload = {
+        ...formData,
+        campaign_id: campaignId,
+        magazine_id: magazineId,
+        lead_type: category, // 'campaign' or 'magazine' is typically passed here
+        source_page: typeof window !== 'undefined' ? window.location.pathname : '',
+        source_referrer: typeof document !== 'undefined' ? document.referrer : '',
+        click_element: 'lead_form_cta',
+      };
+
+      const res = await fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) throw new Error('제출 실패');
       setSubmitted(true);
     } catch (err) {
       console.error('Lead submission failed:', err);
@@ -78,14 +97,25 @@ export default function LeadForm({ title, subtitle, ctaLabel, campaignId, magazi
             value={formData.email}
             onChange={e => setFormData({...formData, email: e.target.value})}
           />
-          <input 
-            type="tel" 
-            placeholder="연락처 (가이드 수령용)" 
-            required 
-            className="w-full p-4 bg-white dark:bg-zinc-800 border-none rounded-2xl text-sm focus:ring-2 focus:ring-primary shadow-sm"
-            value={formData.phone}
-            onChange={e => setFormData({...formData, phone: e.target.value})}
-          />
+          <div>
+            <input 
+              type="tel" 
+              placeholder="연락처 (가이드 수령용)" 
+              required 
+              className={`w-full p-4 bg-white dark:bg-zinc-800 rounded-2xl text-sm focus:ring-2 focus:ring-primary shadow-sm outline-none transition-all
+                ${phoneError ? 'border-2 border-rose-300' : 'border-none'}`}
+              value={formData.phone}
+              onChange={e => {
+                const formatted = formatPhone(e.target.value);
+                setFormData({...formData, phone: formatted});
+                if (phoneError) setPhoneError('');
+              }}
+              maxLength={13}
+            />
+            {phoneError && (
+              <p className="text-[11px] text-rose-500 mt-1 ml-2 font-medium">{phoneError}</p>
+            )}
+          </div>
           
           <div className="flex items-start gap-3 py-4">
             <input type="checkbox" required className="mt-1 w-4 h-4 rounded text-primary" />
