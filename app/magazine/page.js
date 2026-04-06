@@ -25,7 +25,7 @@ export default function MagazinePage() {
           supabase
             .from('magazines')
             .select('*')
-            .eq('is_published', true)
+            .eq('status', 'published')
             .order('sort_order', { ascending: true, nullsFirst: false })
             .order('created_at', { ascending: false }),
           supabase.from('landing_settings').select('*').single()

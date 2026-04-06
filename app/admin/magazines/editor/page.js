@@ -2,7 +2,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { 
-  ArrowLeft, Save, Eye, Trash2, Monitor, Smartphone, CheckCircle2, ChevronRight
+  ArrowLeft, Save, Eye, Trash2, Monitor, Smartphone, CheckCircle2, ChevronRight,
+  Archive, Send
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import AiSolutionBlock from '@/components/ui/AiSolutionBlock';
@@ -17,7 +18,7 @@ export default function MagazineEditor() {
   const [magazine, setMagazine] = useState({
     title: '', slug: '', category: 'INSIGHT', thumbnail_url: '', content_html: '',
     excerpt: '', author: 'GIVENEEDS', tags: [],
-    is_premium: false, is_published: true, is_featured: false, sort_order: 0,
+    is_premium: false, status: 'draft', is_featured: false, sort_order: 0,
     show_ai_block: true
   });
 
@@ -57,13 +58,14 @@ export default function MagazineEditor() {
     setMagazine({ ...magazine, tags: parsed });
   }
 
-  async function handleSave() {
+  async function handleSave(status) {
     setSaving(true);
+    const updatedData = { ...magazine, status: status || magazine.status || 'draft' };
     try {
       const res = await fetch('/api/magazines', {
         method: id ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(id ? { ...magazine, id } : magazine)
+        body: JSON.stringify(id ? { ...updatedData, id } : updatedData)
       });
       if (res.ok) router.push('/admin/magazines');
     } catch (e) { console.error(e); }
@@ -87,9 +89,22 @@ export default function MagazineEditor() {
             <button onClick={() => setPreviewMode('mobile')} className={clsx("flex items-center gap-2 px-3 py-1.5 rounded-md text-[10px] font-black uppercase", previewMode === 'mobile' ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-400 hover:text-zinc-600")}><Smartphone size={14} /> Mobile</button>
          </div>
 
-         <button onClick={handleSave} disabled={saving} className="bg-zinc-900 text-white px-6 py-2.5 rounded-md font-black text-xs uppercase tracking-widest hover:bg-black transition-all shadow-md active:scale-95 disabled:bg-zinc-100 disabled:text-zinc-300">
-           {saving ? 'Syncing...' : 'Publish Archive'}
-         </button>
+         <div className="flex items-center gap-2">
+           <button 
+             onClick={() => handleSave('draft')} 
+             disabled={saving} 
+             className="flex items-center gap-2 px-5 py-2.5 bg-white hover:bg-zinc-50 text-zinc-600 border border-zinc-200 rounded-md font-black text-[10px] uppercase tracking-widest transition-all"
+           >
+             <Archive size={14} /> {saving ? 'Syncing...' : '임시 저장'}
+           </button>
+           <button 
+             onClick={() => handleSave('published')} 
+             disabled={saving} 
+             className="flex items-center gap-2 bg-zinc-900 text-white px-6 py-2.5 rounded-md font-black text-[10px] uppercase tracking-widest hover:bg-black transition-all shadow-md active:scale-95 disabled:bg-zinc-100"
+           >
+             <Send size={14} /> {saving ? 'Syncing...' : '라이브 발행'}
+           </button>
+         </div>
       </header>
 
       <div className="flex-1 flex overflow-hidden">
@@ -136,7 +151,6 @@ export default function MagazineEditor() {
               
               <button onClick={() => setMagazine({ ...magazine, is_featured: !magazine.is_featured })} className={clsx("w-full p-4 rounded-xl border flex items-center justify-between transition-all", magazine.is_featured ? "bg-blue-50 border-blue-200 text-blue-600" : "bg-white border-zinc-200 text-zinc-500")}><span className="text-[10px] font-black uppercase tracking-widest">Featured (대형 카드)</span>{magazine.is_featured && <CheckCircle2 size={16} />}</button>
               <button onClick={() => setMagazine({ ...magazine, is_premium: !magazine.is_premium })} className={clsx("w-full p-4 rounded-xl border flex items-center justify-between transition-all", magazine.is_premium ? "bg-zinc-900 border-zinc-900 text-white" : "bg-white border-zinc-200 text-zinc-500")}><span className="text-[10px] font-black uppercase tracking-widest">Premium Content</span>{magazine.is_premium && <CheckCircle2 size={16} />}</button>
-              <button onClick={() => setMagazine({ ...magazine, is_published: !magazine.is_published })} className={clsx("w-full p-4 rounded-xl border flex items-center justify-between transition-all", magazine.is_published ? "bg-emerald-50 border-emerald-200 text-emerald-600" : "bg-white border-zinc-200 text-zinc-500")}><span className="text-[10px] font-black uppercase tracking-widest">Publish Instantly</span>{magazine.is_published && <CheckCircle2 size={16} />}</button>
               <button onClick={() => setMagazine({ ...magazine, show_ai_block: !magazine.show_ai_block })} className={clsx("w-full p-4 rounded-xl border flex items-center justify-between transition-all", magazine.show_ai_block ? "bg-violet-50 border-violet-200 text-violet-600" : "bg-white border-zinc-200 text-zinc-500")}><span className="text-[10px] font-black uppercase tracking-widest">⚡ AI 솔루션 블록 표시</span>{magazine.show_ai_block && <CheckCircle2 size={16} />}</button>
            </div>
         </aside>

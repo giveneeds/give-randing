@@ -6,18 +6,32 @@ export async function GET(request) {
   const id = searchParams.get('id');
   const slug = searchParams.get('slug');
   const category = searchParams.get('category');
+  const isAdmin = searchParams.get('admin') === 'true';
 
   try {
     if (isDummyMode) {
-      if (slug) return NextResponse.json({ magazine: DUMMY_MAGAZINES.find(m => m.slug === slug) });
-      if (id) return NextResponse.json({ magazine: DUMMY_MAGAZINES.find(m => m.id === id) });
+      if (slug) {
+        const magazine = DUMMY_MAGAZINES.find(m => m.slug === slug);
+        if (!magazine) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+        if (!isAdmin && magazine.status !== 'published') return NextResponse.json({ error: 'Not published' }, { status: 403 });
+        return NextResponse.json({ magazine });
+      }
+      if (id) {
+        const magazine = DUMMY_MAGAZINES.find(m => m.id === id);
+        if (!magazine) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+        if (!isAdmin && magazine.status !== 'published') return NextResponse.json({ error: 'Not published' }, { status: 403 });
+        return NextResponse.json({ magazine });
+      }
       let result = [...DUMMY_MAGAZINES];
+      if (!isAdmin) result = result.filter(m => m.status === 'published');
       if (category) result = result.filter(m => m.category === category);
       result.sort((a, b) => (a.sort_order || 99) - (b.sort_order || 99));
       return NextResponse.json({ magazines: result });
     }
 
     let query = supabase.from('magazines').select('*');
+    if (!isAdmin) query = query.eq('status', 'published');
+
     if (id) query = query.eq('id', id).single();
     else if (slug) query = query.eq('slug', slug).single();
     else {
@@ -28,7 +42,7 @@ export async function GET(request) {
     }
 
     const { data, error } = await query;
-    if (error) throw error;
+    if (error) return NextResponse.json({ error: 'Not found or not published' }, { status: 404 });
     return NextResponse.json(id || slug ? { magazine: data } : { magazines: data });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

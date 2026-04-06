@@ -27,7 +27,7 @@ export default function HomePage() {
 
         // 실서버 데이터 로드 (실패 시 개별적으로 더미 데이터 폴백)
         const [mRes, sRes, secRes] = await Promise.all([
-          supabase.from('magazines').select('*').eq('is_active', true).order('created_at', { ascending: false }),
+          supabase.from('magazines').select('*').eq('status', 'published').order('created_at', { ascending: false }),
           supabase.from('landing_settings').select('*').single(),
           supabase.from('global_sections').select('*').eq('is_active', true).order('order_index', { ascending: true })
         ]);

@@ -8,6 +8,7 @@ let inMemoryDummyCampaigns = null;
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const slug = searchParams.get('slug');
+  const isAdmin = searchParams.get('admin') === 'true';
 
   if (isDummyMode) {
     if (!inMemoryDummyCampaigns) {
@@ -17,28 +18,30 @@ export async function GET(request) {
     if (slug) {
       const campaign = inMemoryDummyCampaigns.find(c => c.slug === slug);
       if (!campaign) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+      if (!isAdmin && campaign.status !== 'published') return NextResponse.json({ error: 'Not published' }, { status: 403 });
       return NextResponse.json({ campaign });
     }
 
-    return NextResponse.json({ campaigns: inMemoryDummyCampaigns });
+    let result = [...inMemoryDummyCampaigns];
+    if (!isAdmin) result = result.filter(c => c.status === 'published');
+    return NextResponse.json({ campaigns: result });
   }
 
   try {
     if (slug) {
-      const { data, error } = await supabase
-        .from('campaigns')
-        .select('*')
-        .eq('slug', slug)
-        .single();
-      if (error) throw error;
+      let query = supabase.from('campaigns').select('*').eq('slug', slug);
+      if (!isAdmin) query = query.eq('status', 'published');
+      
+      const { data, error } = await query.single();
+      if (error) return NextResponse.json({ error: 'Not found or not published' }, { status: 404 });
       return NextResponse.json({ campaign: data });
     }
 
-    const { data, error } = await supabase
-      .from('campaigns')
-      .select('*')
-      .order('created_at', { ascending: false });
+    let query = supabase.from('campaigns').select('*');
+    if (!isAdmin) query = query.eq('status', 'published');
+    query = query.order('created_at', { ascending: false });
 
+    const { data, error } = await query;
     if (error) throw error;
     return NextResponse.json({ campaigns: data });
   } catch (error) {

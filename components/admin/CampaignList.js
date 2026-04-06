@@ -1,11 +1,16 @@
-'use client';
-import { Globe, Plus, Trash2, Edit3, ExternalLink, ChevronRight, CheckCircle2, Search, Filter } from 'lucide-react';
+import { useState } from 'react';
+import { Globe, Plus, Trash2, Edit3, ExternalLink, ChevronRight, CheckCircle2, Search, Filter, Archive, Send } from 'lucide-react';
 
 export default function CampaignList({ campaigns, searchQuery, setSearchQuery, onEdit, onCreate }) {
-  const filtered = campaigns.filter(c => 
-    c.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    c.slug.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const [activeTab, setActiveTab] = useState('all'); // all, published, draft
+
+  const filtered = campaigns.filter(c => {
+    const matchesSearch = c.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                         c.slug.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    if (activeTab === 'all') return matchesSearch;
+    return matchesSearch && (c.status || 'draft') === activeTab;
+  });
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -19,7 +24,32 @@ export default function CampaignList({ campaigns, searchQuery, setSearchQuery, o
         </button>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4 bg-white p-4 rounded-xl border border-zinc-200 shadow-sm transition-colors">
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-4 bg-white p-2 rounded-2xl border border-zinc-200 shadow-sm">
+        <div className="flex p-1 bg-zinc-100 rounded-xl overflow-x-auto no-scrollbar shrink-0">
+          {[
+            { id: 'all', label: '전체', icon: <Filter size={14} /> },
+            { id: 'published', label: '발행됨', icon: <Send size={14} /> },
+            { id: 'draft', label: '임시저장', icon: <Archive size={14} /> }
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${
+                activeTab === tab.id 
+                  ? 'bg-white text-zinc-900 shadow-sm border border-zinc-200' 
+                  : 'text-zinc-400 hover:text-zinc-600'
+              }`}
+            >
+              {tab.icon} {tab.label}
+              <span className={`ml-1.5 px-1.5 py-0.5 rounded-md text-[10px] transition-colors ${
+                activeTab === tab.id ? 'bg-zinc-900 text-white' : 'bg-zinc-200 text-zinc-500'
+              }`}>
+                {tab.id === 'all' ? campaigns.length : campaigns.filter(c => (c.status || 'draft') === tab.id).length}
+              </span>
+            </button>
+          ))}
+        </div>
+
         <div className="relative flex-1">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" size={16} />
           <input 

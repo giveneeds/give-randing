@@ -16,7 +16,7 @@ export default function AdminCampaigns() {
     async function loadData() {
       try {
         const [cRes, sRes] = await Promise.all([
-          fetch('/api/campaigns').then(res => res.json()),
+          fetch('/api/campaigns?admin=true').then(res => res.json()),
           fetch('/api/sections?all=true').then(res => res.json())
         ]);
         setCampaigns(cRes.campaigns || []);

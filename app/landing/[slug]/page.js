@@ -5,7 +5,7 @@ import SectionRenderer from '@/components/landing/SectionRenderer';
 import MagazineList from '@/components/landing/MagazineList';
 import LandingNavbar from '@/components/landing/LandingNavbar';
 import LandingFooter from '@/components/landing/LandingFooter';
-import { supabase, isDummyMode, DUMMY_CAMPAIGNS, DUMMY_SECTIONS, DUMMY_SETTINGS } from '@/lib/supabase';
+import { supabase, isDummyMode } from '@/lib/supabase';
 import { ParticleTextEffect } from '@/components/ui/particle-text-effect';
 import LeadForm from '@/components/ui/LeadForm';
 import AiSolutionBlock from '@/components/ui/AiSolutionBlock';
@@ -22,11 +22,11 @@ export default function CampaignLandingPage() {
     async function fetchCampaign() {
       try {
         let campaignData;
-        let settingsData = DUMMY_SETTINGS;
         
-        const [cRes, sRes] = await Promise.all([
+        const [cRes, sRes, stRes] = await Promise.all([
           fetch(`/api/campaigns?slug=${slug}`).then(r => r.json()),
-          fetch(`/api/sections?all=true`).then(r => r.json())
+          fetch(`/api/sections?all=true`).then(r => r.json()),
+          fetch(`/api/settings`).then(r => r.json())
         ]);
 
         if (cRes.error) throw new Error(cRes.error);
@@ -55,9 +55,14 @@ export default function CampaignLandingPage() {
           .filter(Boolean);
         setSections(selected);
 
+        
+        if (stRes.settings) {
+          setSettings(stRes.settings);
+        }
+
       } catch (err) {
-        console.error('API fetch failed, falling back:', err);
-        setError('데이터를 불러오는 중 오류가 발생했습니다.');
+        console.error('API fetch failed:', err);
+        setError('데이터를 불러오는 중 오류가 발생했습니다. (슬러그 확인 요망)');
       } finally {
         setLoading(false);
       }

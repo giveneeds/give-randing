@@ -4,7 +4,8 @@ import {
   X, BarChart3, CheckCircle2, Save, Eye, Sparkles,
   ClipboardList, Zap, Layout, Monitor, Smartphone, MessageSquare,
   GripVertical, Trash2, ChevronUp, ChevronDown, Plus, Image as ImageIcon,
-  BookOpen, ArrowUpDown, Link2, FileText, ChevronDown as CollapseIcon
+  BookOpen, ArrowUpDown, Link2, FileText, ChevronDown as CollapseIcon,
+  Archive, Send
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import AiCoachingPanel from './AiCoachingPanel';
@@ -308,9 +309,20 @@ export default function CampaignEditorUnified({ campaign, sections, onSave, onCl
             </p>
           </div>
         </div>
-        <button onClick={() => onSave(current)} className="px-5 py-2.5 bg-zinc-900 hover:bg-black text-white rounded-full text-[11px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg transition-all hover:-translate-y-0.5">
-          <Save size={13} /> 라이브 반영
-        </button>
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={() => onSave({ ...current, status: 'draft' })} 
+            className="px-5 py-2.5 bg-white hover:bg-zinc-50 text-zinc-600 border border-zinc-200 rounded-full text-[11px] font-black uppercase tracking-widest flex items-center gap-2 shadow-sm transition-all hover:-translate-y-0.5"
+          >
+            <Archive size={13} /> 임시 저장
+          </button>
+          <button 
+            onClick={() => onSave({ ...current, status: 'published' })} 
+            className="px-5 py-2.5 bg-zinc-900 hover:bg-black text-white rounded-full text-[11px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg transition-all hover:-translate-y-0.5"
+          >
+            <Send size={13} /> 라이브 발행
+          </button>
+        </div>
       </header>
 
       <main className="flex-1 flex overflow-hidden">
