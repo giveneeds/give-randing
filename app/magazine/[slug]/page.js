@@ -8,6 +8,7 @@ import MagazineCard from '@/components/landing/MagazineCard';
 import { ArrowLeft, Clock, Share2, Bookmark } from 'lucide-react';
 import Link from 'next/link';
 import AiSolutionBlock from '@/components/ui/AiSolutionBlock';
+import LeadForm from '@/components/ui/LeadForm';
 
 export default function MagazineDetailPage() {
   const { slug } = useParams();
@@ -151,6 +152,16 @@ export default function MagazineDetailPage() {
              dangerouslySetInnerHTML={{ __html: post.content_html }}
           />
           
+          <div className="mt-20 border-t border-zinc-100 dark:border-zinc-800 pt-20">
+            <LeadForm 
+              title="프리미엄 전략 리포트 신청"
+              subtitle="매거진 독자분들을 위해 기브니즈가 엄선한 월간 마케팅 트렌드 리포트를 보내드립니다."
+              ctaLabel="리포트 무료로 받기"
+              category="magazine"
+              magazineId={post.id}
+            />
+          </div>
+
           <div className="mt-20">
             <AiSolutionBlock />
           </div>

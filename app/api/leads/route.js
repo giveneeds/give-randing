@@ -73,7 +73,7 @@ export async function GET(request) {
 
     let query = supabase
       .from('leads')
-      .select('*, campaigns(title), magazines(title)')
+      .select('*')
       .order('created_at', { ascending: false });
 
     if (leadType && leadType !== 'all') {
