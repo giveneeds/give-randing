@@ -1,6 +1,13 @@
 import { NextResponse } from 'next/server';
 import { supabase, isDummyMode, DUMMY_SETTINGS } from '@/lib/supabase';
 
+// 카테고리 매핑: type → category
+const TYPE_CATEGORY_MAP = {
+  hero: 'BOTH', hook: 'BOTH', stats: 'BOTH', testimonials: 'BOTH',
+  faq: 'BOTH', magazine: 'BOTH', ai_strategy: 'BOTH',
+  product_detail: 'BOTH', identity: 'WEBSITE', resources: 'LANDING_PAGE',
+};
+
 // GET: 설정 가져오기
 export async function GET() {
   if (isDummyMode) {
@@ -8,6 +15,7 @@ export async function GET() {
   }
 
   try {
+    // 1. 기본 설정 로딩
     const { data, error } = await supabase
       .from('landing_settings')
       .select('*')
@@ -15,9 +23,32 @@ export async function GET() {
 
     if (error) throw error;
 
-    // data 자체가 { id: 1, brand: {}, seo: {}, ... } 형태의 객체입니다.
-    // DUMMY_SETTINGS 처리를 위해 null인 값들은 fallback 할 수 있으나 일단 data 자체를 내려줍니다.
-    return NextResponse.json({ settings: data });
+    // 2. section_library: landing_settings에 컬럼이 있으면 사용, 없으면 global_sections의 master_ 블록으로 자동 구성
+    let sectionLibrary = data?.section_library;
+
+    if (!sectionLibrary || !sectionLibrary.blocks || sectionLibrary.blocks.length === 0) {
+      const { data: masterBlocks } = await supabase
+        .from('global_sections')
+        .select('id, title, type, content, subtitle')
+        .like('id', 'master_%')
+        .order('order_index');
+
+      if (masterBlocks && masterBlocks.length > 0) {
+        sectionLibrary = {
+          blocks: masterBlocks.map(b => ({
+            type: b.type,
+            name: b.title,
+            subtitle: b.subtitle || '',
+            content: b.content || {},
+            category: TYPE_CATEGORY_MAP[b.type] || 'BOTH',
+          }))
+        };
+      } else {
+        sectionLibrary = { blocks: [] };
+      }
+    }
+
+    return NextResponse.json({ settings: { ...data, section_library: sectionLibrary } });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

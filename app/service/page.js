@@ -155,7 +155,7 @@ export default function ServicePage() {
                           ))}
                         </h3>
                         <p className="text-sm font-bold opacity-0 group-hover:opacity-70 leading-tight line-clamp-3 transition-opacity duration-700 delay-100">
-                          {service.desc}
+                          {service.description}
                         </p>
                       </div>
                     </motion.div>

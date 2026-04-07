@@ -144,11 +144,11 @@ export default function MagazineDetailPage() {
         {/* ─── Content ─── */}
         <article className="px-6 md:px-12 max-w-screen-md mx-auto">
           <div 
-             className="prose prose-zinc dark:prose-invert prose-lg max-w-none 
+             className="prose prose-zinc dark:prose-invert prose-lg max-w-none magazine-prose
                         prose-headings:font-black prose-headings:tracking-tighter
                         prose-p:text-zinc-600 dark:prose-p:text-zinc-300 prose-p:leading-relaxed prose-p:mb-8
                         prose-strong:text-zinc-900 dark:prose-strong:text-white prose-strong:font-black
-                        prose-img:rounded-xl prose-img:border prose-img:border-zinc-200 dark:prose-img:border-zinc-800 shadow-none"
+                        prose-confirm-img:rounded-xl prose-img:border prose-img:border-zinc-200 dark:prose-img:border-zinc-800 shadow-none"
              dangerouslySetInnerHTML={{ __html: post.content_html }}
           />
           

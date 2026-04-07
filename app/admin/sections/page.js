@@ -39,8 +39,22 @@ export default function SectionsPage() {
   const [saving, setSaving] = useState(false);
   const [previewMode, setPreviewMode] = useState('desktop'); // desktop or mobile
   const [isOrderDirty, setIsOrderDirty] = useState(false);
+  const [library, setLibrary] = useState({ blocks: [] });
 
-  useEffect(() => { loadSections(); }, []);
+  useEffect(() => { 
+    loadSections(); 
+    loadLibrary();
+  }, []);
+
+  async function loadLibrary() {
+    try {
+      const res = await fetch('/api/settings');
+      const data = await res.json();
+      if (data.settings?.section_library) {
+        setLibrary(data.settings.section_library);
+      }
+    } catch (e) { console.error('Library load failed:', e); }
+  }
 
   async function loadSections() {
     try {
@@ -68,13 +82,13 @@ export default function SectionsPage() {
     }
   };
 
-  async function handleAddSection(type) {
+  async function handleAddSection(type, masterData = null) {
     setSaving(true);
-    const template = SECTION_TEMPLATES[type];
+    const template = masterData?.content || SECTION_TEMPLATES[type] || {};
     const newSection = {
       type,
-      title: SECTION_TYPES[type]?.label || '새 섹션',
-      subtitle: '',
+      title: masterData?.name || SECTION_TYPES[type]?.label || '새 섹션',
+      subtitle: masterData?.subtitle || '',
       content: template,
       order_index: sections.length,
       is_active: true,
@@ -349,27 +363,70 @@ export default function SectionsPage() {
               <div className="p-8 border-b border-zinc-100 flex justify-between items-center bg-zinc-50/50">
                 <div>
                   <h2 className="text-xl font-black uppercase tracking-tighter">새 섹션 추가</h2>
-                  <p className="text-xs text-zinc-500 mt-1 tracking-tight">캠페인에서 자유롭게 사용할 섹션 템플릿을 선택하세요.</p>
+                  <p className="text-xs text-zinc-500 mt-1 tracking-tight">마스터 라이브러리에서 검증된 템플릿을 가져오거나 기본 섹션을 추가하세요.</p>
                 </div>
                 <button onClick={() => setShowAddModal(false)} className="p-2 hover:bg-zinc-200 rounded-md">
                   <X size={20} />
                 </button>
               </div>
-              <div className="flex-1 overflow-y-auto p-10 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {Object.entries(SECTION_TYPES).map(([key, type]) => (
-                  <button
-                    key={key}
-                    onClick={() => handleAddSection(key)}
-                    disabled={saving}
-                    className="p-6 bg-zinc-50 rounded-md border border-zinc-200 text-left hover:border-zinc-500 hover:bg-white transition-all group shadow-sm"
-                  >
-                    <div className="w-10 h-10 bg-white rounded-md border border-zinc-200 mb-4 flex items-center justify-center text-zinc-900 shadow-sm group-hover:scale-110 transition-transform">
-                      {getIcon(key)}
+              
+              <div className="flex-1 overflow-y-auto p-8 space-y-12">
+                {/* 1. Master Library Sections */}
+                {library.blocks.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-6 ml-2">
+                      <div className="w-1.5 h-6 bg-indigo-600 rounded-full"></div>
+                      <h3 className="text-sm font-black text-indigo-900 uppercase tracking-widest">마스터 라이브러리 (추천)</h3>
                     </div>
-                    <div className="font-bold text-sm text-zinc-900 tracking-tight">{type.label}</div>
-                    <p className="text-[10px] text-zinc-500 mt-1 font-medium leading-relaxed">{type.description}</p>
-                  </button>
-                ))}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {library.blocks.map((master, idx) => (
+                        <button
+                          key={`master-${idx}`}
+                          onClick={() => handleAddSection(master.type, master)}
+                          disabled={saving}
+                          className="p-5 bg-indigo-50/50 rounded-xl border border-indigo-100 text-left hover:border-indigo-400 hover:bg-white transition-all group shadow-sm flex flex-col justify-between h-full"
+                        >
+                          <div className="flex justify-between items-start mb-4">
+                            <div className="w-9 h-9 bg-white rounded-lg border border-indigo-100 flex items-center justify-center text-indigo-600 shadow-sm group-hover:scale-110 transition-transform">
+                              {getIcon(master.type)}
+                            </div>
+                            <span className="text-[10px] font-bold text-indigo-400 bg-white px-2 py-0.5 rounded-full border border-indigo-50 uppercase">{master.category}</span>
+                          </div>
+                          <div>
+                            <div className="font-black text-xs text-indigo-950 tracking-tight">{master.name}</div>
+                            <p className="text-[10px] text-indigo-400 mt-1 font-medium leading-relaxed italic">원본 템플릿 복제</p>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 2. Basic Sections */}
+                <div>
+                  <div className="flex items-center gap-2 mb-6 ml-2">
+                    <div className="w-1.5 h-6 bg-zinc-300 rounded-full"></div>
+                    <h3 className="text-sm font-black text-zinc-500 uppercase tracking-widest">기본 섹션</h3>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {Object.entries(SECTION_TYPES).map(([key, type]) => (
+                      <button
+                        key={key}
+                        onClick={() => handleAddSection(key)}
+                        disabled={saving}
+                        className="p-5 bg-zinc-50 rounded-xl border border-zinc-200 text-left hover:border-zinc-500 hover:bg-white transition-all group shadow-sm flex flex-col justify-between h-full"
+                      >
+                        <div className="w-9 h-9 bg-white rounded-lg border border-zinc-200 mb-4 flex items-center justify-center text-zinc-900 shadow-sm group-hover:scale-110 transition-transform">
+                          {getIcon(key)}
+                        </div>
+                        <div>
+                          <div className="font-bold text-xs text-zinc-900 tracking-tight">{type.label}</div>
+                          <p className="text-[10px] text-zinc-400 mt-1 font-medium leading-relaxed">{type.description}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
            </div>
         </div>
@@ -685,36 +742,106 @@ function SectionContentEditor({ type, content, onChange }) {
         </div>
       );
     
-    case 'magazine':
+    case 'hook':
       return (
         <div className="space-y-6">
           <div className="space-y-2">
-            <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">매거진 섹션 메인 타이틀</label>
-            <input 
-              className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-md font-bold text-xl outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 transition-all shadow-sm" 
-              value={content.headline || ''} 
-              onChange={e => updateContent('headline', e.target.value)} 
-              placeholder="예: Latest Insight"
-            />
+            <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">상단 도입 문구</label>
+            <input className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-md font-bold text-lg" value={content.title || ''} onChange={e => updateContent('title', e.target.value)} />
           </div>
           <div className="space-y-2">
-            <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">매거진 섹션 서브 타이틀</label>
-            <textarea 
-              className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-md text-sm outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 transition-all h-24 shadow-sm" 
-              value={content.subtitle || ''} 
-              onChange={e => updateContent('subtitle', e.target.value)}
-              placeholder="뉴스레터의 성격이나 최신 아티클에 대한 설명을 입력하세요."
-            />
+            <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">핵심 강조 단어 (보라색 포인트)</label>
+            <input className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-md font-black text-2xl text-indigo-600" value={content.highlight || ''} onChange={e => updateContent('highlight', e.target.value)} />
           </div>
-          <div className="bg-amber-50 border border-amber-200 p-4 rounded-md flex items-start gap-3">
-            <Layers size={16} className="text-amber-500 shrink-0 mt-0.5" />
-            <p className="text-[10px] text-amber-700 leading-relaxed font-medium">
-              * 이 섹션은 <strong>[published]</strong> 상태인 최신 매거진 아티클들을 자동으로 불러와 그리드 형태로 표시합니다.<br/>
-              * 매거진 아티클 자체의 내용은 <strong>[매거진 관리]</strong> 메뉴에서 개별적으로 수정해 주세요.
-            </p>
+          <div className="space-y-2">
+            <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">하단 마무리 문구</label>
+            <input className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-md font-bold text-lg" value={content.footer || ''} onChange={e => updateContent('footer', e.target.value)} />
           </div>
         </div>
       );
+
+    case 'stats':
+      return (
+        <div className="space-y-6">
+          {(content.items || []).map((item, i) => (
+            <div key={i} className="flex gap-4 p-4 bg-zinc-50 rounded-lg border border-zinc-200 items-center">
+              <div className="flex-1 space-y-1">
+                <label className="text-[9px] font-bold text-zinc-400 ml-1">지표 라벨</label>
+                <input className="w-full p-2 bg-white rounded border border-zinc-100 text-xs font-bold" value={item.label} onChange={e => updateItemField(i, 'label', e.target.value)} />
+              </div>
+              <div className="flex-1 space-y-1">
+                <label className="text-[9px] font-bold text-zinc-400 ml-1">지표 값 (예: 500+, 92%)</label>
+                <input className="w-full p-2 bg-white rounded border border-zinc-100 text-xs font-black text-indigo-600" value={item.value} onChange={e => updateItemField(i, 'value', e.target.value)} />
+              </div>
+              <button onClick={() => removeItem(i)} className="mt-4 p-2 text-zinc-300 hover:text-red-500"><Trash2 size={16} /></button>
+            </div>
+          ))}
+          <button onClick={() => addItem({ label: '지표명', value: '100%' })} className="w-full py-3 border-2 border-dashed border-zinc-200 rounded-lg text-[10px] font-bold text-zinc-400">지표 추가</button>
+        </div>
+      );
+
+    case 'identity':
+      return (
+        <div className="space-y-8">
+          <p className="text-[10px] text-zinc-400 bg-zinc-50 p-3 rounded italic">* 브랜드의 핵심가치 3가지를 가로로 나열합니다.</p>
+          {['left', 'middle', 'right'].map(pos => (
+            <div key={pos} className="p-5 bg-zinc-50 rounded-lg border border-zinc-200 space-y-3">
+              <div className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{pos === 'left' ? 'GIVE' : pos === 'middle' ? 'NEEDS' : 'GIVENEEDS'} 블록</div>
+              <input className="w-full p-3 bg-white rounded border border-zinc-100 font-black" value={content[pos]?.title || ''} onChange={e => updateContent(pos, { ...content[pos], title: e.target.value })} placeholder="소제목" />
+              <textarea className="w-full p-3 bg-white rounded border border-zinc-100 text-xs h-20" value={content[pos]?.desc || ''} onChange={e => updateContent(pos, { ...content[pos], desc: e.target.value })} placeholder="설명..." />
+            </div>
+          ))}
+        </div>
+      );
+
+    case 'product_detail':
+      return (
+        <div className="space-y-6">
+          <p className="text-[10px] text-amber-600 bg-amber-50 p-3 rounded font-bold">* 4가지 핵심 솔루션(탭 형태)을 구성합니다.</p>
+          {(content.items || []).map((item, i) => (
+            <div key={i} className="bg-zinc-50 p-5 rounded-lg border border-zinc-200 space-y-4">
+              <div className="flex gap-3">
+                <input className="flex-1 p-3 bg-white rounded font-bold border-none shadow-sm" value={item.title} onChange={e => updateItemField(i, 'title', e.target.value)} placeholder="솔루션명" />
+                <input className="w-24 p-3 bg-white rounded font-mono text-[10px] border-none shadow-sm" value={item.id} onChange={e => updateItemField(i, 'id', e.target.value)} placeholder="ID(영어)" />
+                <button onClick={() => removeItem(i)} className="p-2 text-zinc-300 hover:text-red-500"><Trash2 size={16} /></button>
+              </div>
+              <textarea className="w-full p-3 bg-white rounded text-xs h-20 border-none shadow-sm" value={item.desc} onChange={e => updateItemField(i, 'desc', e.target.value)} placeholder="솔루션에 대한 핵심 설명을 입력하세요..." />
+            </div>
+          ))}
+          <button onClick={() => addItem({ id: 'new', title: '새 솔루션', desc: '' })} className="w-full py-4 border-2 border-dashed border-zinc-200 rounded-xl text-[10px] font-bold text-zinc-400">솔루션 탭 추가</button>
+        </div>
+      );
+
+    case 'resources':
+      return (
+        <div className="space-y-6">
+          {(content.items || []).map((item, i) => (
+            <div key={i} className="bg-zinc-50 p-6 rounded-xl border border-zinc-200 space-y-4 shadow-sm relative overflow-hidden">
+               <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500"></div>
+               <div className="flex gap-4 items-center">
+                  <div className="w-12 h-12 bg-white rounded-lg border border-zinc-100 flex items-center justify-center text-emerald-600 font-black text-xs shadow-sm">PDF</div>
+                  <input className="bg-white flex-1 p-3 rounded-lg font-bold text-zinc-900 border-none shadow-sm focus:ring-2 focus:ring-emerald-500/20" value={item.title} onChange={e => updateItemField(i, 'title', e.target.value)} placeholder="자료 제목 (예: 2025 전략서)" />
+                  <button onClick={() => removeItem(i)} className="p-2 text-zinc-300 hover:text-red-500 transition-colors"><Trash2 size={18} /></button>
+               </div>
+               <div className="grid grid-cols-2 gap-4">
+                 <div className="space-y-1">
+                   <label className="text-[10px] font-bold text-zinc-400 ml-1">파일 URL (Supabase/S3)</label>
+                   <input className="w-full bg-white p-3 rounded-lg text-[10px] font-mono border-none shadow-sm" value={item.file_url} onChange={e => updateItemField(i, 'file_url', e.target.value)} placeholder="https://..." />
+                 </div>
+                 <div className="space-y-1">
+                   <label className="text-[10px] font-bold text-zinc-400 ml-1">설명</label>
+                   <input className="w-full bg-white p-3 rounded-lg text-xs border-none shadow-sm" value={item.description} onChange={e => updateItemField(i, 'description', e.target.value)} placeholder="자료에 대한 짧은 요약..." />
+                 </div>
+               </div>
+            </div>
+          ))}
+          <button onClick={() => addItem({ title: '새 자료', description: '', file_url: '', file_type: 'pdf' })} className="w-full py-4 border-2 border-dashed border-zinc-200 rounded-xl text-[10px] font-bold text-zinc-400 hover:border-emerald-500 hover:text-emerald-600 transition-all uppercase tracking-widest flex items-center justify-center gap-2">
+            <Plus size={16} /> 다운로드 자료 추가
+          </button>
+        </div>
+      );
+
+    case 'magazine':
 
     default:
       return <div className="p-10 border border-dashed border-zinc-200 rounded-md text-center text-xs text-zinc-500">이 섹션 타입({type})은 현재 편집기 최적화 중입니다.</div>;

@@ -46,15 +46,75 @@ export default function SettingsPage() {
   const ctaGlobal = settings.cta_global || {};
   const seo = settings.seo || {};
   const footer = settings.footer || {};
+  const library = settings.section_library || { blocks: [] };
+
+  const webBlocks = library.blocks.filter(b => b.category === 'WEBSITE' || b.category === 'BOTH');
+  const lpBlocks = library.blocks.filter(b => b.category === 'LANDING_PAGE' || b.category === 'BOTH');
 
   return (
-    <div>
+    <div style={{ paddingBottom: 'var(--space-2xl)' }}>
       <div className="admin-header">
         <div>
-          <h1 className="admin-title">설정</h1>
-          <p className="admin-subtitle">랜딩 페이지 전체 설정을 관리하세요</p>
+          <h1 className="admin-title">시스템 설정</h1>
+          <p className="admin-subtitle">브랜드 정체성과 마스터 블록 라이브러리를 관리하세요</p>
         </div>
       </div>
+
+      {/* Block Library Management */}
+      <div className="admin-card" style={{ border: '2px solid var(--admin-primary)', background: 'linear-gradient(to bottom right, #fff, #f5f3ff)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-lg)' }}>
+          <div>
+            <h2 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 700, color: 'var(--admin-primary)' }}>📚 마스터 블록 라이브러리</h2>
+            <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--admin-text-secondary)', marginTop: '4px' }}>
+              시스템 전체에서 공통으로 사용할 블록의 원본 템플릿입니다.
+            </p>
+          </div>
+          <button className="admin-btn admin-btn-primary" onClick={() => saveSettingKey('section_library')} disabled={saving}>
+            {savedKey === 'section_library' ? '✅ 라이브러리 반영됨' : '💾 라이브러리 전체 저장'}
+          </button>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-xl)', marginTop: 'var(--space-xl)' }}>
+          {/* Website Blocks */}
+          <div className="p-6 bg-white rounded-xl border border-zinc-200 shadow-sm">
+            <h3 className="flex items-center gap-2 font-bold mb-4 text-zinc-800">
+              <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+              웹사이트 전용 블록
+            </h3>
+            <div className="space-y-2">
+              {webBlocks.map((block, idx) => (
+                <div key={idx} className="flex items-center justify-between p-3 bg-zinc-50 rounded-lg border border-zinc-100 hover:border-blue-200 transition-colors">
+                  <span className="text-sm font-medium text-zinc-700">{block.name}</span>
+                  <span className="text-[10px] px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full font-bold uppercase">{block.type}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Landing Page Blocks */}
+          <div className="p-6 bg-white rounded-xl border border-zinc-200 shadow-sm">
+            <h3 className="flex items-center gap-2 font-bold mb-4 text-zinc-800">
+              <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+              랜딩페이지 전용 블록
+            </h3>
+            <div className="space-y-2">
+              {lpBlocks.map((block, idx) => (
+                <div key={idx} className="flex items-center justify-between p-3 bg-zinc-50 rounded-lg border border-zinc-100 hover:border-purple-200 transition-colors">
+                  <span className="text-sm font-medium text-zinc-700">{block.name}</span>
+                  <span className="text-[10px] px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full font-bold uppercase">{block.type}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        
+        <p className="mt-6 p-4 bg-zinc-100 rounded-lg text-xs text-zinc-500 leading-relaxed">
+          💡 <b>안내:</b> 여기에 등록된 블록들은 "원본"입니다. 각 페이지(회사소개서 등)에서 블록을 추가할 때 이 원본을 복사해서 가져갑니다.<br/>
+          따라서 여기서 원본을 수정해도 <b>이미 만들어진 페이지의 데이터는 절대 변경되지 않아 안전합니다.</b>
+        </p>
+      </div>
+
+      <div style={{ height: 'var(--space-xl)' }}></div>
 
       {/* Brand Settings */}
       <div className="admin-card">

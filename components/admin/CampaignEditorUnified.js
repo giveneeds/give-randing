@@ -205,6 +205,25 @@ export default function CampaignEditorUnified({ campaign, sections, onSave, onCl
   const [activeInsight, setActiveInsight] = useState('preview');
   const [expandedSectionId, setExpandedSectionId] = useState(null);
   const [dragState, setDragState] = useState({ type: null, index: null, overIndex: null });
+  const [library, setLibrary] = useState({ blocks: [] });
+  const [localSections, setLocalSections] = useState(sections);
+  const [isLibraryLoading, setIsLibraryLoading] = useState(false);
+
+  useEffect(() => {
+    async function loadLibrary() {
+      try {
+        const res = await fetch('/api/settings');
+        const data = await res.json();
+        if (data.settings?.section_library) setLibrary(data.settings.section_library);
+      } catch (e) { console.error('Library load failed:', e); }
+    }
+    loadLibrary();
+  }, []);
+
+  // Sync localSections if parent sections change
+  useEffect(() => {
+    setLocalSections(sections);
+  }, [sections]);
 
   // ── helpers (Using functional updates for stability)
   const set = (patch) => setCurrent(p => ({ ...p, ...patch }));
@@ -245,8 +264,39 @@ export default function CampaignEditorUnified({ campaign, sections, onSave, onCl
       } 
     }));
 
+
+  const handleCreateFromLibrary = async (master) => {
+    setIsLibraryLoading(true);
+    try {
+      const newSection = {
+        type: master.type,
+        title: master.name,
+        subtitle: master.subtitle || '',
+        content: master.content,
+        order_index: localSections.length,
+        is_active: true,
+      };
+      const res = await fetch('/api/sections', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newSection),
+      });
+      const { section } = await res.json();
+      
+      // Update local state to show it immediately
+      setLocalSections([...localSections, section]);
+      set({ selected_sections: [...(current.selected_sections || []), section.id] });
+      setExpandedSectionId(section.id);
+    } catch (e) {
+      console.error('Failed to create section from library:', e);
+      alert('라이브러리 블록 생성에 실패했습니다.');
+    } finally {
+      setIsLibraryLoading(false);
+    }
+  };
+
   const liveSections = (current.selected_sections || []).map(id => {
-    const base = sections.find(s => s.id === id);
+    const base = localSections.find(s => s.id === id);
     if (!base) return null;
     return { ...base, ...(current.section_overrides?.[id] || {}) };
   }).filter(Boolean);
@@ -472,27 +522,57 @@ export default function CampaignEditorUnified({ campaign, sections, onSave, onCl
               </div>
 
               <div>
-                <p className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.25em] mb-3 flex items-center gap-2">
-                  <Plus size={10} /> 섹션 라이브러리 — 클릭하여 추가
-                </p>
-                <div className="grid grid-cols-3 gap-2">
-                  {sections.map(sec => {
-                    const isSelected = (current.selected_sections || []).includes(sec.id);
-                    return (
-                      <button key={sec.id} onClick={() => {
-                        if (isSelected) set({ selected_sections: (current.selected_sections || []).filter(id => id !== sec.id) });
-                        else set({ selected_sections: [...(current.selected_sections || []), sec.id] });
-                      }}
-                        className={clsx('p-3 rounded-xl border text-left transition-all text-xs',
-                          isSelected ? 'bg-zinc-900 border-zinc-900 text-white shadow-md' : 'bg-white border-zinc-200 text-zinc-600 hover:border-zinc-400 hover:shadow-sm'
-                        )}>
-                        <span className={clsx('text-[8px] font-black uppercase tracking-widest block mb-1', isSelected ? 'opacity-60' : 'text-zinc-400')}>{sec.type}</span>
-                        <span className="font-bold truncate block">{sec.title}</span>
-                        {isSelected && <CheckCircle2 size={12} className="mt-1.5 text-emerald-400" />}
-                      </button>
-                    );
-                  })}
+              <div className="space-y-8">
+                {/* 1. Master Library (New) */}
+                {library.blocks?.length > 0 && (
+                  <div className="space-y-4">
+                    <p className="text-[9px] font-black text-indigo-500 uppercase tracking-[0.25em] flex items-center gap-2">
+                       <Sparkles size={10} className="animate-pulse" /> 마스터 블록 라이브러리 — 즉시 복제 및 추가
+                    </p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {library.blocks.map((master, idx) => (
+                        <button 
+                          key={`lib-${idx}`}
+                          onClick={() => handleCreateFromLibrary(master)}
+                          disabled={isLibraryLoading}
+                          className="p-3 bg-indigo-50/50 border border-indigo-100 rounded-xl text-left hover:border-indigo-400 hover:bg-white transition-all group shadow-sm disabled:opacity-50"
+                        >
+                          <div className="flex justify-between items-start mb-1.5 px-0.5">
+                            <span className="text-[7px] font-black text-indigo-400 uppercase tracking-tighter">{master.category}</span>
+                            <Plus size={8} className="text-indigo-300" />
+                          </div>
+                          <span className="font-extrabold text-[11px] text-indigo-950 truncate block tracking-tighter leading-none">{master.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 2. Existing Sections List */}
+                <div className="space-y-4">
+                  <p className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.25em] flex items-center gap-2">
+                    <Layout size={10} /> 기존 섹션 선택
+                  </p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {localSections.map(sec => {
+                      const isSelected = (current.selected_sections || []).includes(sec.id);
+                      return (
+                        <button key={sec.id} onClick={() => {
+                          if (isSelected) set({ selected_sections: (current.selected_sections || []).filter(id => id !== sec.id) });
+                          else set({ selected_sections: [...(current.selected_sections || []), sec.id] });
+                        }}
+                          className={clsx('p-3 rounded-xl border text-left transition-all text-xs',
+                            isSelected ? 'bg-zinc-900 border-zinc-900 text-white shadow-md' : 'bg-white border-zinc-200 text-zinc-600 hover:border-zinc-400 hover:shadow-sm'
+                          )}>
+                          <span className={clsx('text-[8px] font-black uppercase tracking-widest block mb-1', isSelected ? 'opacity-60' : 'text-zinc-400')}>{sec.type}</span>
+                          <span className="font-bold truncate block">{sec.title}</span>
+                          {isSelected && <CheckCircle2 size={12} className="mt-1.5 text-emerald-400" />}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
+              </div>
               </div>
             </ConfigCard>
 
