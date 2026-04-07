@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import SectionRenderer from '@/components/landing/SectionRenderer';
 import MagazineList from '@/components/landing/MagazineList';
-import LandingNavbar from '@/components/landing/LandingNavbar';
 import LandingFooter from '@/components/landing/LandingFooter';
 import { supabase, isDummyMode } from '@/lib/supabase';
 import { ParticleTextEffect } from '@/components/ui/particle-text-effect';
@@ -76,8 +75,7 @@ export default function CampaignLandingPage() {
 
   return (
     <>
-      <LandingNavbar settings={settings} />
-      <main className="lp-container pt-20">
+      <main className="lp-container">
         {/* 1. Hero Module */}
         <section className="lp-hero relative overflow-hidden">
           {/* 하위 호환: hero_type이 있으면 그걸로, 없으면 새 플래그 사용 */}
