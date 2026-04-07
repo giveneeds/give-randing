@@ -36,21 +36,37 @@ export default function ServiceDetailPage({ params }) {
   const details = service.details || {};
   const blocks = details.blocks || [];
 
+  // 마크다운 기호(**bold** 등)를 처리하는 인라인 렌더러
+  const renderInline = (text) => {
+    if (typeof text !== 'string') return text;
+    // **텍스트** → <strong>, 나머지 기호들 제거
+    const parts = text.split(/(\*\*[^*]+\*\*)/g);
+    return parts.map((part, i) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return <strong key={i} className="font-extrabold text-zinc-900">{part.slice(2, -2)}</strong>;
+      }
+      // 남은 *, _, ` 등 기호 제거
+      return part.replace(/[*_`~]/g, '');
+    });
+  };
+
   // Rendering logic for text content
   const renderContent = (text) => {
     if (!text) return null;
     return text.split('\n').map((line, i) => {
       if (line.trim().startsWith('- ') || line.trim().startsWith('• ')) {
+        const content = line.trim().substring(2);
         return (
           <div key={i} className="flex gap-2 mb-2 pl-2">
             <span className="text-zinc-400 mt-1.5 flex-shrink-0">•</span>
-            <span className="text-zinc-600 font-medium leading-relaxed">{line.trim().substring(2)}</span>
+            <span className="text-zinc-600 font-medium leading-relaxed">{renderInline(content)}</span>
           </div>
         );
       }
+      if (!line.trim()) return <div key={i} className="mb-2" />;
       return (
         <p key={i} className="mb-4 text-zinc-600 font-medium leading-relaxed">
-          {line}
+          {renderInline(line)}
         </p>
       );
     });
