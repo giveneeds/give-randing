@@ -113,8 +113,8 @@ export default function ProductTabsSection({ title, content }) {
                 {activeItem.detail_sub}
               </p>
               
-              <a 
-                href={`/service/${activeItem.slug}`}
+              <a
+                href={activeItem.slug ? `/service/${activeItem.slug}` : '/service'}
                 className="inline-flex items-center space-x-3 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 px-8 py-4 rounded-full font-bold text-base group transition-transform hover:scale-105 active:scale-95"
               >
                 <span>솔루션 상세보기</span>
