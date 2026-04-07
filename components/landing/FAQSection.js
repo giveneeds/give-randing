@@ -30,7 +30,7 @@ export default function FAQSection({ title, subtitle, content }) {
                 </span>
               </button>
               <div className="faq-answer-wrapper">
-                <div className="faq-answer-minimal">
+                <div className="faq-answer-minimal" style={{ whiteSpace: 'pre-line' }}>
                   {item.answer}
                 </div>
               </div>
