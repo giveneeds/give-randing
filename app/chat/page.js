@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from 'react';
 import LandingNavbar from '@/components/landing/LandingNavbar';
 import LandingFooter from '@/components/landing/LandingFooter';
 import LeadForm from '@/components/ui/LeadForm';
-import { Send, Bot, User, Sparkles, ChevronRight } from 'lucide-react';
+import { Send, Bot, User, Sparkles, ChevronRight, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function ChatPage() {
@@ -49,8 +49,15 @@ export default function ChatPage() {
       <LandingNavbar />
       <main className="min-h-screen bg-zinc-50 flex flex-col pt-24">
         {/* Chat Header */}
-        <div className="bg-white border-b border-zinc-100 py-6 px-6 md:px-12 flex items-center justify-between sticky top-24 z-10">
-          <div className="flex items-center gap-4">
+        <div className="bg-white border-b border-zinc-100 py-4 md:py-6 px-4 md:px-12 flex items-center justify-between sticky top-24 z-10">
+          <div className="flex items-center gap-3 md:gap-4">
+             <button
+               onClick={() => { if (typeof window !== 'undefined') window.history.length > 1 ? window.history.back() : (window.location.href = '/'); }}
+               aria-label="뒤로가기"
+               className="p-2 -ml-2 rounded-lg hover:bg-zinc-100 active:bg-zinc-200 text-zinc-700 transition-colors"
+             >
+                <ArrowLeft size={20} />
+             </button>
              <div className="w-10 h-10 rounded-2xl bg-zinc-900 flex items-center justify-center text-white">
                 <Bot size={20} />
              </div>
@@ -69,8 +76,8 @@ export default function ChatPage() {
         </div>
 
         {/* Chat Messages */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 py-12 md:px-12">
-          <div className="max-w-screen-md mx-auto space-y-8">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-8 md:px-12 md:py-12">
+          <div className="max-w-screen-md mx-auto space-y-6 md:space-y-8">
             <AnimatePresence>
               {messages.map((msg, i) => (
                 <motion.div 
@@ -82,7 +89,7 @@ export default function ChatPage() {
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${msg.role === 'user' ? 'bg-zinc-200' : 'bg-zinc-900 text-white'}`}>
                     {msg.role === 'user' ? <User size={16} /> : <Sparkles size={16} />}
                   </div>
-                  <div className={`max-w-[85%] p-6 rounded-3xl text-sm leading-relaxed ${msg.role === 'user' ? 'bg-zinc-900 text-white rounded-tr-none' : 'bg-white border border-zinc-100 text-zinc-800 rounded-tl-none shadow-sm'}`}>
+                  <div className={`max-w-[80%] sm:max-w-[85%] p-4 md:p-6 rounded-3xl text-sm leading-relaxed ${msg.role === 'user' ? 'bg-zinc-900 text-white rounded-tr-none' : 'bg-white border border-zinc-100 text-zinc-800 rounded-tl-none shadow-sm'}`}>
                     {msg.content}
                   </div>
                 </motion.div>
@@ -114,7 +121,40 @@ export default function ChatPage() {
         </div>
 
         {/* Chat Input */}
-        <div className="bg-zinc-50 border-t border-zinc-200 p-6 sticky bottom-0">
+        <div className="bg-zinc-50 border-t border-zinc-200 p-4 md:p-6 sticky bottom-0">
+          {/* 프리셋 — 첫 질문 전에만 노출 */}
+          {messages.filter(m => m.role === 'user').length === 0 && !showGate && (
+            <div className="max-w-screen-md mx-auto mb-3 flex flex-wrap gap-2">
+              {[
+                {
+                  label: '✓ 체크리스트형',
+                  hint: '내 매장 마케팅 진단',
+                  prompt: '제 매장의 현재 마케팅 상태를 빠르게 진단할 수 있는 핵심 체크리스트를 만들어 주세요. 무엇부터 점검해야 하나요?',
+                },
+                {
+                  label: '◎ 케이스 스터디',
+                  hint: '비슷한 업종 성공 사례',
+                  prompt: '저와 비슷한 업종에서 마케팅으로 성과를 낸 케이스 스터디를 알려주세요. 어떤 전략이 핵심이었나요?',
+                },
+                {
+                  label: '⇄ 비교 리뷰',
+                  hint: '채널별 ROI 비교',
+                  prompt: '소상공인 입장에서 네이버 플레이스, 인스타그램, 카페 바이럴 중 어느 채널이 ROI가 가장 좋은지 비교해서 추천해 주세요.',
+                },
+              ].map(p => (
+                <button
+                  key={p.label}
+                  type="button"
+                  onClick={() => setInput(p.prompt)}
+                  className="group/chip flex items-center gap-2 px-4 py-2 bg-white border border-zinc-200 rounded-full text-xs font-bold text-zinc-700 hover:border-zinc-900 hover:bg-zinc-900 hover:text-white transition-all"
+                  title={p.prompt}
+                >
+                  <span className="font-black tracking-tight">{p.label}</span>
+                  <span className="text-[10px] text-zinc-400 group-hover/chip:text-zinc-300 hidden sm:inline">— {p.hint}</span>
+                </button>
+              ))}
+            </div>
+          )}
           <form onSubmit={handleSend} className="max-w-screen-md mx-auto relative group">
             <input 
               type="text" 
@@ -122,7 +162,7 @@ export default function ChatPage() {
               onChange={e => setInput(e.target.value)}
               disabled={showGate}
               placeholder={showGate ? "위 양식을 먼저 작성해 주세요." : "기브니즈 AI에게 질문하세요..."}
-              className="w-full pl-8 pr-20 py-6 bg-white border border-zinc-200 rounded-[32px] text-sm focus:ring-4 focus:ring-zinc-900/5 transition-all shadow-sm disabled:bg-zinc-100 disabled:cursor-not-allowed"
+              className="w-full pl-5 md:pl-8 pr-16 md:pr-20 py-5 md:py-6 bg-white border border-zinc-200 rounded-[28px] md:rounded-[32px] text-sm focus:ring-4 focus:ring-zinc-900/5 transition-all shadow-sm disabled:bg-zinc-100 disabled:cursor-not-allowed"
             />
             <button 
               type="submit" 

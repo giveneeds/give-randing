@@ -50,7 +50,7 @@ export default function ContactPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="text-4xl md:text-7xl font-black text-zinc-900 dark:text-white tracking-tighter mb-8 leading-[1.1]"
+              className="text-3xl sm:text-4xl md:text-7xl font-black text-zinc-900 dark:text-white tracking-tighter mb-8 leading-[1.1]"
             >
               당신의 비즈니스를<br/>
               <span className="text-zinc-400 dark:text-zinc-600">가장 잘 이해하는</span> 마케팅 팀
@@ -66,7 +66,7 @@ export default function ContactPage() {
             </motion.p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-12 lg:gap-16 items-start">
             {/* 좌측 안내 정보 */}
             <div className="lg:col-span-4 space-y-12">
               <div className="bg-zinc-50 dark:bg-zinc-900/50 p-8 rounded-[2.5rem] border border-zinc-100 dark:border-white/5">

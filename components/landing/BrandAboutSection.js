@@ -4,8 +4,8 @@ import { Minus } from 'lucide-react';
 
 export default function BrandAboutSection() {
   return (
-    <section id="about" className="py-32 px-6 md:px-12 max-w-screen-xl mx-auto overflow-hidden">
-      <div className="grid md:grid-cols-2 gap-16 items-start">
+    <section id="about" className="py-20 sm:py-32 px-4 sm:px-6 md:px-12 max-w-screen-xl mx-auto overflow-hidden">
+      <div className="grid md:grid-cols-2 gap-10 md:gap-16 items-start">
         <motion.div 
           initial={{ opacity: 0, x: -30 }}
           whileInView={{ opacity: 1, x: 0 }}
@@ -18,11 +18,11 @@ export default function BrandAboutSection() {
               WHO WE ARE
             </span>
           </div>
-          <h2 className="text-4xl md:text-5xl font-black leading-tight tracking-tighter text-zinc-900 mb-8">
+          <h2 className="text-2xl sm:text-4xl md:text-5xl font-black leading-tight tracking-tighter text-zinc-900 mb-6 sm:mb-8">
             우리는 숫자의 이면에서<br/>
             브랜드의 <span className="text-zinc-400 italic">본질</span>을 찾습니다.
           </h2>
-          <p className="text-lg text-zinc-500 leading-relaxed max-w-md">
+          <p className="text-base sm:text-lg text-zinc-500 leading-relaxed max-w-md">
             단순히 유입을 늘리는 마케팅은 누구나 할 수 있습니다. 기브니즈는 브랜드가 가진 고유의 철학을 
             데이터와 결합하여, 고객의 기억에 오래 남는 성장을 설계합니다.
           </p>

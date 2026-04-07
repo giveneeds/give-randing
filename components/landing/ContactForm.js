@@ -103,9 +103,13 @@ export default function ContactForm() {
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col items-center justify-center p-12 md:p-24 bg-white dark:bg-zinc-900 rounded-[3rem] text-center border border-zinc-100 dark:border-white/5 shadow-2xl"
+        className="flex flex-col items-center justify-center p-12 md:p-24 bg-white/5 backdrop-blur-3xl rounded-[3rem] text-center border border-white/10 shadow-2xl relative overflow-hidden"
       >
-        <div className="w-24 h-24 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-full flex items-center justify-center mb-8 shadow-xl">
+        {/* 상단 장식 요소 */}
+        <div className="absolute top-0 left-1/4 w-64 h-64 bg-primary/20 rounded-full blur-[100px] -z-10 animate-pulse" />
+        <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-violet-500/10 rounded-full blur-[100px] -z-10" />
+
+        <div className="w-24 h-24 bg-white text-zinc-900 rounded-full flex items-center justify-center mb-8 shadow-[0_0_40px_rgba(255,255,255,0.3)]">
           <CheckCircle2 size={48} strokeWidth={1.5} />
         </div>
         <h3 className="text-3xl md:text-4xl font-black mb-4 tracking-tighter">소중한 문의가 접수되었습니다.</h3>
@@ -128,37 +132,37 @@ export default function ContactForm() {
       <form onSubmit={handleSubmit} className="space-y-12">
         {/* STEP 1: 기본 정보 */}
         <section>
-          <div className="flex items-center gap-3 mb-8">
-            <div className="w-8 h-8 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-full flex items-center justify-center text-xs font-black">01</div>
-            <h3 className="text-xl font-black tracking-tight uppercase">기본 정보</h3>
+          <div className="flex items-center gap-3 mb-10">
+            <div className="w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center text-[10px] font-black shadow-[0_0_15px_rgba(var(--primary-rgb),0.5)]">01</div>
+            <h3 className="text-lg font-black tracking-tight uppercase text-zinc-900 dark:text-white">기본 정보</h3>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-zinc-400 ml-2 uppercase tracking-widest">성함</label>
-              <div className="relative group">
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-300 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors" size={18} />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-10">
+            <div className="space-y-2 relative group">
+              <label className="text-[10px] font-bold text-zinc-400 ml-1 uppercase tracking-[0.2em] group-focus-within:text-primary transition-colors">성함</label>
+              <div className="relative">
+                <User className="absolute left-0 top-1/2 -translate-y-1/2 text-zinc-300 group-focus-within:text-primary transition-colors" size={18} />
                 <input 
                   type="text" 
                   required
                   placeholder="홍길동"
-                  className="w-full pl-12 pr-6 py-4 bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-white/5 rounded-2xl focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white outline-none transition-all font-medium"
+                  className="w-full pl-8 pr-4 py-3 bg-transparent border-b border-zinc-200 dark:border-white/10 focus:border-primary outline-none transition-all font-medium text-zinc-900 dark:text-white placeholder:text-zinc-300 dark:placeholder:text-zinc-600"
                   value={formData.name}
                   onChange={e => setFormData({...formData, name: e.target.value})}
                 />
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-zinc-400 ml-2 uppercase tracking-widest">연락처</label>
-              <div className="relative group">
-                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-300 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors" size={18} />
+            <div className="space-y-2 relative group">
+              <label className="text-[10px] font-bold text-zinc-400 ml-1 uppercase tracking-[0.2em] group-focus-within:text-primary transition-colors">연락처</label>
+              <div className="relative">
+                <Phone className="absolute left-0 top-1/2 -translate-y-1/2 text-zinc-300 group-focus-within:text-primary transition-colors" size={18} />
                 <input 
                   type="tel" 
                   required
                   placeholder="010-0000-0000"
-                  className={`w-full pl-12 pr-6 py-4 bg-zinc-50 dark:bg-zinc-900 border rounded-2xl focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white outline-none transition-all font-medium
-                    ${phoneError ? 'border-rose-300 dark:border-rose-700' : 'border-zinc-100 dark:border-white/5'}`}
+                  className={`w-full pl-8 pr-4 py-3 bg-transparent border-b outline-none transition-all font-medium text-zinc-900 dark:text-white placeholder:text-zinc-300 dark:placeholder:text-zinc-600
+                    ${phoneError ? 'border-rose-500' : 'border-zinc-200 dark:border-white/10 focus:border-primary'}`}
                   value={formData.phone}
                   onChange={e => {
                     const formatted = formatPhone(e.target.value);
@@ -169,34 +173,34 @@ export default function ContactForm() {
                 />
               </div>
               {phoneError && (
-                <p className="text-xs text-rose-500 ml-2 font-medium">{phoneError}</p>
+                <p className="text-[10px] text-rose-500 ml-1 font-bold animate-pulse absolute -bottom-5">{phoneError}</p>
               )}
             </div>
 
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-zinc-400 ml-2 uppercase tracking-widest">회사명 / 브랜드명</label>
-              <div className="relative group">
-                <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-300 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors" size={18} />
+            <div className="space-y-2 relative group">
+              <label className="text-[10px] font-bold text-zinc-400 ml-1 uppercase tracking-[0.2em] group-focus-within:text-primary transition-colors">회사명 / 브랜드명</label>
+              <div className="relative">
+                <Building2 className="absolute left-0 top-1/2 -translate-y-1/2 text-zinc-300 group-focus-within:text-primary transition-colors" size={18} />
                 <input 
                   type="text" 
                   required
                   placeholder="기브니즈코리아"
-                  className="w-full pl-12 pr-6 py-4 bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-white/5 rounded-2xl focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white outline-none transition-all font-medium"
+                  className="w-full pl-8 pr-4 py-3 bg-transparent border-b border-zinc-200 dark:border-white/10 focus:border-primary outline-none transition-all font-medium text-zinc-900 dark:text-white placeholder:text-zinc-300 dark:placeholder:text-zinc-600"
                   value={formData.company_name}
                   onChange={e => setFormData({...formData, company_name: e.target.value})}
                 />
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-zinc-400 ml-2 uppercase tracking-widest">이메일</label>
-              <div className="relative group">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-300 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors" size={18} />
+            <div className="space-y-2 relative group">
+              <label className="text-[10px] font-bold text-zinc-400 ml-1 uppercase tracking-[0.2em] group-focus-within:text-primary transition-colors">이메일</label>
+              <div className="relative">
+                <Mail className="absolute left-0 top-1/2 -translate-y-1/2 text-zinc-300 group-focus-within:text-primary transition-colors" size={18} />
                 <input 
                   type="email" 
                   required
                   placeholder="hello@giveneeds.com"
-                  className="w-full pl-12 pr-6 py-4 bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-white/5 rounded-2xl focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white outline-none transition-all font-medium"
+                  className="w-full pl-8 pr-4 py-3 bg-transparent border-b border-zinc-200 dark:border-white/10 focus:border-primary outline-none transition-all font-medium text-zinc-900 dark:text-white placeholder:text-zinc-300 dark:placeholder:text-zinc-600"
                   value={formData.email}
                   onChange={e => setFormData({...formData, email: e.target.value})}
                 />
@@ -207,30 +211,30 @@ export default function ContactForm() {
 
         {/* STEP 2: 분석 정보 */}
         <section>
-          <div className="flex items-center gap-3 mb-8">
-            <div className="w-8 h-8 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-full flex items-center justify-center text-xs font-black">02</div>
-            <h3 className="text-xl font-black tracking-tight uppercase">분석 및 예산</h3>
+          <div className="flex items-center gap-3 mb-10">
+            <div className="w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center text-[10px] font-black shadow-[0_0_15px_rgba(var(--primary-rgb),0.5)]">02</div>
+            <h3 className="text-lg font-black tracking-tight uppercase text-zinc-900 dark:text-white">분석 및 예산</h3>
           </div>
 
-          <div className="space-y-8">
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-zinc-400 ml-2 uppercase tracking-widest">홈페이지 (또는 분석할 상품 링크)</label>
-              <div className="relative group">
-                <Globe className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-300 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors" size={18} />
+          <div className="space-y-10">
+            <div className="space-y-2 relative group">
+              <label className="text-[10px] font-bold text-zinc-400 ml-1 uppercase tracking-[0.2em] group-focus-within:text-primary transition-colors">홈페이지 (또는 분석할 상품 링크)</label>
+              <div className="relative">
+                <Globe className="absolute left-0 top-1/2 -translate-y-1/2 text-zinc-300 group-focus-within:text-primary transition-colors" size={18} />
                 <input 
                   type="text" 
                   required
                   placeholder="www.your-brand.com (또는 상품 링크)"
-                  className="w-full pl-12 pr-6 py-4 bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-white/5 rounded-2xl focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white outline-none transition-all font-medium"
+                  className="w-full pl-8 pr-4 py-3 bg-transparent border-b border-zinc-200 dark:border-white/10 focus:border-primary outline-none transition-all font-medium text-zinc-900 dark:text-white placeholder:text-zinc-300 dark:placeholder:text-zinc-600"
                   value={formData.website_url}
                   onChange={e => setFormData({...formData, website_url: e.target.value})}
                 />
               </div>
             </div>
 
-            <div className="space-y-4">
-              <label className="text-xs font-bold text-zinc-400 ml-2 uppercase tracking-widest flex items-center gap-2">
-                <Coins size={14} /> 월 예상 마케팅 예산
+            <div className="space-y-5">
+              <label className="text-[10px] font-black text-zinc-400 ml-1 uppercase tracking-[0.2em] flex items-center gap-2">
+                <Coins size={14} className="text-primary" /> 월 예상 마케팅 예산
               </label>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                 {BUDGET_OPTIONS.map((opt) => (
@@ -240,9 +244,9 @@ export default function ContactForm() {
                     onClick={() => setFormData({...formData, budget: opt.id})}
                     className={`px-4 py-3 rounded-xl text-xs font-bold transition-all border
                       ${formData.budget === opt.id 
-                        ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 border-zinc-900 dark:border-white shadow-lg' 
-                        : 'bg-white dark:bg-zinc-900 border-zinc-100 dark:border-white/5 text-zinc-400 dark:text-zinc-500 hover:border-zinc-300 dark:hover:border-white/20'
-                      } ${opt.special ? 'border-dashed border-zinc-300' : ''}`}
+                        ? 'bg-primary text-white border-primary shadow-[0_0_20px_rgba(var(--primary-rgb),0.4)] scale-[1.02]' 
+                        : 'bg-white/5 dark:bg-zinc-900/50 border-zinc-100 dark:border-white/5 text-zinc-500 hover:border-primary/50'
+                      } ${opt.special ? 'border-dashed' : ''}`}
                   >
                     {opt.label}
                   </button>
@@ -254,28 +258,28 @@ export default function ContactForm() {
 
         {/* STEP 3: 상세 문의 */}
         <section>
-          <div className="flex items-center gap-3 mb-8">
-            <div className="w-8 h-8 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-full flex items-center justify-center text-xs font-black">03</div>
-            <h3 className="text-xl font-black tracking-tight uppercase">상세 문의</h3>
+          <div className="flex items-center gap-3 mb-10">
+            <div className="w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center text-[10px] font-black shadow-[0_0_15px_rgba(var(--primary-rgb),0.5)]">03</div>
+            <h3 className="text-lg font-black tracking-tight uppercase text-zinc-900 dark:text-white">상세 문의</h3>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-4 relative group">
             <div className="flex justify-between items-end mb-2">
-              <label className="text-xs font-bold text-zinc-400 ml-2 uppercase tracking-widest">현재 상황 및 구체적으로 원하는 성과</label>
+              <label className="text-[10px] font-bold text-zinc-400 ml-1 uppercase tracking-[0.2em] group-focus-within:text-primary transition-colors">현재 상황 및 구체적으로 원하는 성과</label>
               {isMessageRequired && (
-                <span className="text-[10px] font-black text-rose-500 animate-pulse bg-rose-50 dark:bg-rose-950/30 px-2 py-1 rounded">
+                <span className="text-[9px] font-black text-rose-500 animate-pulse bg-rose-500/10 px-2 py-1 rounded">
                   ⚠️ 예산 상담을 위해 구체적인 상황을 반드시 입력해주세요
                 </span>
               )}
             </div>
-            <div className="relative group">
-              <MessageSquare className="absolute left-4 top-6 text-zinc-300 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors" size={18} />
+            <div className="relative">
+              <MessageSquare className="absolute left-0 top-4 text-zinc-300 group-focus-within:text-primary transition-colors" size={18} />
               <textarea 
                 required={isMessageRequired}
-                rows={6}
+                rows={4}
                 placeholder={isMessageRequired ? "구체적인 운영 상황, 타겟, 목표하시는 성과를 상세히 적어주시면 정확한 예산 설계가 가능합니다." : "문의하실 내용을 자유롭게 적어주세요."}
-                className={`w-full pl-12 pr-6 py-5 bg-zinc-50 dark:bg-zinc-900 border rounded-[2rem] focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white outline-none transition-all font-medium resize-none
-                  ${isMessageRequired ? 'border-rose-200 dark:border-rose-900/50 ring-1 ring-rose-100 dark:ring-rose-900/20' : 'border-zinc-100 dark:border-white/5'}
+                className={`w-full pl-8 pr-4 py-3 bg-transparent border-b outline-none transition-all font-medium text-zinc-900 dark:text-white placeholder:text-zinc-300 dark:placeholder:text-zinc-600 resize-none
+                  ${isMessageRequired ? 'border-rose-300 focus:border-rose-500' : 'border-zinc-200 dark:border-white/10 focus:border-primary'}
                 `}
                 value={formData.message}
                 onChange={e => setFormData({...formData, message: e.target.value})}
@@ -285,17 +289,21 @@ export default function ContactForm() {
         </section>
 
         {/* AI CTA */}
-        <div className="bg-zinc-50 dark:bg-zinc-900/50 p-6 rounded-3xl border border-zinc-100 dark:border-white/5 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-indigo-500/10 text-indigo-500 rounded-full flex items-center justify-center">
-              <Sparkles size={20} />
+        <div className="bg-white/5 backdrop-blur-xl p-8 rounded-3xl border border-white/10 flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative group">
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          <div className="flex items-center gap-4 relative">
+            <div className="w-12 h-12 bg-primary/10 text-primary rounded-full flex items-center justify-center shadow-[inset_0_0_20px_rgba(var(--primary-rgb),0.2)]">
+              <Sparkles size={22} className="animate-pulse" />
             </div>
-            <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">항목 작성이 어려우신가요? AI에게 먼저 비즈니스를 진단받아보세요.</p>
+            <div>
+              <p className="text-[11px] font-black text-primary uppercase tracking-[0.2em] mb-1">AI Diagnostic Assistant</p>
+              <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">항목 작성이 어려우신가요? AI에게 비즈니스를 진단받고 추천 전략을 확인하세요.</p>
+            </div>
           </div>
           <button 
             type="button" 
             onClick={() => window.location.href = '/chat'}
-            className="whitespace-nowrap px-6 py-3 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-xl text-xs font-black shadow-sm hover:translate-y-[-2px] transition-transform"
+            className="w-full md:w-auto px-8 py-3.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:translate-y-[-2px] hover:shadow-primary/20 transition-all relative overflow-hidden"
           >
             기브니즈 AI 상담 시작 <ArrowRight size={14} className="inline ml-1" />
           </button>
@@ -304,13 +312,16 @@ export default function ContactForm() {
         <button 
           type="submit" 
           disabled={loading}
-          className="w-full py-6 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-[2rem] font-black text-xl hover:scale-[1.01] active:scale-[0.99] transition-all shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-4 group"
+          className="w-full py-7 bg-primary text-white rounded-3xl font-black text-xl hover:scale-[1.01] active:scale-[0.98] transition-all shadow-[0_20px_40px_rgba(var(--primary-rgb),0.3)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-4 group relative overflow-hidden"
         >
+          {/* 버튼 내부 안개 효과 */}
+          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-shimmer" />
+          
           {loading ? (
             <Loader2 className="animate-spin" size={24} />
           ) : (
             <>
-              무료 마케팅 진단 신청하기 <ArrowRight className="group-hover:translate-x-2 transition-transform" size={24} />
+              상담 및 솔루션 진단 신청 <ArrowRight className="group-hover:translate-x-2 transition-transform" size={24} />
             </>
           )}
         </button>

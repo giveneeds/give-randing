@@ -17,14 +17,14 @@ export default function BrandIdentitySection({ title, content }) {
   const rightDesc = content?.right?.desc || "진정 원하는 가치를 전달하는 마케팅";
 
   return (
-    <section className="py-32 px-4 bg-white dark:bg-zinc-950 transition-colors flex flex-col items-center">
-      <div className="max-w-4xl mx-auto text-center mb-24">
-        <h2 className="text-3xl md:text-5xl font-black text-zinc-900 dark:text-white tracking-tighter leading-tight">
+    <section className="py-20 sm:py-32 px-4 bg-white dark:bg-zinc-950 transition-colors flex flex-col items-center">
+      <div className="max-w-4xl mx-auto text-center mb-14 sm:mb-24">
+        <h2 className="text-2xl sm:text-3xl md:text-5xl font-black text-zinc-900 dark:text-white tracking-tighter leading-tight">
           {title}
         </h2>
       </div>
 
-      <div className="flex flex-col md:flex-row items-center justify-center space-y-12 md:space-y-0 md:space-x-8">
+      <div className="flex flex-col md:flex-row items-center justify-center space-y-6 md:space-y-0 md:space-x-8">
         {/* GIVE */}
         <div className="flex flex-col items-center">
           <motion.div 
@@ -32,7 +32,7 @@ export default function BrandIdentitySection({ title, content }) {
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
-            className="w-56 h-56 rounded-full border border-zinc-200 dark:border-white/10 flex flex-col items-center justify-center bg-zinc-50/50 dark:bg-white/5 shadow-2xl shadow-black/5"
+            className="w-40 h-40 sm:w-56 sm:h-56 rounded-full border border-zinc-200 dark:border-white/10 flex flex-col items-center justify-center bg-zinc-50/50 dark:bg-white/5 shadow-2xl shadow-black/5"
           >
             <span className="text-2xl font-black text-zinc-900 dark:text-white tracking-widest mb-1">{leftTitle}</span>
             <span className="text-xs font-bold text-zinc-400 uppercase">{leftDesc}</span>
@@ -52,7 +52,7 @@ export default function BrandIdentitySection({ title, content }) {
             whileInView="visible"
             viewport={{ once: true }}
             transition={{ delay: 0.2 }}
-            className="w-56 h-56 rounded-full border border-zinc-200 dark:border-white/10 flex flex-col items-center justify-center bg-zinc-50/50 dark:bg-white/5 shadow-2xl shadow-black/5"
+            className="w-40 h-40 sm:w-56 sm:h-56 rounded-full border border-zinc-200 dark:border-white/10 flex flex-col items-center justify-center bg-zinc-50/50 dark:bg-white/5 shadow-2xl shadow-black/5"
           >
             <span className="text-2xl font-black text-zinc-900 dark:text-white tracking-widest mb-1">{middleTitle}</span>
             <span className="text-xs font-bold text-zinc-400 uppercase">{middleDesc}</span>
@@ -72,7 +72,7 @@ export default function BrandIdentitySection({ title, content }) {
             whileInView="visible"
             viewport={{ once: true }}
             transition={{ delay: 0.4 }}
-            className="w-64 h-64 rounded-full border-4 border-blue-500/30 flex flex-col items-center justify-center bg-zinc-50/50 dark:bg-blue-500/5 shadow-[0_0_50px_rgba(59,130,246,0.15)] relative"
+            className="w-48 h-48 sm:w-64 sm:h-64 rounded-full border-4 border-blue-500/30 flex flex-col items-center justify-center bg-zinc-50/50 dark:bg-blue-500/5 shadow-[0_0_50px_rgba(59,130,246,0.15)] relative"
           >
             <span className="text-2xl font-black text-zinc-900 dark:text-white tracking-[0.2em] mb-2">{rightTitle}</span>
             <span className="text-xs font-bold text-blue-500 text-center max-w-[140px] leading-relaxed uppercase whitespace-pre-wrap">

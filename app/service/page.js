@@ -85,7 +85,7 @@ export default function ServicePage() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <h1 className="text-[12vw] md:text-[10rem] font-black tracking-[-0.05em] text-zinc-900 dark:text-white leading-[0.85] uppercase mb-12">
+            <h1 className="text-[clamp(3rem,12vw,5rem)] md:text-[10rem] font-black tracking-[-0.05em] text-zinc-900 dark:text-white leading-[0.85] uppercase mb-12">
               Our<br />
               Services
             </h1>
@@ -106,7 +106,7 @@ export default function ServicePage() {
                 className="px-4 md:px-0 mb-12 border-b-2 border-zinc-900 dark:border-white pb-6"
               >
                 <div className="flex flex-col md:flex-row md:items-end justify-between mb-3">
-                  <h2 className="text-4xl md:text-6xl font-black tracking-tighter text-zinc-900 dark:text-white uppercase">
+                  <h2 className="text-3xl sm:text-4xl md:text-6xl font-black tracking-tighter text-zinc-900 dark:text-white uppercase">
                     {sector.title}
                   </h2>
                   <span className="text-zinc-400 font-black text-lg tracking-widest mt-4 md:mt-0 uppercase">
@@ -121,7 +121,7 @@ export default function ServicePage() {
               </motion.div>
 
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 border-t border-l border-zinc-200 dark:border-zinc-800">
+              <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 border-t border-l border-zinc-200 dark:border-zinc-800">
                 {sector.items.map((service, iIdx) => {
                   const isComingSoon = service?.details?.status === 'coming_soon';
                   const cardInner = (
@@ -131,19 +131,19 @@ export default function ServicePage() {
                       viewport={{ once: true }}
                       transition={{ delay: (iIdx * 0.05), duration: 0.5 }}
                       className={`
-                        aspect-square md:aspect-[4/3] lg:aspect-square p-10 flex flex-col justify-between transition-all duration-700
+                        aspect-square md:aspect-[4/3] lg:aspect-square p-4 sm:p-10 flex flex-col justify-between transition-all duration-700
                         border-r border-b border-zinc-200 dark:border-zinc-800 relative z-0 overflow-hidden
                         ${sector.bg} ${sector.text || 'text-white'}
                         group-hover:z-10 group-hover:shadow-[0_20px_50px_rgba(0,0,0,0.1)]
                       `}
                     >
                       {isComingSoon && (
-                        <span className="absolute top-4 right-4 px-2.5 py-1 bg-white/15 backdrop-blur rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1">
+                        <span className="absolute top-2 right-2 sm:top-4 sm:right-4 px-2 py-0.5 sm:px-2.5 sm:py-1 bg-white/15 backdrop-blur rounded-full text-[8px] sm:text-[9px] font-black uppercase tracking-widest flex items-center gap-1">
                           <Sparkles size={10} /> Coming Soon
                         </span>
                       )}
                       <div className="flex justify-between items-start">
-                        <span className="text-lg font-black opacity-30 group-hover:opacity-100 transition-opacity">
+                        <span className="text-sm sm:text-lg font-black opacity-30 group-hover:opacity-100 transition-opacity">
                           0{iIdx + 1}
                         </span>
                         {!isComingSoon && (
@@ -154,7 +154,7 @@ export default function ServicePage() {
                       </div>
 
                       <div className="translate-y-4 group-hover:translate-y-0 transition-transform duration-500 flex flex-col min-h-0">
-                        <h3 className="text-3xl md:text-4xl font-black leading-[1] tracking-tighter mb-4 group-hover:mb-5 transition-all">
+                        <h3 className="text-lg sm:text-3xl md:text-4xl font-black leading-[1] tracking-tighter mb-3 sm:mb-4 group-hover:mb-5 transition-all">
                           {service.title.split(' ').map((word, idx) => (
                             <span key={idx} className="block">{word}</span>
                           ))}
@@ -217,7 +217,7 @@ export default function ServicePage() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-[2.5rem] p-12 md:p-14 max-w-lg w-full text-center shadow-2xl relative"
+              className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-6 sm:p-10 md:p-14 max-w-lg w-full text-center shadow-2xl relative"
             >
               <button
                 onClick={() => setComingSoonModal(null)}

@@ -9,7 +9,7 @@ export default function MagazineCard({ post, variant = 'default' }) {
   // ────── Featured (대형 카드 — 2x2 사이즈) ──────
   if (variant === 'featured') {
     return (
-      <a href={`/magazine/${post.slug}`} className="group block relative w-full h-full min-h-[500px] md:min-h-[600px] overflow-hidden rounded-2xl">
+      <a href={`/magazine/${post.slug}`} className="group block relative w-full h-full aspect-square md:aspect-auto md:min-h-[600px] overflow-hidden rounded-2xl">
         {/* 배경 이미지 */}
         <div className="absolute inset-0 bg-zinc-200 dark:bg-zinc-800">
           <img
@@ -69,7 +69,7 @@ export default function MagazineCard({ post, variant = 'default' }) {
   // ────── Horizontal (가로형 카드 — 2칸 가로) ──────
   if (variant === 'horizontal') {
     return (
-      <a href={`/magazine/${post.slug}`} className="group block relative w-full h-full min-h-[260px] overflow-hidden rounded-2xl">
+      <a href={`/magazine/${post.slug}`} className="group block relative w-full h-full min-h-[220px] sm:min-h-[260px] overflow-hidden rounded-2xl">
         <div className="absolute inset-0 bg-zinc-200 dark:bg-zinc-800">
           <img
             src={post.thumbnail_url}
@@ -101,7 +101,7 @@ export default function MagazineCard({ post, variant = 'default' }) {
 
   // ────── Default (소형 카드 — 1x1 사이즈) ──────
   return (
-    <a href={`/magazine/${post.slug}`} className="group block relative w-full h-full min-h-[320px] overflow-hidden rounded-2xl">
+    <a href={`/magazine/${post.slug}`} className="group block relative w-full h-full aspect-square md:aspect-auto md:min-h-[320px] overflow-hidden rounded-2xl">
       <div className="absolute inset-0 bg-zinc-200 dark:bg-zinc-800">
         <img
           src={post.thumbnail_url}

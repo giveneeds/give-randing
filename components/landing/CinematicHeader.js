@@ -24,6 +24,20 @@ export default function CinematicHeader() {
   const listItemsRef = useRef([]);
 
   useGSAP(() => {
+    // 🚫 모바일(<768px)에서는 무거운 시네마틱 타임라인을 건너뜀.
+    //    데스크탑 효과는 브라우저 폭이 좁을 때 시각적으로 깨지고
+    //    GSAP pin/scrub이 모바일 주소창 토글과 충돌한다.
+    if (typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches) {
+      // 모바일 폴백: 검색 팔레트와 상품 리스트를 즉시 노출
+      if (searchBarRef.current) {
+        gsap.set(searchBarRef.current, { opacity: 1, autoAlpha: 1, scale: 1, y: 0 });
+      }
+      listItemsRef.current.forEach((el) => {
+        if (el) gsap.set(el, { opacity: 1, x: 0, filter: 'blur(0px)' });
+      });
+      return;
+    }
+
     // 📏 정확한 해상도 기반 높이 계산 (1000vh + 200vh 여유분)
     const getScrollDist = () => window.innerHeight * 12;
 
@@ -92,34 +106,35 @@ export default function CinematicHeader() {
   }, { scope: container });
 
   return (
-    <div 
-      ref={container} 
-      className="w-full h-screen relative flex items-center justify-center overflow-hidden bg-white dark:bg-zinc-950 z-40"
+    <div
+      ref={container}
+      className="w-full min-h-screen md:h-screen relative flex items-center justify-center overflow-hidden bg-white dark:bg-zinc-950 z-40 py-20 md:py-0"
     >
-      <div className="relative flex items-center justify-center w-full h-full pointer-events-none px-8">
-        {/* 브랜드 로고 */}
-        <h1 
+      <div className="relative flex flex-col md:block items-center justify-center w-full h-full pointer-events-none px-4 sm:px-8 gap-8 md:gap-0">
+        {/* 브랜드 로고 — 모바일에선 정적으로 상단 노출, 데스크탑은 GSAP 절대배치 */}
+        <h1
           ref={heroTextRef}
-          className="absolute text-[16vw] font-black tracking-tighter text-zinc-900 dark:text-white drop-shadow-2xl select-none uppercase z-10"
+          className="md:absolute md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 text-[18vw] md:text-[16vw] font-black tracking-tighter text-zinc-900 dark:text-white drop-shadow-2xl select-none uppercase z-10 text-center leading-none"
         >
           GIVENEEDS
         </h1>
 
-        {/* 시네마틱 검색 팔레트 */}
-        <div 
+        {/* 시네마틱 검색 팔레트 — 센터링 wrapper (GSAP transform 충돌 방지) */}
+        <div className="md:absolute md:inset-0 md:flex md:items-center md:justify-center md:px-4 z-20 pointer-events-none">
+        <div
           ref={searchBarRef}
-          className="absolute w-full max-w-[650px] bg-white/95 dark:bg-zinc-900/85 backdrop-blur-3xl border border-zinc-200 dark:border-white/10 rounded-[2.5rem] shadow-[0_120px_300px_rgba(0,0,0,0.3)] dark:shadow-[0_120px_300px_rgba(0,0,0,1)] p-8 pointer-events-auto opacity-0 invisible z-20"
+          className="md:max-h-[88vh] md:overflow-y-auto w-full max-w-[92vw] sm:max-w-[560px] bg-white/95 dark:bg-zinc-900/85 backdrop-blur-3xl border border-zinc-200 dark:border-white/10 rounded-3xl md:rounded-[2.5rem] shadow-[0_40px_120px_rgba(0,0,0,0.15)] md:shadow-[0_120px_300px_rgba(0,0,0,0.3)] dark:shadow-[0_120px_300px_rgba(0,0,0,1)] p-5 sm:p-6 pointer-events-auto md:opacity-0 md:invisible"
         >
-          <div className="flex items-center space-x-5 pb-8 border-b border-zinc-100 dark:border-white/5 mb-6">
-            <div className="w-14 h-14 rounded-full bg-blue-500/10 flex items-center justify-center shadow-inner">
-              <svg className="w-7 h-7 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="flex items-center gap-3 sm:gap-5 pb-5 sm:pb-8 border-b border-zinc-100 dark:border-white/5 mb-5 sm:mb-6 min-w-0">
+            <div className="shrink-0 w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-blue-500/10 flex items-center justify-center shadow-inner">
+              <svg className="w-6 h-6 sm:w-7 sm:h-7 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
-            <div className="flex-1">
-              <input 
-                type="text" 
-                className="bg-transparent border-none outline-none text-zinc-900 dark:text-white/95 w-full text-3xl font-light tracking-tight"
+            <div className="flex-1 min-w-0">
+              <input
+                type="text"
+                className="bg-transparent border-none outline-none text-zinc-900 dark:text-white/95 w-full text-xl sm:text-3xl font-light tracking-tight truncate"
                 readOnly
                 value="Marketing Solutions"
               />
@@ -139,18 +154,18 @@ export default function CinematicHeader() {
                 ref={(el) => {
                   listItemsRef.current[i] = el;
                 }}
-                className="group flex items-center justify-between px-7 py-5 rounded-3xl border border-zinc-100 dark:border-white/5 bg-transparent transition-all duration-500"
+                className="group flex items-center justify-between gap-3 px-4 sm:px-7 py-3.5 sm:py-5 rounded-2xl sm:rounded-3xl border border-zinc-100 dark:border-white/5 bg-transparent transition-all duration-500 min-w-0"
               >
-                <div className="flex items-center space-x-6">
-                  <div className="w-14 h-14 rounded-2xl bg-zinc-100 dark:bg-white/5 flex items-center justify-center group-hover:bg-blue-500/20 transition-all duration-500 rotate-0 group-hover:rotate-6">
-                    <div className="w-4 h-4 rounded-full bg-blue-500 shadow-[0_0_20px_rgba(59,130,246,1)]" />
+                <div className="flex items-center gap-3 sm:gap-6 min-w-0">
+                  <div className="shrink-0 w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-zinc-100 dark:bg-white/5 flex items-center justify-center group-hover:bg-blue-500/20 transition-all duration-500 rotate-0 group-hover:rotate-6">
+                    <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-blue-500 shadow-[0_0_20px_rgba(59,130,246,1)]" />
                   </div>
-                  <div>
-                    <div className="text-[18px] font-bold text-zinc-900 dark:text-white/95 tracking-tight mb-0.5">{product.title}</div>
-                    <div className="text-[12px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wide">{product.subtitle}</div>
+                  <div className="min-w-0">
+                    <div className="text-sm sm:text-[18px] font-bold text-zinc-900 dark:text-white/95 tracking-tight mb-0.5 truncate">{product.title}</div>
+                    <div className="text-[11px] sm:text-[12px] text-zinc-500 dark:text-zinc-400 font-bold tracking-wide truncate">{product.subtitle}</div>
                   </div>
                 </div>
-                <div className="text-[10px] font-mono font-black text-zinc-400 bg-zinc-100 dark:bg-white/10 px-4 py-2 rounded-xl border border-zinc-200 dark:border-white/10 uppercase tracking-[0.2em] opacity-80">
+                <div className="shrink-0 text-[9px] sm:text-[10px] font-mono font-black text-zinc-400 bg-zinc-100 dark:bg-white/10 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl border border-zinc-200 dark:border-white/10 uppercase tracking-[0.15em] sm:tracking-[0.2em] opacity-80">
                   {product.category}
                 </div>
               </div>
@@ -169,6 +184,7 @@ export default function CinematicHeader() {
               </svg>
             </div>
           </div>
+        </div>
         </div>
       </div>
     </div>

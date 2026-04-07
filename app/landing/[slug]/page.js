@@ -91,7 +91,7 @@ export default function CampaignLandingPage() {
               <>
                 {/* 파티클 블록 */}
                 {showParticle && (
-                  <div className={`relative w-full ${showLeadForm ? 'h-[60vh]' : 'h-screen'}`}>
+                  <div className={`relative w-full ${showLeadForm ? 'h-[40vh] md:h-[60vh]' : 'h-[70vh] md:h-screen'}`}>
                     <ParticleTextEffect
                       words={(campaign.hero_content.particle_text || campaign.hero_content.headline || '').split('\n').filter(Boolean)}
                     />
@@ -100,23 +100,23 @@ export default function CampaignLandingPage() {
 
                 {/* 리드 마그넷 폼 블록 */}
                 {showLeadForm && (
-                  <div className="flex flex-col lg:flex-row items-center justify-center min-h-screen text-center lg:text-left px-4 md:px-8 max-w-7xl mx-auto gap-12 py-20">
+                  <div className="flex flex-col lg:flex-row items-center justify-center min-h-[80vh] lg:min-h-screen text-center lg:text-left px-4 md:px-8 max-w-7xl mx-auto gap-8 md:gap-12 py-12 md:py-20">
                     <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-6">
+                      <div className="flex items-center justify-center lg:justify-start gap-2 md:gap-3 mb-4 md:mb-6 flex-wrap">
                         <span className="text-[10px] font-bold tracking-[0.3em] text-zinc-400 uppercase">
                           {campaign.category || 'CAMPAIGN'}
                         </span>
                         <div className="h-px w-8 bg-zinc-200" />
-                        <span className="text-xs font-bold tracking-[0.3em] text-primary uppercase">EXCLUSIVELY FOR GROWTH</span>
+                        <span className="text-[10px] md:text-xs font-bold tracking-[0.3em] text-primary uppercase">EXCLUSIVELY FOR GROWTH</span>
                       </div>
-                      <h1 className="text-5xl md:text-7xl font-black leading-snug mb-8 whitespace-pre-line tracking-tighter">
+                      <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-black leading-tight md:leading-snug mb-5 md:mb-8 whitespace-pre-line tracking-tighter">
                         {campaign.hero_content.headline}
                       </h1>
-                      <p className="text-xl md:text-2xl text-zinc-500 mb-12 max-w-2xl font-medium leading-relaxed">
+                      <p className="text-base sm:text-lg md:text-2xl text-zinc-500 mb-8 md:mb-12 max-w-2xl font-medium leading-relaxed">
                         {campaign.hero_content.description}
                       </p>
                     </div>
-                    <div className="flex-1 w-full max-w-md">
+                    <div className="flex-1 w-full max-w-md mx-auto lg:mx-0">
                       <LeadForm
                         title={campaign.hero_content.file_name}
                         ctaLabel={campaign.hero_content.cta_label}
@@ -132,7 +132,7 @@ export default function CampaignLandingPage() {
         </section>
 
         {/* 2. Selected Sections */}
-        <div className="space-y-32">
+        <div className="space-y-16 md:space-y-32">
           {sections.map(section => (
             <SectionRenderer
               key={section.id}
@@ -145,9 +145,9 @@ export default function CampaignLandingPage() {
         </div>
 
         {/* 3. 🛡️ 롤백 요청 사항: 아티클(매거진) 강제 노출 */}
-        <section className={`${campaign.show_ai_block ? 'pt-32' : 'py-32'} border-t border-zinc-100 mt-32 px-6 md:px-12 max-w-7xl mx-auto`}>
+        <section className={`${campaign.show_ai_block ? 'pt-16 md:pt-32' : 'py-16 md:py-32'} border-t border-zinc-100 mt-16 md:mt-32 px-4 md:px-12 max-w-7xl mx-auto`}>
           {campaign.show_ai_block && (
-            <div className="mb-32 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
+            <div className="mb-16 md:mb-32 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
                <AiSolutionBlock />
             </div>
           )}

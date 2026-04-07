@@ -89,7 +89,7 @@ export default function HomePage() {
         {/* ─── Global Sections (Content starts after cinematic phase) ─── */}
         <div className="bg-white dark:bg-zinc-950 relative z-20">
           {sections.map(section => (
-            <div key={section.id} className="mb-32">
+            <div key={section.id} className="mb-16 md:mb-32">
               <SectionRenderer
                 type={section.type}
                 title={section.title}

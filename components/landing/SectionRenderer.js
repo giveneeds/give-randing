@@ -53,8 +53,8 @@ export default function SectionRenderer({ type, content, settings, title, subtit
       return <MagazineList {...commonProps} />;
     default:
       return (
-        <div style={{ padding: '50px', textAlign: 'center', color: '#888' }}>
-          <div>알 수 없는 섹션 타입입니다: {type}</div>
+        <div className="px-4 py-12 md:px-8 md:py-16 text-center text-sm text-zinc-500 break-keep">
+          알 수 없는 섹션 타입입니다: {type}
         </div>
       );
   }

@@ -13,6 +13,12 @@ export default function MarketingHookSection({ title, subtitle, content }) {
   const subtitleRef = useRef(null);
 
   useGSAP(() => {
+    // 모바일에선 pin 애니메이션 비활성화 (주소창 토글/오버플로우 충돌 방지)
+    if (typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches) {
+      if (bigTextRef.current) gsap.set(bigTextRef.current, { scale: 1, opacity: 1, y: 0, color: '#3B82F6', filter: 'blur(0px)' });
+      if (subtitleRef.current) gsap.set(subtitleRef.current, { opacity: 1, x: 0, filter: 'blur(0px)' });
+      return;
+    }
     const tl = gsap.timeline({
       scrollTrigger: {
         trigger: container.current,
@@ -52,18 +58,18 @@ export default function MarketingHookSection({ title, subtitle, content }) {
   }, { scope: container });
 
   return (
-    <section ref={container} className="h-screen w-full flex flex-col items-center justify-center bg-white dark:bg-zinc-950 overflow-hidden relative">
-      <div className="relative z-10 text-center px-4 max-w-7xl w-full translate-y-[-5%]">
+    <section ref={container} className="min-h-screen md:h-screen w-full flex flex-col items-center justify-center bg-white dark:bg-zinc-950 overflow-hidden relative py-20 md:py-0">
+      <div className="relative z-10 text-center px-4 max-w-7xl w-full md:translate-y-[-5%]">
         {/* 1단: 상단 훅 타이틀 */}
-        <div className="mb-14 overflow-hidden">
-          <h2 className="text-3xl md:text-5xl font-black text-zinc-900 dark:text-white tracking-[0.1em] leading-tight opacity-40 uppercase">
+        <div className="mb-8 md:mb-14 overflow-hidden">
+          <h2 className="text-xl sm:text-3xl md:text-5xl font-black text-zinc-900 dark:text-white tracking-[0.08em] sm:tracking-[0.1em] leading-tight opacity-40 uppercase">
             {title}
           </h2>
         </div>
 
         {/* 2단: 핵심 애니메이션 구간 (마케팅 + 이 아닙니다.) */}
         <div className="flex flex-col items-center">
-          <div className="flex flex-wrap items-center justify-center gap-x-6 text-5xl md:text-8xl font-black tracking-tighter leading-tight">
+          <div className="flex flex-wrap items-center justify-center gap-x-3 sm:gap-x-6 text-3xl sm:text-5xl md:text-8xl font-black tracking-tighter leading-tight">
             {/* 마케팅 (슬롯 시스템) */}
             <div className="relative inline-flex items-center justify-center">
               {/* 애니메이션 되는 실제 텍스트 */}
@@ -89,8 +95,8 @@ export default function MarketingHookSection({ title, subtitle, content }) {
           </div>
 
           {/* 3단: 하단 보조 푸터 */}
-          <div className="mt-28">
-            <p className="text-xl md:text-3xl font-bold text-zinc-400 dark:text-zinc-700 tracking-[0.2em] uppercase italic border-t border-zinc-100 dark:border-white/5 pt-10 px-10 inline-block">
+          <div className="mt-14 md:mt-28">
+            <p className="text-sm sm:text-xl md:text-3xl font-bold text-zinc-400 dark:text-zinc-700 tracking-[0.15em] sm:tracking-[0.2em] uppercase italic border-t border-zinc-100 dark:border-white/5 pt-6 md:pt-10 px-4 sm:px-10 inline-block">
               {content.footer}
             </p>
           </div>

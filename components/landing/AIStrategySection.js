@@ -35,7 +35,7 @@ export default function AIStrategySection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="text-4xl md:text-7xl font-black text-zinc-900 dark:text-white tracking-tighter mb-10 leading-none"
+            className="text-3xl sm:text-4xl md:text-7xl font-black text-zinc-900 dark:text-white tracking-tighter mb-8 md:mb-10 leading-[1.1] md:leading-none"
           >
             기브니즈 AI로<br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-zinc-900 to-blue-600 dark:from-purple-400 dark:via-white dark:to-blue-400">
@@ -49,7 +49,7 @@ export default function AIStrategySection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.2 }}
-            className="text-xl text-zinc-500 dark:text-zinc-400 mb-12 max-w-xl font-medium leading-relaxed"
+            className="text-base sm:text-xl text-zinc-500 dark:text-zinc-400 mb-10 md:mb-12 max-w-xl font-medium leading-relaxed mx-auto md:mx-0"
           >
             복잡한 데이터 분석과 시장 조사, 이제 AI가 대신합니다. 
             당신의 비즈니스 상황에 딱 맞는 초격차 성장의 로드맵을 지금 바로 확인하세요.
@@ -61,7 +61,7 @@ export default function AIStrategySection() {
             viewport={{ once: true }}
             transition={{ delay: 0.3 }}
             onClick={handleStartAI}
-            className="group relative inline-flex items-center space-x-4 bg-zinc-900 dark:bg-white text-white dark:text-black px-12 py-5 rounded-full font-black text-xl hover:scale-105 active:scale-95 transition-all shadow-xl dark:shadow-[0_0_40px_rgba(255,255,255,0.2)]"
+            className="group relative inline-flex items-center gap-3 sm:gap-4 bg-zinc-900 dark:bg-white text-white dark:text-black px-8 sm:px-12 py-4 sm:py-5 rounded-full font-black text-base sm:text-xl hover:scale-105 active:scale-95 transition-all shadow-xl dark:shadow-[0_0_40px_rgba(255,255,255,0.2)]"
           >
             <span>전략 알아보기</span>
             <ArrowRight size={24} className="group-hover:translate-x-2 transition-transform" />

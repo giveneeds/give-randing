@@ -7,7 +7,7 @@ export default function ChatbotBlock() {
     <motion.div 
       initial={{ opacity: 0, scale: 0.95 }}
       whileInView={{ opacity: 1, scale: 1 }}
-      className="my-16 p-8 md:p-12 bg-zinc-900 text-white overflow-hidden relative group"
+      className="my-12 sm:my-16 p-6 sm:p-8 md:p-12 bg-zinc-900 text-white overflow-hidden relative group"
     >
       <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
         <Sparkles size={120} />
@@ -21,7 +21,7 @@ export default function ChatbotBlock() {
           <span className="text-[10px] font-bold tracking-[0.3em] text-zinc-500 uppercase">Interactive AI Helper</span>
         </div>
         
-        <h3 className="text-2xl md:text-3xl font-black tracking-tighter mb-6 leading-tight">
+        <h3 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tighter mb-5 sm:mb-6 leading-tight">
           이 아티클의 내용을<br/>
           당신의 브랜드에 <span className="text-zinc-500">직접 적용</span>해볼까요?
         </h3>
@@ -33,7 +33,7 @@ export default function ChatbotBlock() {
         
         <a 
           href="/chat" 
-          className="inline-flex items-center gap-3 bg-white text-zinc-900 px-8 py-4 text-xs font-black uppercase tracking-widest hover:gap-6 transition-all"
+          className="inline-flex items-center gap-3 bg-white text-zinc-900 px-6 sm:px-8 py-3 sm:py-4 text-xs font-black uppercase tracking-widest hover:gap-6 transition-all"
         >
           AI 진단 시작하기 <ArrowRight size={14} />
         </a>

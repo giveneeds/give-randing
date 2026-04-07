@@ -3,14 +3,13 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowLeft, Save, Eye, Trash2, Monitor, Smartphone, CheckCircle2, ChevronRight,
-  Archive, Send, X
+  Archive, Send, X, Info
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import AiSolutionBlock from '@/components/ui/AiSolutionBlock';
 import MagazineRichEditor from '@/components/admin/MagazineRichEditor';
 import ThumbnailUploader from '@/components/admin/ThumbnailUploader';
-
-const CATEGORY_OPTIONS = ['INSIGHT', 'STRATEGY', 'ANALYSIS', 'CASE STUDY', 'TREND'];
+import { CATEGORY_OPTIONS as MAGAZINE_CATEGORY_OPTIONS, MAGAZINE_CATEGORIES } from '@/lib/magazineCategories';
 
 export default function MagazineEditor() {
   const router = useRouter();
@@ -18,7 +17,7 @@ export default function MagazineEditor() {
   const id = searchParams.get('id');
 
   const [magazine, setMagazine] = useState({
-    title: '', slug: '', category: 'INSIGHT', thumbnail_url: '', content_html: '',
+    title: '', slug: '', category: '', thumbnail_url: '', content_html: '',
     excerpt: '', author: 'GIVENEEDS', tags: [],
     is_premium: false, status: 'draft', is_featured: false, sort_order: 0,
     show_ai_block: true
@@ -120,11 +119,14 @@ export default function MagazineEditor() {
               <input className="w-full p-4 bg-white border border-zinc-200 rounded-md font-bold text-base outline-none shadow-sm focus:ring-2 focus:ring-zinc-900/10" placeholder="기사 제목을 입력하세요" value={magazine.title} onChange={e => handleTitleChange(e.target.value)} />
               
               <div className="grid grid-cols-2 gap-3">
-                 <select className="w-full p-3 bg-white border border-zinc-200 rounded-md font-bold text-xs uppercase tracking-widest outline-none shadow-sm" value={magazine.category} onChange={e => setMagazine({ ...magazine, category: e.target.value })}>
-                   {CATEGORY_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
+                 <select className="w-full p-3 bg-white border border-zinc-200 rounded-md font-bold text-xs outline-none shadow-sm" value={magazine.category} onChange={e => setMagazine({ ...magazine, category: e.target.value })}>
+                   {MAGAZINE_CATEGORY_OPTIONS.map(c => <option key={c.value || 'none'} value={c.value}>{c.label}</option>)}
                  </select>
                  <input className="w-full p-3 bg-white border border-zinc-200 rounded-md font-mono text-[11px] outline-none shadow-sm" placeholder="slug (auto)" value={magazine.slug} onChange={e => setMagazine({ ...magazine, slug: e.target.value })} />
               </div>
+
+              {/* 카테고리 가이드 — 어떤 글을 쓸지 형식 안내 */}
+              <CategoryGuideTooltip current={magazine.category} />
               
               <input className="w-full p-3 bg-white border border-zinc-200 rounded-md text-sm outline-none shadow-sm" placeholder="작성자 (기본: GIVENEEDS)" value={magazine.author} onChange={e => setMagazine({ ...magazine, author: e.target.value })} />
               <ThumbnailUploader value={magazine.thumbnail_url} onChange={(url) => setMagazine({ ...magazine, thumbnail_url: url })} />
@@ -232,6 +234,37 @@ function PreviewContent({ post }) {
            </div>
          </div>
        )}
+    </div>
+  );
+}
+
+function CategoryGuideTooltip({ current }) {
+  const isUncat = !current;
+  const meta = MAGAZINE_CATEGORIES.find(c => c.value === current);
+
+  return (
+    <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-4 space-y-2">
+      <div className="flex items-center gap-2 text-[10px] font-black text-amber-700 uppercase tracking-widest">
+        <Info size={12} />
+        {isUncat ? '미분류 안내' : `${meta?.label} 작성 가이드`}
+      </div>
+
+      {isUncat ? (
+        <p className="text-[12px] leading-relaxed text-amber-900">
+          맞는 카테고리가 없으면 비워두세요. <strong>"모든 글" 뷰 상단</strong>에 매일 12시(KST) 랜덤 순서로 노출됩니다.
+          어떤 주제든 자유롭게 써도 되지만, 가능하면 4개 카테고리 중 하나에 맞춰 쓰면 검색·추천에서 더 잘 잡힙니다.
+        </p>
+      ) : (
+        <>
+          <p className="text-[12px] leading-relaxed text-amber-900">{meta.description}</p>
+          <div className="pt-1">
+            <div className="text-[9px] font-black text-amber-700 uppercase tracking-widest mb-1">예시 제목</div>
+            <ul className="text-[11px] text-amber-900 space-y-0.5 list-disc pl-4">
+              {meta.examples.map((ex, i) => <li key={i}>{ex}</li>)}
+            </ul>
+          </div>
+        </>
+      )}
     </div>
   );
 }

@@ -35,38 +35,45 @@ export default function ProductsSection() {
         </div>
       </div>
       
-      {/* Horizontal Scroll Area */}
-      <div 
+      {/* 모바일: 2열 그리드 / 데스크탑: 가로 스크롤 캐러셀 */}
+      <div className="md:hidden grid grid-cols-2 gap-3 px-4 pb-10">
+        {products.map(product => (
+          <div key={product.id} className="service-card-minimal">
+            <div className="minimal-label">{product.category}</div>
+            <h3 className="minimal-title">{product.title}</h3>
+            <p className="minimal-desc">{product.desc}</p>
+          </div>
+        ))}
+      </div>
+
+      <div
+        className="hidden md:flex"
         style={{
-          display: 'flex',
           overflowX: 'auto',
           scrollSnapType: 'x mandatory',
           padding: '0 24px 40px 24px',
           gap: '24px',
-          // Hide scrollbar but keep functionality
           scrollbarWidth: 'none',
           msOverflowStyle: 'none',
           WebkitOverflowScrolling: 'touch',
         }}
       >
-        {/* Helper style snippet to hide webkit scrollbar specifically inside the JSX */}
         <style dangerouslySetInnerHTML={{__html: `
           ::-webkit-scrollbar { display: none; }
         `}} />
-        
-        {/* Empty padding block for initial alignment */}
+
         <div style={{ minWidth: 'max(0vw, calc((100vw - 1200px) / 2))' }}></div>
 
         {products.map(product => (
-          <div 
+          <div
             key={product.id}
             className="service-card-minimal"
-            style={{ 
-              minWidth: '300px', 
-              width: '80vw', 
-              maxWidth: '400px', 
+            style={{
+              minWidth: '300px',
+              width: '80vw',
+              maxWidth: '400px',
               scrollSnapAlign: 'center',
-              flexShrink: 0 
+              flexShrink: 0
             }}
           >
             <div className="minimal-label">{product.category}</div>
@@ -75,7 +82,6 @@ export default function ProductsSection() {
           </div>
         ))}
 
-        {/* Empty padding block for ending alignment */}
         <div style={{ minWidth: 'max(0vw, calc((100vw - 1200px) / 2))', paddingRight: '24px' }}></div>
       </div>
     </section>
