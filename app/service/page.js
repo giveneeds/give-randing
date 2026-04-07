@@ -159,8 +159,8 @@ export default function ServicePage() {
                             <span key={idx} className="block">{word}</span>
                           ))}
                         </h3>
-                        <p className="text-xs font-medium opacity-0 group-hover:opacity-80 leading-snug transition-opacity duration-700 delay-100 max-h-[55%] overflow-y-auto pr-2">
-                          {service.description}
+                        <p className="text-xs font-medium opacity-0 group-hover:opacity-80 leading-snug transition-opacity duration-700 delay-100">
+                          {service.subtitle || service.description}
                         </p>
                       </div>
                     </motion.div>
