@@ -58,8 +58,7 @@ export default function ServiceDetailPage({ params }) {
               목록으로
             </Link>
             <Link
-              href="https://pf.kakao.com/_Rxfuxbxj"
-              target="_blank"
+              href="/contact"
               className="px-8 py-4 bg-zinc-900 text-white rounded-full font-black text-sm uppercase tracking-tight hover:bg-zinc-800 transition-all"
             >
               먼저 상담하기
@@ -294,8 +293,7 @@ export default function ServiceDetailPage({ params }) {
           {/* CTA */}
           <div className="mt-16 flex justify-center">
             <Link
-              href="https://pf.kakao.com/_Rxfuxbxj"
-              target="_blank"
+              href="/contact"
               className="px-14 py-5 bg-zinc-900 text-white rounded-full font-black text-lg uppercase tracking-tight hover:bg-zinc-800 transition-all shadow-xl flex items-center gap-3"
             >
               상담하기
