@@ -1,9 +1,9 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import LandingNavbar from '@/components/landing/LandingNavbar';
 import LandingFooter from '@/components/landing/LandingFooter';
-import { DUMMY_SERVICE_PRODUCTS, DUMMY_SETTINGS } from '@/lib/supabase';
+import { DUMMY_SETTINGS } from '@/lib/supabase';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
@@ -55,14 +55,22 @@ const SECTORS = [
 
 
 export default function ServicePage() {
-  const services = DUMMY_SERVICE_PRODUCTS;
+  const [services, setServices] = useState([]);
 
-  const groupedServices = useMemo(() => {
-    return SECTORS.map(sector => ({
-      ...sector,
-      items: services.filter(s => s.category === sector.id)
-    }));
-  }, [services]);
+  useEffect(() => {
+    fetch('/api/services')
+      .then(r => r.json())
+      .then(data => {
+        const active = Array.isArray(data) ? data.filter(s => s.is_active) : [];
+        setServices(active);
+      })
+      .catch(() => setServices([]));
+  }, []);
+
+  const groupedServices = SECTORS.map(sector => ({
+    ...sector,
+    items: services.filter(s => s.category === sector.id)
+  }));
 
   return (
     <div className="min-h-screen bg-white dark:bg-zinc-950 selection:bg-blue-500 selection:text-white">
