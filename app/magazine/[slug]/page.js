@@ -9,12 +9,16 @@ import { ArrowLeft, Clock, Share2, Bookmark } from 'lucide-react';
 import Link from 'next/link';
 import AiSolutionBlock from '@/components/ui/AiSolutionBlock';
 import LeadForm from '@/components/ui/LeadForm';
+import PremiumGateModal from '@/components/ui/PremiumGateModal';
+import { useAuth } from '@/lib/useAuth';
 
 export default function MagazineDetailPage() {
   const { slug } = useParams();
   const [post, setPost] = useState(null);
   const [related, setRelated] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { user, loading: authLoading } = useAuth();
+  const isLocked = !!post?.is_premium && !user && !authLoading;
 
   useEffect(() => {
     async function loadPost() {
@@ -143,14 +147,22 @@ export default function MagazineDetailPage() {
 
         {/* ─── Content ─── */}
         <article className="px-6 md:px-12 max-w-screen-md mx-auto">
-          <div 
-             className="prose prose-zinc dark:prose-invert prose-lg max-w-none magazine-prose
-                        prose-headings:font-black prose-headings:tracking-tighter
-                        prose-p:text-zinc-600 dark:prose-p:text-zinc-300 prose-p:leading-relaxed prose-p:mb-8
-                        prose-strong:text-zinc-900 dark:prose-strong:text-white prose-strong:font-black
-                        prose-confirm-img:rounded-xl prose-img:border prose-img:border-zinc-200 dark:prose-img:border-zinc-800 shadow-none"
-             dangerouslySetInnerHTML={{ __html: post.content_html }}
-          />
+          <div className="relative">
+            <div
+               className="prose prose-zinc dark:prose-invert prose-lg max-w-none magazine-prose
+                          prose-headings:font-black prose-headings:tracking-tighter
+                          prose-p:text-zinc-600 dark:prose-p:text-zinc-300 prose-p:leading-relaxed prose-p:mb-8
+                          prose-strong:text-zinc-900 dark:prose-strong:text-white prose-strong:font-black
+                          prose-confirm-img:rounded-xl prose-img:border prose-img:border-zinc-200 dark:prose-img:border-zinc-800 shadow-none"
+               style={isLocked ? {
+                 maxHeight: '480px',
+                 overflow: 'hidden',
+                 WebkitMaskImage: 'linear-gradient(to bottom, black 50%, transparent 100%)',
+                 maskImage: 'linear-gradient(to bottom, black 50%, transparent 100%)',
+               } : undefined}
+               dangerouslySetInnerHTML={{ __html: post.content_html }}
+            />
+          </div>
           
           <div className="mt-20 border-t border-zinc-100 dark:border-zinc-800 pt-20">
             <LeadForm 
@@ -186,6 +198,7 @@ export default function MagazineDetailPage() {
       </main>
 
       <LandingFooter />
+      {isLocked && <PremiumGateModal slug={slug} />}
     </>
   );
 }

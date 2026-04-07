@@ -538,6 +538,24 @@ a {
   border-bottom: 1px solid var(--border);
 }
 
+/* 모바일에서는 항상 불투명 — 콘텐츠가 네비 뒤로 비쳐 보이는 문제 방지 */
+@media (max-width: 767px) {
+  .navbar-minimal {
+    padding: 14px 0;
+    background: var(--nav-scrolled);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+  /* CSS 기반 섹션 공통 — 모바일 패딩/폰트 축소 */
+  .container { padding: 0 16px; }
+  .section { padding: 60px 0; }
+  .section-title { font-size: 1.5rem; }
+  .cta-box-minimal { padding: 48px 24px; }
+  .minimal-grid { gap: 16px; grid-template-columns: 1fr; }
+  .testimonials-grid-minimal { gap: 16px; grid-template-columns: 1fr; }
+}
+
 .nav-container-minimal {
   display: flex;
   justify-content: space-between;
@@ -794,3 +812,23 @@ a {
     font-size: 1.4rem !important;
   }
 }
+
+/* ============ Magazine Rich Editor (scoped) ============ */
+.magazine-editor .ProseMirror { outline: none; min-height: 600px; padding: 2.5rem; }
+.magazine-editor .ProseMirror h1 { font-size: 2.25rem; font-weight: 900; letter-spacing: -0.03em; margin: 1.5rem 0 1rem; line-height: 1.15; color: #18181b; }
+.magazine-editor .ProseMirror h2 { font-size: 1.75rem; font-weight: 900; letter-spacing: -0.02em; margin: 1.5rem 0 0.75rem; line-height: 1.2; color: #18181b; }
+.magazine-editor .ProseMirror h3 { font-size: 1.35rem; font-weight: 800; letter-spacing: -0.01em; margin: 1.25rem 0 0.5rem; line-height: 1.3; color: #18181b; }
+.magazine-editor .ProseMirror p { margin: 0 0 1rem; line-height: 1.75; color: #3f3f46; font-size: 1rem; }
+.magazine-editor .ProseMirror ul { list-style: disc; padding-left: 1.5rem; margin: 0 0 1rem; }
+.magazine-editor .ProseMirror ol { list-style: decimal; padding-left: 1.5rem; margin: 0 0 1rem; }
+.magazine-editor .ProseMirror li { margin: 0.25rem 0; }
+.magazine-editor .ProseMirror li > p { margin: 0; }
+.magazine-editor .ProseMirror blockquote { border-left: 4px solid #18181b; padding-left: 1.25rem; margin: 1.5rem 0; font-style: italic; color: #52525b; }
+.magazine-editor .ProseMirror img { border-radius: 0.75rem; border: 1px solid #e4e4e7; max-width: 100%; height: auto; margin: 1rem 0; cursor: pointer; }
+.magazine-editor .ProseMirror img:hover { outline: 2px solid #ef4444; outline-offset: 2px; }
+.magazine-editor .ProseMirror hr { border: none; border-top: 1px solid #e4e4e7; margin: 2rem 0; }
+.magazine-editor .ProseMirror a { color: #2563eb; text-decoration: underline; }
+.magazine-editor .ProseMirror mark { padding: 0 0.15em; border-radius: 2px; }
+.magazine-editor .ProseMirror strong { font-weight: 800; color: #18181b; }
+.magazine-editor .ProseMirror p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: #a1a1aa; float: left; pointer-events: none; height: 0; }
+

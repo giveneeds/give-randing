@@ -1,12 +1,14 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { 
+import {
   ArrowLeft, Save, Eye, Trash2, Monitor, Smartphone, CheckCircle2, ChevronRight,
-  Archive, Send
+  Archive, Send, X
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import AiSolutionBlock from '@/components/ui/AiSolutionBlock';
+import MagazineRichEditor from '@/components/admin/MagazineRichEditor';
+import ThumbnailUploader from '@/components/admin/ThumbnailUploader';
 
 const CATEGORY_OPTIONS = ['INSIGHT', 'STRATEGY', 'ANALYSIS', 'CASE STUDY', 'TREND'];
 
@@ -26,6 +28,7 @@ export default function MagazineEditor() {
   const [previewMode, setPreviewMode] = useState('desktop');
   const [loading, setLoading] = useState(!!id);
   const [tagInput, setTagInput] = useState('');
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   useEffect(() => { if (id) loadMagazine(); }, [id]);
 
@@ -84,10 +87,12 @@ export default function MagazineEditor() {
             <h1 className="text-xs font-black uppercase tracking-widest text-zinc-900">Archive Editor</h1>
          </div>
 
-         <div className="flex bg-zinc-100 p-1 rounded-lg border border-zinc-200">
-            <button onClick={() => setPreviewMode('desktop')} className={clsx("flex items-center gap-2 px-3 py-1.5 rounded-md text-[10px] font-black uppercase", previewMode === 'desktop' ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-400 hover:text-zinc-600")}><Monitor size={14} /> Desktop</button>
-            <button onClick={() => setPreviewMode('mobile')} className={clsx("flex items-center gap-2 px-3 py-1.5 rounded-md text-[10px] font-black uppercase", previewMode === 'mobile' ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-400 hover:text-zinc-600")}><Smartphone size={14} /> Mobile</button>
-         </div>
+         <button
+           onClick={() => setPreviewOpen(true)}
+           className="flex items-center gap-2 px-4 py-2 rounded-md text-[10px] font-black uppercase tracking-widest border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
+         >
+           <Eye size={14} /> Preview
+         </button>
 
          <div className="flex items-center gap-2">
            <button 
@@ -122,7 +127,7 @@ export default function MagazineEditor() {
               </div>
               
               <input className="w-full p-3 bg-white border border-zinc-200 rounded-md text-sm outline-none shadow-sm" placeholder="작성자 (기본: GIVENEEDS)" value={magazine.author} onChange={e => setMagazine({ ...magazine, author: e.target.value })} />
-              <input className="w-full p-3 bg-white border border-zinc-200 rounded-md font-mono text-[11px] outline-none shadow-sm" placeholder="Thumbnail Image URL (Unsplash 등)" value={magazine.thumbnail_url} onChange={e => setMagazine({ ...magazine, thumbnail_url: e.target.value })} />
+              <ThumbnailUploader value={magazine.thumbnail_url} onChange={(url) => setMagazine({ ...magazine, thumbnail_url: url })} />
            </div>
 
            {/* 요약 & 태그 */}
@@ -139,12 +144,6 @@ export default function MagazineEditor() {
               )}
            </div>
 
-           {/* 콘텐츠 에디터 */}
-           <div className="flex-1 space-y-4 pt-6 border-t border-zinc-200">
-              <label className="text-[10px] font-bold text-zinc-900 uppercase ml-1">Content Editor</label>
-              <textarea className="w-full min-h-[400px] bg-white border border-zinc-200 rounded-md p-6 text-sm leading-relaxed outline-none font-mono shadow-sm" placeholder="본문을 HTML로 작성하세요..." value={magazine.content_html} onChange={e => setMagazine({ ...magazine, content_html: e.target.value })} />
-           </div>
-
            {/* 토글 옵션 */}
            <div className="pt-6 border-t border-zinc-200 space-y-3">
               <input type="number" className="w-full p-3 bg-white border border-zinc-200 rounded-md text-sm outline-none shadow-sm" placeholder="정렬 순서 (숫자, 낮을수록 앞)" value={magazine.sort_order || 0} onChange={e => setMagazine({ ...magazine, sort_order: parseInt(e.target.value) || 0 })} />
@@ -155,14 +154,36 @@ export default function MagazineEditor() {
            </div>
         </aside>
 
-        <main className="flex-1 bg-zinc-100 overflow-y-auto flex flex-col items-center">
-           <div className={clsx("bg-white shadow-2xl transition-all duration-700 ease-in-out border-zinc-200 overflow-hidden", previewMode === 'mobile' ? "w-[393px] h-[852px] my-10 rounded-[3rem] border-[12px] border-zinc-900 relative shrink-0" : "w-full min-h-full")}>
-              <div className="h-full overflow-y-auto scroll-smooth custom-scrollbar">
-                 <PreviewContent post={magazine} />
-              </div>
-           </div>
+        <main className="flex-1 bg-white overflow-hidden flex flex-col">
+           <MagazineRichEditor
+             value={magazine.content_html}
+             onChange={(html) => setMagazine((m) => ({ ...m, content_html: html }))}
+           />
         </main>
       </div>
+
+      {/* ─── Preview Modal ─── */}
+      {previewOpen && (
+        <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex flex-col animate-in fade-in duration-200">
+          <div className="h-16 flex items-center justify-between px-6 bg-white border-b border-zinc-100 shrink-0">
+            <h2 className="text-xs font-black uppercase tracking-widest text-zinc-900">Live Preview</h2>
+            <div className="flex bg-zinc-100 p-1 rounded-lg border border-zinc-200">
+              <button onClick={() => setPreviewMode('desktop')} className={clsx("flex items-center gap-2 px-3 py-1.5 rounded-md text-[10px] font-black uppercase", previewMode === 'desktop' ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-400 hover:text-zinc-600")}><Monitor size={14} /> Desktop</button>
+              <button onClick={() => setPreviewMode('mobile')} className={clsx("flex items-center gap-2 px-3 py-1.5 rounded-md text-[10px] font-black uppercase", previewMode === 'mobile' ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-400 hover:text-zinc-600")}><Smartphone size={14} /> Mobile</button>
+            </div>
+            <button onClick={() => setPreviewOpen(false)} className="p-2 hover:bg-zinc-100 rounded-lg">
+              <X size={18} className="text-zinc-600" />
+            </button>
+          </div>
+          <div className="flex-1 bg-zinc-100 overflow-y-auto flex flex-col items-center">
+            <div className={clsx("bg-white shadow-2xl transition-all duration-500 ease-in-out border-zinc-200 overflow-hidden", previewMode === 'mobile' ? "w-[393px] h-[852px] my-10 rounded-[3rem] border-[12px] border-zinc-900 relative shrink-0" : "w-full min-h-full")}>
+              <div className="h-full overflow-y-auto scroll-smooth custom-scrollbar">
+                <PreviewContent post={magazine} />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

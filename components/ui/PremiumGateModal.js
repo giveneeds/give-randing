@@ -1,0 +1,74 @@
+'use client';
+import { Lock } from 'lucide-react';
+import { supabase, isDummyMode } from '@/lib/supabase';
+
+export default function PremiumGateModal({ slug }) {
+  async function handleKakaoLogin() {
+    if (isDummyMode || !supabase) {
+      alert('현재 환경에서는 카카오 로그인이 비활성화되어 있습니다.');
+      return;
+    }
+    const redirectTo =
+      typeof window !== 'undefined'
+        ? `${window.location.origin}/magazine/${slug}`
+        : undefined;
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'kakao',
+      options: { redirectTo },
+    });
+    if (error) alert('로그인 실패: ' + error.message);
+  }
+
+  const loginHref = typeof window !== 'undefined'
+    ? `/login?redirect=${encodeURIComponent(`/magazine/${slug}`)}`
+    : '/login';
+
+  return (
+    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 sm:p-6 bg-black/70 backdrop-blur-sm animate-in fade-in duration-300">
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl max-w-sm sm:max-w-md w-full p-6 sm:p-10 text-center border border-zinc-200 dark:border-zinc-800">
+        <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-zinc-900 dark:bg-white flex items-center justify-center mx-auto mb-4 sm:mb-6">
+          <Lock size={18} className="text-white dark:text-zinc-900 sm:hidden" />
+          <Lock size={22} className="text-white dark:text-zinc-900 hidden sm:block" />
+        </div>
+        <div className="text-[9px] sm:text-[10px] font-black tracking-[0.25em] sm:tracking-[0.3em] text-zinc-400 uppercase mb-2 sm:mb-3">Premium Archive</div>
+        <h3 className="text-lg sm:text-2xl font-black tracking-tighter text-zinc-900 dark:text-white mb-2 sm:mb-3 break-keep leading-tight">
+          이 콘텐츠는<br />프리미엄 매거진입니다
+        </h3>
+        <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed mb-5 sm:mb-8">
+          로그인하고 모든 프리미엄<br className="sm:hidden" /> 콘텐츠를 무료로 열람하세요.
+        </p>
+
+        {/* 이메일 로그인/회원가입 (메인) */}
+        <a
+          href={loginHref}
+          className="block w-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-black py-3 sm:py-4 rounded-xl text-xs sm:text-sm transition-all active:scale-[0.98] mb-2"
+        >
+          이메일로 로그인 / 회원가입
+        </a>
+
+        {/* 카카오 로그인 (보조) */}
+        <button
+          onClick={handleKakaoLogin}
+          className="w-full flex items-center justify-center gap-2 bg-[#FEE500] hover:bg-[#FDD800] text-[#191919] font-black py-3 sm:py-4 rounded-xl text-xs sm:text-sm transition-colors active:scale-[0.98]"
+        >
+          <KakaoIcon /> 카카오로 계속하기
+        </button>
+
+        <p className="text-[9px] sm:text-[10px] text-zinc-400 mt-3 sm:mt-4 leading-relaxed">
+          로그인 시 GIVENEEDS 서비스 이용약관 및<br className="sm:hidden" /> 개인정보 처리방침에 동의하게 됩니다.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function KakaoIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+      <path
+        d="M12 3C6.477 3 2 6.477 2 10.8c0 2.79 1.846 5.235 4.628 6.604l-1.17 4.276c-.103.378.327.677.658.456l5.13-3.39c.25.014.5.024.754.024 5.523 0 10-3.477 10-7.97C22 6.477 17.523 3 12 3z"
+        fill="#191919"
+      />
+    </svg>
+  );
+}
