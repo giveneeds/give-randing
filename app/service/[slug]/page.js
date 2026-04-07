@@ -88,12 +88,29 @@ export default function ServiceDetailPage({ params }) {
     });
   };
 
-  // Multi-line text renderer with bullet support
+  // 마크다운 기호를 줄바꿈 기준으로 정규화 (DB에 `\n`이 없는 경우 대비)
+  const normalizeMarkdown = (text) => {
+    if (typeof text !== 'string') return '';
+    let t = text.replace(/\r\n/g, '\n');
+    // 인라인 마커들을 새 줄로 분리
+    t = t.replace(/\s+>\s+/g, '\n> ');
+    t = t.replace(/\s+-\s+(?=\S)/g, '\n- ');
+    // "**소제목**" 이 문장 중간에 있으면 앞뒤 줄바꿈
+    t = t.replace(/\s+(\*\*[^*\n]+\*\*)\s+/g, '\n\n$1\n');
+    // 여러 공백 정리
+    t = t.replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n');
+    return t.trim();
+  };
+
+  // Multi-line text renderer with bullet / quote / heading support
   const renderMultiline = (text) => {
     if (!text) return null;
-    return text.split('\n').map((line, i) => {
+    const normalized = normalizeMarkdown(text);
+    return normalized.split('\n').map((line, i) => {
       const trimmed = line.trim();
-      if (!trimmed) return <div key={i} className="h-2" />;
+      if (!trimmed) return <div key={i} className="h-3" />;
+
+      // 불릿
       if (trimmed.startsWith('- ') || trimmed.startsWith('• ')) {
         return (
           <div key={i} className="flex gap-3 mb-2">
@@ -102,6 +119,26 @@ export default function ServiceDetailPage({ params }) {
           </div>
         );
       }
+
+      // 인용문 (>)
+      if (trimmed.startsWith('> ')) {
+        return (
+          <div key={i} className="border-l-2 border-zinc-900 pl-4 my-3 text-zinc-700 font-bold leading-relaxed">
+            {renderInline(trimmed.substring(2))}
+          </div>
+        );
+      }
+
+      // **소제목** 만 있는 줄 → 헤딩으로 취급
+      const headingMatch = trimmed.match(/^\*\*([^*]+)\*\*$/);
+      if (headingMatch) {
+        return (
+          <h4 key={i} className="font-black text-zinc-900 text-base mt-5 mb-2 leading-tight">
+            {headingMatch[1]}
+          </h4>
+        );
+      }
+
       return (
         <p key={i} className="mb-3 text-zinc-600 font-medium leading-relaxed">
           {renderInline(trimmed)}
@@ -149,9 +186,9 @@ export default function ServiceDetailPage({ params }) {
             </p>
           )}
           {service.description && (
-            <p className="mt-6 text-base text-zinc-500 max-w-3xl leading-relaxed font-medium border-t border-zinc-100 pt-6">
-              {service.description}
-            </p>
+            <div className="mt-6 text-base text-zinc-500 max-w-3xl leading-relaxed font-medium border-t border-zinc-100 pt-6">
+              {renderMultiline(service.description)}
+            </div>
           )}
         </header>
 
