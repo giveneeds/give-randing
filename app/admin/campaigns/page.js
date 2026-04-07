@@ -43,7 +43,10 @@ export default function AdminCampaigns() {
         body: JSON.stringify(updated)
       });
       
-      if (!res.ok) throw new Error('Failed to save via API');
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || `Failed to save via API (${res.status})`);
+      }
       
       const { campaign } = await res.json();
       

@@ -1,5 +1,11 @@
 import { NextResponse } from 'next/server';
 import { supabase, isDummyMode, DUMMY_CAMPAIGNS } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
+
+// RLS 우회용 — 쓰기 작업은 service role 키 사용. 없으면 anon으로 폴백.
+const db = supabaseAdmin || supabase;
+
+export const dynamic = 'force-dynamic';
 
 // In-memory state for dummy mode to persist changes locally
 let inMemoryDummyCampaigns = null;
@@ -73,7 +79,7 @@ export async function POST(request) {
       id: undefined // Let Supabase use default gen_random_uuid
     };
 
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from('campaigns')
       .insert(newCampaign)
       .select()
@@ -105,7 +111,7 @@ export async function PUT(request) {
     const body = await request.json();
     
     // We expect body to contain id if updating, but if it's an upsert on slug, need to handle
-    const { error } = await supabase
+    const { error } = await db
       .from('campaigns')
       .upsert({ ...body, updated_at: new Date().toISOString() }, { onConflict: 'slug' });
 
@@ -131,7 +137,7 @@ export async function DELETE(request) {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 
-    const { error } = await supabase
+    const { error } = await db
       .from('campaigns')
       .delete()
       .eq('id', id);
