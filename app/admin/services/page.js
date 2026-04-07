@@ -46,13 +46,15 @@ export default function AdminServicesPage() {
     setIsEditing(service.id);
     setEditForm({
       ...service,
-      details: service.details || {
+      details: {
         effects: [],
         operation: '',
         process: [],
         sub_items: [],
         duration: '',
-        reference_img: ''
+        reference_img: '',
+        status: 'published',
+        ...(service.details || {})
       }
     });
   };
@@ -75,7 +77,8 @@ export default function AdminServicesPage() {
         process: [{ step: '01', name: '', desc: '' }],
         sub_items: [{ title: '', desc: '' }],
         duration: '',
-        reference_img: ''
+        reference_img: '',
+        status: 'published'
       }
     });
   };
@@ -549,6 +552,17 @@ export default function AdminServicesPage() {
                     <div className="flex items-center gap-3 pt-6">
                        <input type="checkbox" id="is_active" className="w-5 h-5 rounded-md" checked={editForm.is_active} onChange={e => setEditForm({...editForm, is_active: e.target.checked})} />
                        <label htmlFor="is_active" className="text-xs font-black uppercase text-zinc-900">Active Stage</label>
+                    </div>
+                    <div className="space-y-2">
+                       <label className="text-xs font-black uppercase text-zinc-400">Publish Status</label>
+                       <select
+                         className="w-full p-2 bg-zinc-50 border rounded-lg text-xs font-bold"
+                         value={editForm.details.status || 'published'}
+                         onChange={(e) => setEditForm({...editForm, details: {...editForm.details, status: e.target.value}})}
+                       >
+                         <option value="published">Published (정상 노출)</option>
+                         <option value="coming_soon">Coming Soon (준비 중 팝업)</option>
+                       </select>
                     </div>
                  </div>
               </section>

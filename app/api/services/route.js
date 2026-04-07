@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 // GET: 서비스 목록 조회 (활성화된 것 위주)
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
