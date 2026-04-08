@@ -210,13 +210,22 @@ function LoginPageInner() {
             {/* Mode toggle */}
             <p className="text-center text-xs text-zinc-500 dark:text-zinc-400 mt-8">
               {mode === 'signin' ? '아직 계정이 없으신가요?' : '이미 계정이 있으신가요?'}
-              <button
-                type="button"
-                onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError(''); setInfo(''); }}
-                className="ml-2 font-black text-zinc-900 dark:text-white underline underline-offset-2"
-              >
-                {mode === 'signin' ? '회원가입' : '로그인'}
-              </button>
+              {mode === 'signin' ? (
+                <Link
+                  href={`/signup${redirectTo !== '/' ? `?redirect=${encodeURIComponent(redirectTo)}` : ''}`}
+                  className="ml-2 font-black text-zinc-900 dark:text-white underline underline-offset-2"
+                >
+                  회원가입
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => { setMode('signin'); setError(''); setInfo(''); }}
+                  className="ml-2 font-black text-zinc-900 dark:text-white underline underline-offset-2"
+                >
+                  로그인
+                </button>
+              )}
             </p>
 
             <p className="text-center text-[10px] text-zinc-400 mt-6 leading-relaxed">

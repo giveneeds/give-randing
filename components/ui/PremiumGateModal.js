@@ -22,6 +22,9 @@ export default function PremiumGateModal({ slug }) {
   const loginHref = typeof window !== 'undefined'
     ? `/login?redirect=${encodeURIComponent(`/magazine/${slug}`)}`
     : '/login';
+  const signupHref = typeof window !== 'undefined'
+    ? `/signup?redirect=${encodeURIComponent(`/magazine/${slug}`)}`
+    : '/signup';
 
   return (
     <div
@@ -41,12 +44,20 @@ export default function PremiumGateModal({ slug }) {
           로그인하고 모든 프리미엄<br className="sm:hidden" /> 콘텐츠를 무료로 열람하세요.
         </p>
 
-        {/* 이메일 로그인/회원가입 (메인) */}
+        {/* 회원가입 (메인 CTA) */}
         <a
-          href={loginHref}
+          href={signupHref}
           className="block w-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-black py-2.5 sm:py-4 rounded-lg sm:rounded-xl text-[11px] sm:text-sm transition-all active:scale-[0.98] mb-1.5 sm:mb-2"
         >
-          이메일로 로그인 / 회원가입
+          무료 회원가입하고 열람하기
+        </a>
+
+        {/* 이메일 로그인 (보조) */}
+        <a
+          href={loginHref}
+          className="block w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 text-zinc-900 dark:text-white font-black py-2.5 sm:py-4 rounded-lg sm:rounded-xl text-[11px] sm:text-sm transition-all active:scale-[0.98] mb-1.5 sm:mb-2"
+        >
+          이메일로 로그인
         </a>
 
         {/* 카카오 로그인 (보조) */}
