@@ -14,6 +14,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { signInWithKakao } from '@/lib/authKakao';
+import PrivacyPolicyDisclosure from '@/components/auth/PrivacyPolicyDisclosure';
 
 const BENEFITS = [
   {
@@ -192,6 +193,8 @@ function SignupPageInner() {
               <br />
               동의하게 됩니다.
             </p>
+
+            <PrivacyPolicyDisclosure />
           </div>
         </div>
       </div>

@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, MessageCircle, AlertCircle } from 'lucide-react';
 import { signInWithKakao } from '@/lib/authKakao';
+import PrivacyPolicyDisclosure from '@/components/auth/PrivacyPolicyDisclosure';
 
 function LoginPageInner() {
   const searchParams = useSearchParams();
@@ -104,6 +105,8 @@ function LoginPageInner() {
             <p className="text-center text-[10px] text-zinc-400 mt-6 leading-relaxed">
               로그인 시 GIVENEEDS 서비스 이용약관 및 개인정보 처리방침에<br />동의하게 됩니다.
             </p>
+
+            <PrivacyPolicyDisclosure />
           </div>
         </div>
       </div>

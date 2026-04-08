@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Loader2, X, Lock as LockIcon, MessageCircle } from 'lucide-react';
 import { signInWithKakao } from '@/lib/authKakao';
+import PrivacyPolicyDisclosure from '@/components/auth/PrivacyPolicyDisclosure';
 
 /**
  * 배경 블러 위에 띄우는 로그인 모달.
@@ -101,6 +102,8 @@ export default function LoginModal({
           <br />
           동의하게 됩니다.
         </p>
+
+        <PrivacyPolicyDisclosure />
       </div>
     </div>
   );
