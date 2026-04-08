@@ -1,24 +1,7 @@
 'use client';
 import { Lock } from 'lucide-react';
-import { supabase, isDummyMode } from '@/lib/supabase';
 
 export default function PremiumGateModal({ slug }) {
-  async function handleKakaoLogin() {
-    if (isDummyMode || !supabase) {
-      alert('현재 환경에서는 카카오 로그인이 비활성화되어 있습니다.');
-      return;
-    }
-    const redirectTo =
-      typeof window !== 'undefined'
-        ? `${window.location.origin}/magazine/${slug}`
-        : undefined;
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'kakao',
-      options: { redirectTo },
-    });
-    if (error) alert('로그인 실패: ' + error.message);
-  }
-
   const loginHref = typeof window !== 'undefined'
     ? `/login?redirect=${encodeURIComponent(`/magazine/${slug}`)}`
     : '/login';
@@ -60,14 +43,6 @@ export default function PremiumGateModal({ slug }) {
           이메일로 로그인
         </a>
 
-        {/* 카카오 로그인 (보조) */}
-        <button
-          onClick={handleKakaoLogin}
-          className="w-full flex items-center justify-center gap-2 bg-[#FEE500] hover:bg-[#FDD800] text-[#191919] font-black py-2.5 sm:py-4 rounded-lg sm:rounded-xl text-[11px] sm:text-sm transition-colors active:scale-[0.98]"
-        >
-          <KakaoIcon /> 카카오로 계속하기
-        </button>
-
         <p className="text-[8px] sm:text-[10px] text-zinc-400 mt-2.5 sm:mt-4 leading-relaxed">
           로그인 시 GIVENEEDS 서비스 이용약관 및<br className="sm:hidden" /> 개인정보 처리방침에 동의하게 됩니다.
         </p>
@@ -89,13 +64,3 @@ export default function PremiumGateModal({ slug }) {
   );
 }
 
-function KakaoIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-      <path
-        d="M12 3C6.477 3 2 6.477 2 10.8c0 2.79 1.846 5.235 4.628 6.604l-1.17 4.276c-.103.378.327.677.658.456l5.13-3.39c.25.014.5.024.754.024 5.523 0 10-3.477 10-7.97C22 6.477 17.523 3 12 3z"
-        fill="#191919"
-      />
-    </svg>
-  );
-}

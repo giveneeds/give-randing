@@ -25,6 +25,13 @@ function LoginPageInner() {
     setError('');
     setInfo('');
 
+    // 이메일 형식 강제 (@ 포함)
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('올바른 이메일 형식으로 입력해 주세요. (예: name@example.com)');
+      return;
+    }
+
     if (isDummyMode || !supabase) {
       setError('현재 환경에서는 로그인이 비활성화되어 있습니다.');
       return;
@@ -50,19 +57,6 @@ function LoginPageInner() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleKakao = async () => {
-    if (isDummyMode || !supabase) {
-      setError('현재 환경에서는 카카오 로그인이 비활성화되어 있습니다.');
-      return;
-    }
-    const origin = typeof window !== 'undefined' ? window.location.origin : '';
-    const { error: err } = await supabase.auth.signInWithOAuth({
-      provider: 'kakao',
-      options: { redirectTo: `${origin}${redirectTo}` },
-    });
-    if (err) setError('카카오 로그인 실패: ' + err.message);
   };
 
   return (
@@ -104,7 +98,7 @@ function LoginPageInner() {
               </h1>
               <p className="text-sm text-zinc-500 dark:text-zinc-400">
                 {mode === 'signin'
-                  ? '이메일로 로그인하거나 카카오 계정으로 계속하세요.'
+                  ? '이메일 주소로 로그인하세요.'
                   : '간단한 정보로 무료 계정을 만들어 보세요.'}
               </p>
             </div>
@@ -155,7 +149,9 @@ function LoginPageInner() {
                 <input
                   type="email"
                   required
-                  placeholder="이메일"
+                  pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$"
+                  title="이메일은 반드시 @ 형식이어야 합니다 (예: name@example.com)"
+                  placeholder="이메일 (예: name@example.com)"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-12 pr-4 py-3.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 rounded-xl text-sm font-medium text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:border-zinc-900 dark:focus:border-white outline-none transition"
@@ -191,22 +187,6 @@ function LoginPageInner() {
               </button>
             </form>
 
-            {/* Divider */}
-            <div className="flex items-center gap-4 my-6">
-              <div className="flex-1 h-px bg-zinc-200 dark:bg-zinc-800" />
-              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">또는</span>
-              <div className="flex-1 h-px bg-zinc-200 dark:bg-zinc-800" />
-            </div>
-
-            {/* Kakao */}
-            <button
-              type="button"
-              onClick={handleKakao}
-              className="w-full flex items-center justify-center gap-2 bg-[#FEE500] hover:bg-[#FDD800] text-[#191919] font-black py-4 rounded-xl text-sm transition-colors active:scale-[0.98]"
-            >
-              <KakaoIcon /> 카카오로 계속하기
-            </button>
-
             {/* Mode toggle */}
             <p className="text-center text-xs text-zinc-500 dark:text-zinc-400 mt-8">
               {mode === 'signin' ? '아직 계정이 없으신가요?' : '이미 계정이 있으신가요?'}
@@ -235,17 +215,6 @@ function LoginPageInner() {
         </div>
       </div>
     </div>
-  );
-}
-
-function KakaoIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-      <path
-        d="M12 3C6.477 3 2 6.477 2 10.8c0 2.79 1.846 5.235 4.628 6.604l-1.17 4.276c-.103.378.327.677.658.456l5.13-3.39c.25.014.5.024.754.024 5.523 0 10-3.477 10-7.97C22 6.477 17.523 3 12 3z"
-        fill="#191919"
-      />
-    </svg>
   );
 }
 
