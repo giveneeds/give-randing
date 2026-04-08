@@ -146,11 +146,6 @@ export default function ServiceDetailPage({ params }) {
                   {service.subtitle}
                 </p>
               )}
-              {service.description && (
-                <div className="mt-5 border-t border-zinc-100 dark:border-zinc-800 pt-5">
-                  <MarkdownContent text={service.description} />
-                </div>
-              )}
             </header>
 
             {/* Structured Blocks */}
