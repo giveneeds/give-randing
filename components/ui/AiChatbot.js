@@ -20,19 +20,39 @@ export default function AiChatbot() {
     if (!input.trim()) return;
 
     const userMessage = { role: 'user', content: input };
-    setMessages(prev => [...prev, userMessage]);
+    const nextMessages = [...messages, userMessage];
+    setMessages(nextMessages);
     setInput('');
     setIsTyping(true);
 
-    // AI Response Simulation (OpenAI/Gemini 연동 지점)
-    setTimeout(() => {
-      const aiResponse = { 
-        role: 'assistant', 
-        content: `"${input}"에 대한 기브니즈의 분석 결과입니다. 해당 카테고리에서는 데이터 기반의 퍼포먼스 마케팅과 감각적인 콘텐츠가 필수적입니다. 더 자세한 사례는 저희 '매거진'의 [스타트업 성장기] 섹션을 참고해보세요!` 
-      };
-      setMessages(prev => [...prev, aiResponse]);
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        // 첫 인사 메시지는 시스템 역할이 아니라 assistant 인사이므로 그대로 전달
+        body: JSON.stringify({ messages: nextMessages }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || 'AI 응답 실패');
+
+      setMessages((prev) => [
+        ...prev,
+        { role: 'assistant', content: data.reply || '죄송해요, 응답을 가져오지 못했어요.' },
+      ]);
+    } catch (err) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: 'assistant',
+          content:
+            '일시적으로 AI 응답을 불러오지 못했어요. 잠시 후 다시 시도해 주세요. 🙏',
+        },
+      ]);
+      console.error(err);
+    } finally {
       setIsTyping(false);
-    }, 1500);
+    }
   };
 
   return (
