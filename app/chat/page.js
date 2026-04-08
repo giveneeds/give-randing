@@ -2,8 +2,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import LandingNavbar from '@/components/landing/LandingNavbar';
 import LandingFooter from '@/components/landing/LandingFooter';
-import LoginModal from '@/components/auth/LoginModal';
 import useRequireAuth from '@/components/auth/useRequireAuth';
+import PremiumGateModal from '@/components/ui/PremiumGateModal';
 import { Send, Bot, User, Sparkles, ArrowLeft, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
@@ -29,6 +29,8 @@ export default function ChatPage() {
   const [answers, setAnswers] = useState({});
   const [sessionId, setSessionId] = useState(null);
   const [currentChoices, setCurrentChoices] = useState(MAIN_CONCERN_CHOICES);
+  const [guestMsgCount, setGuestMsgCount] = useState(0);
+  const [showGateModal, setShowGateModal] = useState(false);
   const scrollRef = useRef(null);
   const sessionInitRef = useRef(false);
 
@@ -118,12 +120,31 @@ export default function ChatPage() {
     const content = (text || '').trim();
     if (!content || isTyping) return;
 
+    // 비로그인 사용자: 5회 초과 시 로그인 게이트
+    if (!user && guestMsgCount >= 5) {
+      setShowGateModal(true);
+      return;
+    }
+
     const userMsg = { role: 'user', content, step };
     const nextMessagesLocal = [...messages, userMsg];
     setMessages(nextMessagesLocal);
     setInput('');
     setCurrentChoices([]);
     setIsTyping(true);
+
+    // 비로그인 사용자 메시지 카운트 증가
+    if (!user) {
+      const nextCount = guestMsgCount + 1;
+      setGuestMsgCount(nextCount);
+      if (nextCount >= 5) {
+        setTimeout(() => {
+          setIsTyping(false);
+          setShowGateModal(true);
+        }, 800);
+        return;
+      }
+    }
 
     // answers 자동 업데이트
     let nextAnswers = { ...answers };
@@ -221,7 +242,6 @@ export default function ChatPage() {
     handleSend({ text: choice.label, selectedValue: choice.value });
   };
 
-  // 인증 게이트 — 로딩 / 미로그인 시 모달 강제 노출
   if (authLoading) {
     return (
       <>
@@ -229,24 +249,6 @@ export default function ChatPage() {
         <main className="min-h-screen flex items-center justify-center pt-24">
           <Loader2 className="animate-spin text-zinc-400" size={28} />
         </main>
-      </>
-    );
-  }
-
-  if (!user) {
-    return (
-      <>
-        <LandingNavbar />
-        <main className="min-h-screen bg-zinc-50 pt-24 flex items-center justify-center">
-          <div className="text-center text-zinc-400 text-sm">로그인이 필요합니다.</div>
-        </main>
-        <LoginModal
-          open
-          dismissible={false}
-          redirectPath="/chat"
-          title="기브니즈 AI 전략 센터"
-          description="로그인하시면 라이트 AI 마케팅 전략 진단과 1:1 추천을 무료로 이용하실 수 있어요."
-        />
       </>
     );
   }
@@ -388,6 +390,7 @@ export default function ChatPage() {
         </div>
       </main>
       <LandingFooter />
+      {showGateModal && <PremiumGateModal redirectPath="/chat" />}
     </>
   );
 }

@@ -1,12 +1,13 @@
 'use client';
 import { Lock } from 'lucide-react';
 
-export default function PremiumGateModal({ slug }) {
+export default function PremiumGateModal({ slug, redirectPath }) {
+  const resolvedRedirect = redirectPath || (slug ? `/magazine/${slug}` : '/');
   const loginHref = typeof window !== 'undefined'
-    ? `/login?redirect=${encodeURIComponent(`/magazine/${slug}`)}`
+    ? `/login?redirect=${encodeURIComponent(resolvedRedirect)}`
     : '/login';
   const signupHref = typeof window !== 'undefined'
-    ? `/signup?redirect=${encodeURIComponent(`/magazine/${slug}`)}`
+    ? `/signup?redirect=${encodeURIComponent(resolvedRedirect)}`
     : '/signup';
 
   return (
@@ -35,12 +36,12 @@ export default function PremiumGateModal({ slug }) {
           무료 회원가입하고 열람하기
         </a>
 
-        {/* 이메일 로그인 (보조) */}
+        {/* 카카오 간편로그인 (보조) */}
         <a
           href={loginHref}
-          className="block w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 text-zinc-900 dark:text-white font-black py-2.5 sm:py-4 rounded-lg sm:rounded-xl text-[11px] sm:text-sm transition-all active:scale-[0.98] mb-1.5 sm:mb-2"
+          className="block w-full bg-[#FEE500] border border-[#FEE500] text-zinc-900 font-black py-2.5 sm:py-4 rounded-lg sm:rounded-xl text-[11px] sm:text-sm transition-all active:scale-[0.98] mb-1.5 sm:mb-2"
         >
-          이메일로 로그인
+          카카오 간편로그인
         </a>
 
         <p className="text-[8px] sm:text-[10px] text-zinc-400 mt-2.5 sm:mt-4 leading-relaxed">
