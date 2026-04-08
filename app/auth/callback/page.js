@@ -39,7 +39,10 @@ function AuthCallbackInner() {
             return;
           }
         }
-        router.replace(next);
+        const welcomeUrl = next.includes('?')
+          ? `${next}&welcome=1`
+          : `${next}?welcome=1`;
+        router.replace(welcomeUrl);
       } catch (err) {
         console.error('Auth callback error:', err);
         router.replace(`/login?error=callback&next=${encodeURIComponent(next)}`);

@@ -1,15 +1,35 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useTheme } from 'next-themes';
-import { Moon, Sun, Menu, X, ArrowLeft } from 'lucide-react';
+import { Moon, Sun, Menu, X, ArrowLeft, LogOut } from 'lucide-react';
 import { usePathname } from 'next/navigation';
+import { supabase, isDummyMode } from '@/lib/supabase';
 
 export default function LandingNavbar({ settings }) {
   const [scrolled, setScrolled] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [user, setUser] = useState(null);
   const { theme, setTheme } = useTheme();
   const pathname = usePathname();
+
+  useEffect(() => {
+    if (isDummyMode || !supabase) return;
+    supabase.auth.getSession().then(({ data }) => {
+      setUser(data?.session?.user || null);
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      setUser(session?.user || null);
+    });
+    return () => sub?.subscription?.unsubscribe?.();
+  }, []);
+
+  const handleSignOut = async () => {
+    if (!supabase) return;
+    await supabase.auth.signOut();
+    setMobileOpen(false);
+    window.location.href = '/';
+  };
   const isHome = pathname === '/';
   const handleBack = () => {
     if (typeof window === 'undefined') return;
@@ -90,18 +110,30 @@ export default function LandingNavbar({ settings }) {
             </button>
           )}
 
-          <a
-            href="/login"
-            className="hidden md:inline-flex items-center text-zinc-700 dark:text-zinc-200 hover:text-zinc-900 dark:hover:text-white px-3 py-2 font-bold text-xs tracking-widest uppercase transition-colors"
-          >
-            로그인
-          </a>
-          <a
-            href="/signup"
-            className="hidden md:inline-flex bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-5 py-2 rounded-md font-bold text-xs tracking-widest uppercase hover:scale-[1.02] active:scale-[0.98] transition-all"
-          >
-            무료 가입
-          </a>
+          {user ? (
+            <button
+              onClick={handleSignOut}
+              className="hidden md:inline-flex items-center gap-1.5 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white px-3 py-2 font-bold text-xs tracking-widest uppercase transition-colors"
+            >
+              <LogOut size={14} />
+              로그아웃
+            </button>
+          ) : (
+            <>
+              <a
+                href="/login"
+                className="hidden md:inline-flex items-center text-zinc-700 dark:text-zinc-200 hover:text-zinc-900 dark:hover:text-white px-3 py-2 font-bold text-xs tracking-widest uppercase transition-colors"
+              >
+                로그인
+              </a>
+              <a
+                href="/signup"
+                className="hidden md:inline-flex bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-5 py-2 rounded-md font-bold text-xs tracking-widest uppercase hover:scale-[1.02] active:scale-[0.98] transition-all"
+              >
+                무료 가입
+              </a>
+            </>
+          )}
 
           {/* 모바일 햄버거 (md 미만에서만) */}
           <button
@@ -146,20 +178,32 @@ export default function LandingNavbar({ settings }) {
             </ul>
           </nav>
           <div className="px-5 pb-8 pt-2 space-y-2.5">
-            <a
-              href="/signup"
-              onClick={() => setMobileOpen(false)}
-              className="block text-center w-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 py-4 rounded-2xl font-black text-sm tracking-widest uppercase active:scale-[0.99] transition-transform"
-            >
-              무료 회원가입
-            </a>
-            <a
-              href="/login"
-              onClick={() => setMobileOpen(false)}
-              className="block text-center w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 text-zinc-900 dark:text-white py-4 rounded-2xl font-black text-sm tracking-widest uppercase active:scale-[0.99] transition-transform"
-            >
-              로그인
-            </a>
+            {user ? (
+              <button
+                onClick={handleSignOut}
+                className="flex items-center justify-center gap-2 w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 text-zinc-900 dark:text-white py-4 rounded-2xl font-black text-sm tracking-widest uppercase active:scale-[0.99] transition-transform"
+              >
+                <LogOut size={16} />
+                로그아웃
+              </button>
+            ) : (
+              <>
+                <a
+                  href="/signup"
+                  onClick={() => setMobileOpen(false)}
+                  className="block text-center w-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 py-4 rounded-2xl font-black text-sm tracking-widest uppercase active:scale-[0.99] transition-transform"
+                >
+                  무료 회원가입
+                </a>
+                <a
+                  href="/login"
+                  onClick={() => setMobileOpen(false)}
+                  className="block text-center w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 text-zinc-900 dark:text-white py-4 rounded-2xl font-black text-sm tracking-widest uppercase active:scale-[0.99] transition-transform"
+                >
+                  로그인
+                </a>
+              </>
+            )}
           </div>
         </div>
       )}
