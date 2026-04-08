@@ -102,6 +102,14 @@ function MdTextarea({ value, onChange, placeholder, rows = 4 }) {
             {uploading ? <Loader2 size={12} className="animate-spin" /> : <ImageIcon size={12} />}
             {uploading ? '업로드중' : 'Image'}
           </button>
+          <button
+            type="button"
+            onClick={() => insertAtCursor('\n\n---\n\n')}
+            className="flex items-center gap-1.5 px-3 py-1 text-[11px] font-black uppercase tracking-wider rounded-md text-zinc-600 hover:bg-zinc-200 transition-colors"
+            title="구분선 삽입 — 문단 사이에 얇은 가로선을 넣습니다"
+          >
+            — 구분선
+          </button>
           <input
             ref={fileInputRef}
             type="file"
@@ -115,7 +123,7 @@ function MdTextarea({ value, onChange, placeholder, rows = 4 }) {
           />
         </div>
         <div className="hidden sm:block text-[10px] text-zinc-400 font-medium tracking-tight">
-          <span className="font-bold">**굵게**</span> · <span className="italic">*기울임*</span> · &gt; 인용 · - 불릿 · 1. 번호
+          <span className="font-bold">**굵게**</span> · <span className="italic">*기울임*</span> · &gt; 인용 · - 불릿 · 1. 번호 · --- 구분선
         </div>
       </div>
       {tab === 'write' ? (
