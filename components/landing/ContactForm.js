@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase, isDummyMode } from '@/lib/supabase';
+import { appendCTA } from '@/lib/userTrail';
 import { 
   CheckCircle2, 
   ArrowRight, 
@@ -302,7 +303,7 @@ export default function ContactForm() {
           </div>
           <button 
             type="button" 
-            onClick={() => window.location.href = '/chat'}
+            onClick={() => { appendCTA({ label: 'ContactForm — AI 상담 시작', page: typeof window !== 'undefined' ? window.location.pathname : '' }); window.location.href = '/chat'; }}
             className="w-full md:w-auto px-8 py-3.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:translate-y-[-2px] hover:shadow-primary/20 transition-all relative overflow-hidden"
           >
             기브니즈 AI 상담 시작 <ArrowRight size={14} className="inline ml-1" />

@@ -3,10 +3,12 @@
 import { motion } from 'framer-motion';
 import { CpuArchitecture } from '@/components/ui/cpu-architecture';
 import { ArrowRight, Sparkles, Zap } from 'lucide-react';
+import { appendCTA } from '@/lib/userTrail';
 
 export default function AIStrategySection() {
   const handleStartAI = () => {
-    window.location.href = '/chat'; // /chat 페이지로 이동
+    appendCTA({ label: 'AIStrategySection — 전략 알아보기', page: typeof window !== 'undefined' ? window.location.pathname : '' });
+    window.location.href = '/chat';
   };
 
   return (

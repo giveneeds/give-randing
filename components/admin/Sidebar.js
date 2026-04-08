@@ -29,6 +29,7 @@ export default function Sidebar({ handleLogout }) {
     { href: '/admin/magazines', icon: BookOpen, label: '매거진 콘텐츠' },
     { href: '/admin/leads', icon: Users, label: '고객 리드 조회' },
     { href: '/admin/settings', icon: Settings, label: '시스템 설정' },
+    { href: '/admin/settings/admins', icon: Users, label: '관리자 계정' },
   ];
 
   return (

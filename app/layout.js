@@ -1,7 +1,6 @@
 import { Inter } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
-import AiChatbot from "@/components/ui/AiChatbot";
 import FooterWrapper from "@/components/ui/FooterWrapper";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });

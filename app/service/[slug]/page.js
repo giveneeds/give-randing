@@ -7,6 +7,7 @@ import {
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import MarkdownContent from '@/lib/markdownRender';
+import { appendService } from '@/lib/userTrail';
 
 export default function ServiceDetailPage({ params }) {
   const { slug } = use(params);
@@ -29,6 +30,13 @@ export default function ServiceDetailPage({ params }) {
     }
     fetchService();
   }, [slug]);
+
+  // 행동 추적 — 내부 전용, UI 노출 금지
+  useEffect(() => {
+    if (service?.slug) {
+      appendService({ slug: service.slug, title: service.title, category: service.category });
+    }
+  }, [service]);
 
   // 연결된 매거진 메타(제목/썸네일) 조회 — 서비스 로드 후 1회
   useEffect(() => {

@@ -1,13 +1,19 @@
 'use client';
 import { useRouter } from 'next/navigation';
 import { MessageSquare, Sparkles, ArrowUpRight, Zap } from 'lucide-react';
+import { appendCTA } from '@/lib/userTrail';
 
 export default function ChatCTA() {
   const router = useRouter();
 
+  const handleGo = () => {
+    appendCTA({ label: 'ChatCTA — Start Conversation', page: typeof window !== 'undefined' ? window.location.pathname : '' });
+    router.push('/chat');
+  };
+
   return (
     <div className="my-24 px-8 max-w-screen-md mx-auto group animate-in slide-in-from-bottom-8 duration-700">
-      <div className="bg-zinc-900 rounded-3xl p-10 md:p-14 relative overflow-hidden shadow-2xl transition-all active:scale-[0.99]" onClick={() => router.push('/chat')}>
+      <div className="bg-zinc-900 rounded-3xl p-10 md:p-14 relative overflow-hidden shadow-2xl transition-all active:scale-[0.99]" onClick={handleGo}>
         {/* Background Accents */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-zinc-800 rounded-full translate-x-24 -translate-y-24 opacity-20 blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-zinc-800 rounded-full -translate-x-12 translate-y-12 opacity-10 blur-3xl pointer-events-none" />

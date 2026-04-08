@@ -1,6 +1,7 @@
 'use client';
 import { motion } from 'framer-motion';
 import { MessageSquareText, Sparkles, ArrowRight } from 'lucide-react';
+import { appendCTA } from '@/lib/userTrail';
 
 export default function ChatbotBlock() {
   return (
@@ -31,8 +32,9 @@ export default function ChatbotBlock() {
           즉각적인 개선안을 제안해 드립니다. 1대1 맞춤형 가이드를 지금 바로 시작하세요.
         </p>
         
-        <a 
-          href="/chat" 
+        <a
+          href="/chat"
+          onClick={() => appendCTA({ label: 'ChatbotBlock — AI 진단 시작', page: typeof window !== 'undefined' ? window.location.pathname : '' })}
           className="inline-flex items-center gap-3 bg-white text-zinc-900 px-6 sm:px-8 py-3 sm:py-4 text-xs font-black uppercase tracking-widest hover:gap-6 transition-all"
         >
           AI 진단 시작하기 <ArrowRight size={14} />

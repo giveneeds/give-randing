@@ -1,8 +1,8 @@
 'use client';
-import { useRouter } from 'next/navigation';
 import { CpuArchitecture } from '@/components/ui/cpu-architecture';
 import { ArrowRight, Sparkles } from 'lucide-react';
 import Link from 'next/link';
+import { appendCTA } from '@/lib/userTrail';
 
 /**
  * AiSolutionBlock — 리뉴얼 버전
@@ -32,7 +32,11 @@ export default function AiSolutionBlock({ className = '' }) {
       </div>
 
       {/* ── 클릭 가능한 애니메이션 블록 ── */}
-      <Link href="/chat" className="block group">
+      <Link
+        href="/chat"
+        className="block group"
+        onClick={() => appendCTA({ label: 'AiSolutionBlock — AI Strategy', page: typeof window !== 'undefined' ? window.location.pathname : '' })}
+      >
         <div className="
           relative w-full h-[280px] md:h-[340px] 
           overflow-hidden rounded-[2.5rem]

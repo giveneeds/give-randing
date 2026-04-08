@@ -11,6 +11,7 @@ import AiSolutionBlock from '@/components/ui/AiSolutionBlock';
 import LeadForm from '@/components/ui/LeadForm';
 import PremiumGateModal from '@/components/ui/PremiumGateModal';
 import { useAuth } from '@/lib/useAuth';
+import { appendMagazine } from '@/lib/userTrail';
 
 export default function MagazineDetailPage() {
   const { slug } = useParams();
@@ -59,6 +60,13 @@ export default function MagazineDetailPage() {
     }
     if (slug) loadPost();
   }, [slug]);
+
+  // 행동 추적 — 내부 전용, UI에 노출 금지
+  useEffect(() => {
+    if (post?.slug) {
+      appendMagazine({ slug: post.slug, title: post.title, category: post.category });
+    }
+  }, [post]);
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-white dark:bg-zinc-950">
