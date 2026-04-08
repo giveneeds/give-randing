@@ -45,7 +45,7 @@ export default function MagazineList({ title, subtitle }) {
         <div className="hidden md:block flex-1 h-px bg-zinc-100" />
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-px bg-zinc-100 border border-zinc-100">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-px bg-zinc-100 dark:bg-white/5 border border-zinc-100 dark:border-white/5">
         {magazines.map((post) => (
           <MagazineCard key={post.id} post={post} />
         ))}
