@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase, isDummyMode, DUMMY_MAGAZINES } from '@/lib/supabase';
 import MagazineCard from './MagazineCard';
+import BrandLoader from '@/components/ui/BrandLoader';
 
 export default function MagazineList({ title, subtitle }) {
   const [magazines, setMagazines] = useState([]);
@@ -33,7 +34,13 @@ export default function MagazineList({ title, subtitle }) {
     loadMagazines();
   }, []);
 
-  if (loading) return null;
+  if (loading) {
+    return (
+      <section className="px-4 sm:px-6 md:px-12 max-w-screen-xl mx-auto py-20 flex justify-center">
+        <BrandLoader size={64} label="MAGAZINE" />
+      </section>
+    );
+  }
 
   return (
     <section className="px-4 sm:px-6 md:px-12 max-w-screen-xl mx-auto">

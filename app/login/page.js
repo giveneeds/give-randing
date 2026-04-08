@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, MessageCircle, AlertCircle } from 'lucide-react';
 import { signInWithKakao } from '@/lib/authKakao';
 import PrivacyPolicyDisclosure from '@/components/auth/PrivacyPolicyDisclosure';
+import BrandLoader from '@/components/ui/BrandLoader';
 
 function LoginPageInner() {
   const searchParams = useSearchParams();
@@ -116,7 +117,7 @@ function LoginPageInner() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-xs text-zinc-400 uppercase tracking-widest">Loading</div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><BrandLoader size={72} /></div>}>
       <LoginPageInner />
     </Suspense>
   );

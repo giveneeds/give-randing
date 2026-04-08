@@ -2,6 +2,8 @@ import { Inter } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 import FooterWrapper from "@/components/ui/FooterWrapper";
+import BrandSplash from "@/components/ui/BrandSplash";
+import LoginToast from "@/components/ui/LoginToast";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
@@ -25,7 +27,9 @@ export default function RootLayout({ children }) {
           enableSystem
           disableTransitionOnChange
         >
+          <BrandSplash />
           {children}
+          <LoginToast />
           <FooterWrapper />
         </ThemeProvider>
       </body>
