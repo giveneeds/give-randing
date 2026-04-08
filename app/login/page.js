@@ -1,69 +1,40 @@
 'use client';
 
-import { useState, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, Suspense, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mail, Lock, User, ArrowRight, Loader2, CheckCircle2 } from 'lucide-react';
-import { supabase, isDummyMode } from '@/lib/supabase';
+import { Loader2, MessageCircle, AlertCircle } from 'lucide-react';
+import { signInWithKakao } from '@/lib/authKakao';
 
 function LoginPageInner() {
-  const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get('redirect') || '/';
+  const redirectTo = searchParams.get('redirect') || searchParams.get('next') || '/chat';
+  const errorParam = searchParams.get('error');
 
-  const [mode, setMode] = useState('signin'); // 'signin' | 'signup'
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [info, setInfo] = useState('');
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  useEffect(() => {
+    if (errorParam === 'callback') {
+      setError('인증 처리 중 문제가 발생했어요. 다시 시도해 주세요.');
+    }
+  }, [errorParam]);
+
+  const handleKakao = async () => {
     setError('');
-    setInfo('');
-
-    // 이메일 형식 강제 (@ 포함)
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setError('올바른 이메일 형식으로 입력해 주세요. (예: name@example.com)');
-      return;
-    }
-
-    if (isDummyMode || !supabase) {
-      setError('현재 환경에서는 로그인이 비활성화되어 있습니다.');
-      return;
-    }
-
     setLoading(true);
-    try {
-      if (mode === 'signin') {
-        const { error: err } = await supabase.auth.signInWithPassword({ email, password });
-        if (err) throw err;
-        router.push(redirectTo);
-      } else {
-        const { error: err } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { data: { full_name: name } },
-        });
-        if (err) throw err;
-        setInfo('이메일로 인증 링크가 발송되었습니다. 메일함을 확인해 주세요.');
-      }
-    } catch (err) {
-      setError(err.message || '로그인 중 오류가 발생했습니다.');
-    } finally {
+    const { ok, error: errMsg } = await signInWithKakao(redirectTo);
+    if (!ok) {
+      setError(errMsg || '카카오 로그인 중 오류가 발생했습니다.');
       setLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col">
-      {/* 좌우 2단 — 모바일에선 단순 1단 */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-2">
-        {/* Brand Side (데스크탑 전용) */}
+        {/* Brand Side */}
         <div className="hidden lg:flex bg-zinc-900 text-white p-16 flex-col justify-between relative overflow-hidden">
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2 pointer-events-none" />
           <Link href="/" className="text-xl font-black tracking-tight relative z-10">GIVENEEDS</Link>
@@ -73,8 +44,8 @@ function LoginPageInner() {
               <span className="text-zinc-500">한 곳에서.</span>
             </h2>
             <p className="text-zinc-400 leading-relaxed max-w-md">
-              로그인하고 프리미엄 매거진과 AI 마케팅 진단을
-              모두 무료로 이용해 보세요.
+              카카오 계정 한 번이면 프리미엄 매거진과 AI 마케팅 진단을
+              모두 무료로 이용할 수 있어요.
             </p>
           </div>
           <div className="text-[10px] font-bold text-zinc-600 tracking-widest uppercase relative z-10">
@@ -85,7 +56,6 @@ function LoginPageInner() {
         {/* Form Side */}
         <div className="flex items-center justify-center p-5 sm:p-10 lg:p-16">
           <div className="w-full max-w-md">
-            {/* 모바일 상단 브랜드 */}
             <div className="lg:hidden mb-10 text-center">
               <Link href="/" className="text-lg font-black tracking-tight text-zinc-900 dark:text-white">
                 GIVENEEDS
@@ -94,119 +64,42 @@ function LoginPageInner() {
 
             <div className="mb-8">
               <h1 className="text-2xl sm:text-3xl font-black tracking-tighter text-zinc-900 dark:text-white mb-2">
-                {mode === 'signin' ? '다시 만나서 반가워요' : '계정 만들기'}
+                다시 만나서 반가워요
               </h1>
               <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                {mode === 'signin'
-                  ? '이메일 주소로 로그인하세요.'
-                  : '간단한 정보로 무료 계정을 만들어 보세요.'}
+                카카오 계정으로 3초 만에 로그인하세요.
               </p>
             </div>
 
-            {/* 알림 */}
             <AnimatePresence>
               {error && (
                 <motion.div
                   initial={{ opacity: 0, y: -8 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
-                  className="mb-5 p-3 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 text-xs font-bold"
+                  className="mb-5 p-3 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 text-xs font-bold flex items-start gap-2"
                 >
-                  {error}
-                </motion.div>
-              )}
-              {info && (
-                <motion.div
-                  initial={{ opacity: 0, y: -8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  className="mb-5 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/50 text-emerald-600 dark:text-emerald-400 text-xs font-bold flex items-start gap-2"
-                >
-                  <CheckCircle2 size={14} className="mt-0.5 shrink-0" />
-                  <span>{info}</span>
+                  <AlertCircle size={14} className="mt-0.5 shrink-0" />
+                  <span>{error}</span>
                 </motion.div>
               )}
             </AnimatePresence>
 
-            {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {mode === 'signup' && (
-                <div className="relative">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
-                  <input
-                    type="text"
-                    required
-                    placeholder="이름"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 rounded-xl text-sm font-medium text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:border-zinc-900 dark:focus:border-white outline-none transition"
-                  />
-                </div>
-              )}
-
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
-                <input
-                  type="email"
-                  required
-                  pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$"
-                  title="이메일은 반드시 @ 형식이어야 합니다 (예: name@example.com)"
-                  placeholder="이메일 (예: name@example.com)"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 rounded-xl text-sm font-medium text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:border-zinc-900 dark:focus:border-white outline-none transition"
-                />
-              </div>
-
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
-                <input
-                  type="password"
-                  required
-                  minLength={6}
-                  placeholder="비밀번호 (6자 이상)"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 rounded-xl text-sm font-medium text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:border-zinc-900 dark:focus:border-white outline-none transition"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full flex items-center justify-center gap-2 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-black py-4 rounded-xl text-sm transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? (
-                  <Loader2 size={18} className="animate-spin" />
-                ) : (
-                  <>
-                    {mode === 'signin' ? '로그인' : '회원가입'}
-                    <ArrowRight size={16} />
-                  </>
-                )}
-              </button>
-            </form>
-
-            {/* Mode toggle */}
-            <p className="text-center text-xs text-zinc-500 dark:text-zinc-400 mt-8">
-              {mode === 'signin' ? '아직 계정이 없으신가요?' : '이미 계정이 있으신가요?'}
-              {mode === 'signin' ? (
-                <Link
-                  href={`/signup${redirectTo !== '/' ? `?redirect=${encodeURIComponent(redirectTo)}` : ''}`}
-                  className="ml-2 font-black text-zinc-900 dark:text-white underline underline-offset-2"
-                >
-                  회원가입
-                </Link>
+            <button
+              type="button"
+              onClick={handleKakao}
+              disabled={loading}
+              className="w-full flex items-center justify-center gap-2.5 bg-[#FEE500] hover:bg-[#FFEB3B] text-[#191919] font-black py-4 rounded-xl text-sm transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? (
+                <Loader2 size={18} className="animate-spin" />
               ) : (
-                <button
-                  type="button"
-                  onClick={() => { setMode('signin'); setError(''); setInfo(''); }}
-                  className="ml-2 font-black text-zinc-900 dark:text-white underline underline-offset-2"
-                >
-                  로그인
-                </button>
+                <>
+                  <MessageCircle size={18} fill="#191919" />
+                  카카오로 3초 만에 로그인
+                </>
               )}
-            </p>
+            </button>
 
             <p className="text-center text-[10px] text-zinc-400 mt-6 leading-relaxed">
               로그인 시 GIVENEEDS 서비스 이용약관 및 개인정보 처리방침에<br />동의하게 됩니다.

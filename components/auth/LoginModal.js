@@ -1,32 +1,25 @@
 'use client';
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { Mail, Lock, ArrowRight, Loader2, X, Lock as LockIcon } from 'lucide-react';
-import { supabase, isDummyMode } from '@/lib/supabase';
+import { Loader2, X, Lock as LockIcon, MessageCircle } from 'lucide-react';
+import { signInWithKakao } from '@/lib/authKakao';
 
 /**
  * 배경 블러 위에 띄우는 로그인 모달.
- * /login 페이지의 이메일/비밀번호 로직을 재사용.
- * 회원가입 필요 시 /signup으로 이동 (redirect 파라미터 포함).
+ * 카카오 로그인 단일 — 클릭 시 Supabase OAuth로 이동 → /auth/callback에서 세션 수립.
  */
 export default function LoginModal({
   open,
   onClose,
-  onSuccess,
-  redirectPath,
+  redirectPath = '/chat',
   title = '로그인이 필요해요',
-  description = '이 기능은 로그인하신 분만 이용하실 수 있어요. 가입은 이메일만 있으면 30초면 끝나요.',
+  description = '카카오 계정 한 번이면 끝나요. 별도 가입 절차도, 비밀번호도 필요 없어요.',
   dismissible = true,
 }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
     if (!open) {
-      setEmail('');
-      setPassword('');
       setError('');
       setLoading(false);
     }
@@ -34,37 +27,16 @@ export default function LoginModal({
 
   if (!open) return null;
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleKakao = async () => {
     setError('');
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setError('올바른 이메일 형식으로 입력해 주세요. (예: name@example.com)');
-      return;
-    }
-
-    if (isDummyMode || !supabase) {
-      setError('현재 환경에서는 로그인이 비활성화되어 있습니다.');
-      return;
-    }
-
     setLoading(true);
-    try {
-      const { error: err } = await supabase.auth.signInWithPassword({ email, password });
-      if (err) throw err;
-      if (typeof onSuccess === 'function') onSuccess();
-      if (typeof onClose === 'function') onClose();
-    } catch (err) {
-      setError(err.message || '로그인 중 오류가 발생했습니다.');
-    } finally {
+    const { ok, error: errMsg } = await signInWithKakao(redirectPath);
+    if (!ok) {
+      setError(errMsg || '카카오 로그인 중 오류가 발생했습니다.');
       setLoading(false);
     }
+    // 성공 시엔 브라우저가 리다이렉트되므로 여기 도달하지 않음.
   };
-
-  const signupHref = redirectPath
-    ? `/signup?redirect=${encodeURIComponent(redirectPath)}`
-    : '/signup';
 
   return (
     <div
@@ -108,51 +80,26 @@ export default function LoginModal({
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <div className="relative">
-            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
-            <input
-              type="email"
-              required
-              pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$"
-              title="이메일은 반드시 @ 형식이어야 합니다"
-              placeholder="이메일 (예: name@example.com)"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full pl-12 pr-4 py-3.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-white/10 rounded-xl text-sm font-medium text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:border-zinc-900 dark:focus:border-white outline-none transition"
-            />
-          </div>
+        <button
+          type="button"
+          onClick={handleKakao}
+          disabled={loading}
+          className="w-full flex items-center justify-center gap-2.5 bg-[#FEE500] hover:bg-[#FFEB3B] text-[#191919] font-black py-4 rounded-xl text-sm transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {loading ? (
+            <Loader2 size={18} className="animate-spin" />
+          ) : (
+            <>
+              <MessageCircle size={18} fill="#191919" />
+              카카오로 3초 만에 시작하기
+            </>
+          )}
+        </button>
 
-          <div className="relative">
-            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
-            <input
-              type="password"
-              required
-              minLength={6}
-              placeholder="비밀번호 (6자 이상)"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full pl-12 pr-4 py-3.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-white/10 rounded-xl text-sm font-medium text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:border-zinc-900 dark:focus:border-white outline-none transition"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-2 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-black py-3.5 rounded-xl text-sm transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? <Loader2 size={18} className="animate-spin" /> : (<>로그인 <ArrowRight size={16} /></>)}
-          </button>
-        </form>
-
-        <p className="text-center text-xs text-zinc-500 dark:text-zinc-400 mt-6">
-          아직 계정이 없으신가요?
-          <Link
-            href={signupHref}
-            className="ml-2 font-black text-zinc-900 dark:text-white underline underline-offset-2"
-          >
-            30초 무료 가입
-          </Link>
+        <p className="text-center text-[10px] text-zinc-400 mt-5 leading-relaxed">
+          로그인 시 GIVENEEDS 서비스 이용약관 및 개인정보 처리방침에
+          <br />
+          동의하게 됩니다.
         </p>
       </div>
     </div>
