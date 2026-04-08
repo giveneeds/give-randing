@@ -10,8 +10,27 @@ import { supabase, isDummyMode } from '@/lib/supabase';
  */
 export default function useRequireAuth() {
   const [user, setUser] = useState(null);
+  const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+
+  // 세션 사용자 → profiles.role 조회. admin/superadmin이면 어떤 보호 페이지든 통과.
+  const fetchRole = useCallback(async (sessionUser) => {
+    if (!sessionUser || !supabase) {
+      setRole(null);
+      return;
+    }
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', sessionUser.id)
+        .maybeSingle();
+      setRole(data?.role || null);
+    } catch {
+      setRole(null);
+    }
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -25,14 +44,18 @@ export default function useRequireAuth() {
       }
       const { data } = await supabase.auth.getSession();
       if (!mounted) return;
-      setUser(data?.session?.user || null);
+      const u = data?.session?.user || null;
+      setUser(u);
+      await fetchRole(u);
       setLoading(false);
     }
     load();
 
     if (supabase) {
       const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-        setUser(session?.user || null);
+        const u = session?.user || null;
+        setUser(u);
+        fetchRole(u);
       });
       return () => {
         mounted = false;
@@ -42,9 +65,12 @@ export default function useRequireAuth() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [fetchRole]);
+
+  const isAdmin = role === 'admin' || role === 'superadmin';
 
   const requireAuth = useCallback(() => {
+    // 일반 로그인 사용자 또는 관리자(admin/superadmin) 모두 통과
     if (user) return true;
     setShowModal(true);
     return false;
@@ -52,6 +78,8 @@ export default function useRequireAuth() {
 
   return {
     user,
+    role,
+    isAdmin,
     loading,
     isAuthenticated: !!user,
     showModal,
