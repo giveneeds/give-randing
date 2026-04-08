@@ -1,10 +1,18 @@
 'use client';
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Mail, Lock, Loader2 } from 'lucide-react';
 
 export default function AdminLoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin" size={28} /></div>}>
+      <AdminLoginInner />
+    </Suspense>
+  );
+}
+
+function AdminLoginInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialError = searchParams.get('error') === 'forbidden' ? '관리자 권한이 없는 계정입니다.' : '';
