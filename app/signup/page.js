@@ -44,7 +44,7 @@ const BENEFITS = [
 function SignupPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get('redirect') || '/';
+  const redirectTo = searchParams.get('redirect') || '/chat';
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -72,12 +72,17 @@ function SignupPageInner() {
 
     setLoading(true);
     try {
-      const { error: err } = await supabase.auth.signUp({
+      const emailRedirectTo =
+        typeof window !== 'undefined'
+          ? `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`
+          : undefined;
+      const { data: signUpData, error: err } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { full_name: name } },
+        options: { data: { full_name: name }, emailRedirectTo },
       });
       if (err) throw err;
+      const newUserId = signUpData?.user?.id || null;
 
       // 어드민 리드 DB에도 동시 적재 (실패해도 가입 흐름은 막지 않음)
       try {
@@ -87,6 +92,7 @@ function SignupPageInner() {
           body: JSON.stringify({
             name,
             email,
+            user_id: newUserId,
             inquiry_type: 'signup',
             lead_type: 'signup',
             category: 'member',
@@ -100,7 +106,12 @@ function SignupPageInner() {
         console.warn('Lead capture failed (non-blocking):', leadErr);
       }
 
-      setInfo('이메일로 인증 링크가 발송되었습니다. 메일함을 확인해 주세요.');
+      // Supabase 'Confirm email'이 꺼져있으면 가입 즉시 세션이 함께 옴 → 바로 이동
+      if (signUpData?.session) {
+        router.replace(redirectTo);
+        return;
+      }
+      setInfo('인증 메일을 보냈어요. 메일함의 링크를 누르면 자동으로 로그인되고 이어집니다.');
     } catch (err) {
       setError(err.message || '회원가입 중 오류가 발생했습니다.');
     } finally {
