@@ -46,6 +46,7 @@ export default function LandingNavbar({ settings }) {
   }, [mobileOpen]);
 
   return (
+    <>
     <nav className={`navbar-minimal ${scrolled ? 'scrolled' : ''}`}>
       <div className="container nav-container-minimal px-4 sm:px-6">
         <div className="flex items-center gap-2">
@@ -112,10 +113,11 @@ export default function LandingNavbar({ settings }) {
           </button>
         </div>
       </div>
+    </nav>
 
-      {/* 모바일 메뉴 오버레이 */}
-      {mobileOpen && (
-        <div className="md:hidden fixed inset-0 z-[100] bg-white dark:bg-zinc-950 flex flex-col">
+    {/* 모바일 메뉴 오버레이 — navbar-minimal의 backdrop-filter가 fixed containing block을 만들어버리는 문제로 nav 바깥으로 분리 */}
+    {mobileOpen && (
+      <div className="md:hidden fixed inset-0 z-[100] bg-white dark:bg-zinc-950 flex flex-col">
           <div className="flex items-center justify-between px-5 py-5 border-b border-zinc-100 dark:border-white/5">
             <a href="/" className="text-base font-bold tracking-tight text-zinc-900 dark:text-white" onClick={() => setMobileOpen(false)}>
               {brand.name || 'GIVENEEDS'}
@@ -161,6 +163,6 @@ export default function LandingNavbar({ settings }) {
           </div>
         </div>
       )}
-    </nav>
+    </>
   );
 }
