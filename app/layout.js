@@ -28,9 +28,6 @@ export default function RootLayout({ children }) {
           {children}
           <FooterWrapper />
         </ThemeProvider>
-        
-        {/* Kakao SDK Initializer */}
-        <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.0/kakao.min.js" integrity="sha384-l680eb3tqQ+vOq02oJq5+qj60bYI0fKvXfN7/4A+N+4A+N+4A+N+4" crossOrigin="anonymous" async></script>
       </body>
     </html>
   );
