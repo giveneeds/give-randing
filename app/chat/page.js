@@ -31,6 +31,7 @@ export default function ChatPage() {
   const [currentChoices, setCurrentChoices] = useState(MAIN_CONCERN_CHOICES);
   const [guestMsgCount, setGuestMsgCount] = useState(0);
   const [showGateModal, setShowGateModal] = useState(false);
+  const [awaitingLoginConfirm, setAwaitingLoginConfirm] = useState(false);
   const scrollRef = useRef(null);
   const sessionInitRef = useRef(false);
 
@@ -115,14 +116,76 @@ export default function ChatPage() {
     } catch {}
   }
 
+  // 로그인 질의 후 긍정/부정 판별용
+  const LOGIN_PROMPT_CHOICES = [
+    { label: '네, 로그인 할게요', value: '네' },
+    { label: '아니요, 괜찮아요', value: '아니요' },
+  ];
+  const AFFIRMATIVE_RE = /(^|\s)(네|응|예|좋아|좋아요|좋아용|그래|그래요|yes|yeah|yep|yup|y|ok|okay|오케이|띄워|띄워줘|로그인|해줘|해|해주세요|응응|ㅇㅇ|ㅇㅋ|부탁|부탁해|부탁드려요)($|\s|\.|!|\?|~)/i;
+
+  function pushAssistantLoginPrompt() {
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: 'assistant',
+        content:
+          '로그인을 시도하시면 저와 대화를 더 나눌 수 있어요.\n로그인 팝업을 띄워드릴까요? 😊',
+        choices: LOGIN_PROMPT_CHOICES,
+        step,
+      },
+    ]);
+    setCurrentChoices(LOGIN_PROMPT_CHOICES);
+    setAwaitingLoginConfirm(true);
+  }
+
   // 선택지 버튼 클릭 또는 자유 입력 → 사용자 메시지 추가 + AI 호출
   async function handleSend({ text, selectedValue }) {
     const content = (text || '').trim();
     if (!content || isTyping) return;
 
-    // 비로그인 사용자: 5회 초과 시 로그인 게이트
-    if (!user && guestMsgCount >= 5) {
-      setShowGateModal(true);
+    // 비로그인 + 로그인 확인 대기 중: 긍정/부정 판별
+    if (!user && awaitingLoginConfirm) {
+      const userMsg = { role: 'user', content, step };
+      setMessages((prev) => [...prev, userMsg]);
+      setInput('');
+      setCurrentChoices([]);
+
+      const affirmative =
+        selectedValue === '네' || AFFIRMATIVE_RE.test(content);
+
+      if (affirmative) {
+        setAwaitingLoginConfirm(false);
+        setIsTyping(true);
+        setTimeout(() => {
+          setMessages((prev) => [
+            ...prev,
+            {
+              role: 'assistant',
+              content: '좋아요! 로그인 창을 띄워드릴게요 ✨',
+              choices: [],
+              step,
+            },
+          ]);
+          setIsTyping(false);
+          setShowGateModal(true);
+        }, 500);
+      } else {
+        setIsTyping(true);
+        setTimeout(() => {
+          setMessages((prev) => [
+            ...prev,
+            {
+              role: 'assistant',
+              content:
+                '알겠어요! 마음이 바뀌시면 "네"라고 답해 주세요. 언제든 로그인 팝업을 띄워드릴게요 🙂',
+              choices: LOGIN_PROMPT_CHOICES,
+              step,
+            },
+          ]);
+          setCurrentChoices(LOGIN_PROMPT_CHOICES);
+          setIsTyping(false);
+        }, 500);
+      }
       return;
     }
 
@@ -134,16 +197,11 @@ export default function ChatPage() {
     setIsTyping(true);
 
     // 비로그인 사용자 메시지 카운트 증가
+    let hitGuestLimit = false;
     if (!user) {
       const nextCount = guestMsgCount + 1;
       setGuestMsgCount(nextCount);
-      if (nextCount >= 5) {
-        setTimeout(() => {
-          setIsTyping(false);
-          setShowGateModal(true);
-        }, 800);
-        return;
-      }
+      if (nextCount >= 5) hitGuestLimit = true;
     }
 
     // answers 자동 업데이트
@@ -154,9 +212,18 @@ export default function ChatPage() {
     else if (step === STEPS.STRENGTH) nextAnswers.strength = content;
     setAnswers(nextAnswers);
 
-    // 세션 확보
-    const sid = sessionId || (await ensureSession());
-    persistMessage({ role: 'user', content, stepId: step, sid });
+    // 비로그인 사용자: 메시지 5회 도달 → AI 호출 대신 로그인 질의
+    if (!user && hitGuestLimit) {
+      setTimeout(() => {
+        setIsTyping(false);
+        pushAssistantLoginPrompt();
+      }, 700);
+      return;
+    }
+
+    // 세션 확보 (로그인 사용자만)
+    const sid = user ? (sessionId || (await ensureSession())) : null;
+    if (sid) persistMessage({ role: 'user', content, stepId: step, sid });
 
     // 다음 단계가 아직 "수집 단계"면 로컬 프롬프트로 진행 (AI 호출 X)
     const localNext = nextLocalStep(step, nextAnswers);
@@ -177,12 +244,23 @@ export default function ChatPage() {
         setStep(localNext);
         setCurrentChoices(choices);
       }, 400);
-      persistMessage({ role: 'assistant', content: promptText, choices, stepId: localNext, sid });
-      updateSessionState({ sid, nextStep: localNext, nextAnswers });
+      if (sid) {
+        persistMessage({ role: 'assistant', content: promptText, choices, stepId: localNext, sid });
+        updateSessionState({ sid, nextStep: localNext, nextAnswers });
+      }
       return;
     }
 
-    // 이후 단계는 AI 호출 (recommendation / freeChat)
+    // 비로그인 사용자가 AI 단계(recommendation/freeChat)에 도달 → 로그인 질의
+    if (!user) {
+      setTimeout(() => {
+        setIsTyping(false);
+        pushAssistantLoginPrompt();
+      }, 600);
+      return;
+    }
+
+    // 이후 단계는 AI 호출 (recommendation / freeChat) — 로그인 사용자만
     try {
       const { data: sess } = await supabase.auth.getSession();
       const token = sess?.session?.access_token;
@@ -217,16 +295,10 @@ export default function ChatPage() {
       updateSessionState({ sid, nextStep: nextStepFromAi, nextAnswers });
     } catch (err) {
       console.error(err);
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: 'assistant',
-          content:
-            '일시적으로 AI 응답을 불러오지 못했어요. 잠시 후 다시 시도해 주세요. 🙏',
-          choices: [],
-          step,
-        },
-      ]);
+      // 401/네트워크 등 → 로그인 질의로 자연스럽게 유도
+      setIsTyping(false);
+      pushAssistantLoginPrompt();
+      return;
     } finally {
       setIsTyping(false);
     }

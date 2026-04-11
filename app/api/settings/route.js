@@ -6,6 +6,7 @@ const TYPE_CATEGORY_MAP = {
   hero: 'BOTH', hook: 'BOTH', stats: 'BOTH', testimonials: 'BOTH',
   faq: 'BOTH', magazine: 'BOTH', ai_strategy: 'BOTH',
   product_detail: 'BOTH', identity: 'WEBSITE', resources: 'LANDING_PAGE',
+  brand_stats: 'BOTH',
 };
 
 // GET: 설정 가져오기

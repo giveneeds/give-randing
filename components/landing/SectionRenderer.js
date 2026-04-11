@@ -14,6 +14,7 @@ import BrandIdentitySection from './BrandIdentitySection';
 import ProductTabsSection from './ProductTabsSection';
 import AIStrategySection from './AIStrategySection';
 import MagazineList from './MagazineList';
+import BrandStatsSection from './BrandStatsSection';
 
 export default function SectionRenderer({ type, content, settings, title, subtitle }) {
   const commonProps = { title, subtitle, content, settings };
@@ -51,6 +52,8 @@ export default function SectionRenderer({ type, content, settings, title, subtit
       return <AIStrategySection {...commonProps} />;
     case 'magazine':
       return <MagazineList {...commonProps} />;
+    case 'brand_stats':
+      return <BrandStatsSection {...commonProps} />;
     default:
       return (
         <div className="px-4 py-12 md:px-8 md:py-16 text-center text-sm text-zinc-500 break-keep">

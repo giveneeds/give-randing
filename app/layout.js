@@ -4,6 +4,7 @@ import "./globals.css";
 import FooterWrapper from "@/components/ui/FooterWrapper";
 import BrandSplash from "@/components/ui/BrandSplash";
 import LoginToast from "@/components/ui/LoginToast";
+import BlueDotCursor from "@/components/ui/BlueDotCursor";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
@@ -28,6 +29,7 @@ export default function RootLayout({ children }) {
           disableTransitionOnChange
         >
           <BrandSplash />
+          <BlueDotCursor />
           {children}
           <LoginToast />
           <FooterWrapper />
