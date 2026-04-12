@@ -4,23 +4,13 @@ import { useEffect, useRef, useState } from 'react';
 
 /**
  * BrandStatsSection
- * - shimmer 텍스트 효과 (linear-gradient + background-clip:text, 자동 반복, prefers-reduced-motion 대응)
- * - 통계 숫자 count-up (IntersectionObserver + requestAnimationFrame, ease-out, 1회성)
- * - 검은 배경 / 모바일 반응형 / 접근성 aria-live
- *
- * content shape:
- * {
- *   eyebrow?: string,            // 상단 작은 라벨
- *   title_main?: string,         // 흰색 강조 부분 (예: "We are")
- *   title_dim?: string,          // 어둡게 표시 + shimmer 적용 (예: "brand marketing agency")
- *   stats: [
- *     { value: number, suffix?: string, label?: string, description?: string }
- *   ]
- * }
+ * 레이아웃: 헤드라인(상단) → 카운트업 숫자(하단)
+ * - shimmer 텍스트 효과
+ * - 통계 숫자 count-up (IntersectionObserver + rAF)
+ * - 검은 배경 / 모바일 반응형 / 접근성
  */
 export default function BrandStatsSection({ title, subtitle, content = {} }) {
   const {
-    // eyebrow 제거
     title_main = title || 'We are',
     title_dim = subtitle || 'brand marketing agency',
     stats = [
@@ -36,14 +26,16 @@ export default function BrandStatsSection({ title, subtitle, content = {} }) {
     >
       <style jsx>{`
         .bs-section {
-          padding: clamp(100px, 15vw, 220px) clamp(24px, 8vw, 100px);
+          padding: clamp(80px, 12vw, 180px) clamp(24px, 8vw, 100px);
         }
+
+        /* ── 헤드라인 (상단) ── */
         .bs-headline {
           font-weight: 800;
           letter-spacing: -0.05em;
-          line-height: 1.0;
-          font-size: clamp(32px, 6vw, 76px); /* 크기 축소 */
-          margin: 0;
+          line-height: 1.05;
+          font-size: clamp(36px, 7vw, 84px);
+          margin: 0 0 clamp(80px, 10vw, 160px) 0;
           max-width: 1400px;
         }
         .bs-headline .bs-line {
@@ -72,43 +64,24 @@ export default function BrandStatsSection({ title, subtitle, content = {} }) {
         @keyframes bs-shine {
           to { background-position: 200% center; }
         }
-        
-        .bs-content-grid {
-          display: flex;
-          flex-direction: column;
-          gap: 80px;
-        }
-        @media (min-width: 1024px) {
-          .bs-content-grid {
-            display: grid;
-            grid-template-columns: 1fr 1.2fr;
-            align-items: end;
-          }
-        }
 
+        /* ── 카운트업 그리드 (하단) ── */
         .bs-stats-row {
           display: grid;
           grid-template-columns: 1fr;
-          gap: clamp(60px, 8vw, 100px);
-          justify-items: start;
+          gap: clamp(60px, 8vw, 80px);
         }
         @media (min-width: 640px) {
           .bs-stats-row {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 60px;
-          }
-        }
-        @media (min-width: 1024px) {
-          .bs-stats-row {
-            justify-self: end;
-            width: 100%;
+            grid-template-columns: repeat(${stats.length}, 1fr);
+            gap: clamp(40px, 5vw, 80px);
           }
         }
 
         .bs-stat {
           position: relative;
           width: 100%;
-          padding-top: 32px;
+          padding-top: 28px;
         }
         .bs-stat::before {
           content: '';
@@ -149,30 +122,36 @@ export default function BrandStatsSection({ title, subtitle, content = {} }) {
           box-shadow: 0 0 20px rgba(245, 158, 11, 0.82);
           transition: left 1.2s cubic-bezier(0.19, 1, 0.22, 1);
         }
-        
+
         .bs-number {
-          font-size: clamp(80px, 18vw, 220px);
+          font-size: clamp(56px, 10vw, 120px);
           font-weight: 900;
-          letter-spacing: -0.05em;
+          letter-spacing: -0.04em;
           color: #ffffff;
-          line-height: 0.9;
+          line-height: 1;
           display: flex;
-          align-items: flex-start;
-          margin-bottom: 20px;
+          align-items: baseline;
+          margin-bottom: 16px;
         }
         .bs-suffix {
-          font-size: 0.5em;
-          font-weight: 800;
-          margin-left: 6px;
-          color: rgba(255, 255, 255, 0.4);
-          margin-top: 10px;
+          font-size: 0.45em;
+          font-weight: 700;
+          margin-left: 4px;
+          color: rgba(255, 255, 255, 0.35);
+        }
+        .bs-label {
+          font-size: clamp(13px, 1.2vw, 16px);
+          font-weight: 700;
+          color: rgba(255, 255, 255, 0.5);
+          margin-bottom: 8px;
+          letter-spacing: 0.02em;
         }
         .bs-desc {
-          font-size: clamp(14px, 1.5vw, 18px);
-          font-weight: 600;
-          line-height: 1.5;
-          color: #999;
-          max-width: 240px;
+          font-size: clamp(13px, 1.2vw, 16px);
+          font-weight: 500;
+          line-height: 1.6;
+          color: #666;
+          max-width: 320px;
           word-break: keep-all;
         }
 
@@ -182,20 +161,18 @@ export default function BrandStatsSection({ title, subtitle, content = {} }) {
         }
       `}</style>
 
-      <div className="bs-inner" style={{ maxWidth: 1600, margin: '0 auto' }}>
-        <div className="bs-content-grid">
-          <div className="bs-text-side">
-            <h2 className="bs-headline">
-              <span className="bs-line bs-main">{title_main}</span>
-              <span className="bs-line bs-shimmer">{title_dim}</span>
-            </h2>
-          </div>
+      <div style={{ maxWidth: 1400, margin: '0 auto' }}>
+        {/* 상단: 헤드라인 */}
+        <h2 className="bs-headline">
+          <span className="bs-line bs-main">{title_main}</span>
+          <span className="bs-line bs-shimmer">{title_dim}</span>
+        </h2>
 
-          <div className="bs-stats-row">
-            {stats.map((s, i) => (
-              <BrandStatItem key={i} stat={s} index={i} />
-            ))}
-          </div>
+        {/* 하단: 카운트업 숫자 */}
+        <div className="bs-stats-row">
+          {stats.map((s, i) => (
+            <BrandStatItem key={i} stat={s} index={i} />
+          ))}
         </div>
       </div>
     </section>
@@ -203,7 +180,7 @@ export default function BrandStatsSection({ title, subtitle, content = {} }) {
 }
 
 function BrandStatItem({ stat, index }) {
-  const { value = 0, suffix = '+', description = '' } = stat || {};
+  const { value = 0, suffix = '+', label = '', description = '' } = stat || {};
   const ref = useRef(null);
   const startedRef = useRef(false);
   const [display, setDisplay] = useState(0);
@@ -217,26 +194,19 @@ function BrandStatItem({ stat, index }) {
     const start = () => {
       if (startedRef.current) return;
       startedRef.current = true;
-      
-      // 즉각적인 게이지 시작
       setProgress(100);
 
       const target = Number(value) || 0;
       let startTs = null;
-      const duration = 1200; // 빠르게 카운팅
+      const duration = 1200;
 
       const step = (timestamp) => {
         if (!startTs) startTs = timestamp;
         const progressTime = timestamp - startTs;
         const t = Math.min(progressTime / duration, 1);
-        
-        // easeOutExpo (빠르게 시작해서 부드럽게 멈춤)
         const eased = t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
         setDisplay(Math.round(target * eased));
-
-        if (t < 1) {
-          window.requestAnimationFrame(step);
-        }
+        if (t < 1) window.requestAnimationFrame(step);
       };
       window.requestAnimationFrame(step);
     };
@@ -244,14 +214,11 @@ function BrandStatItem({ stat, index }) {
     const io = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
-          // 약간의 지연 후 혹은 즉시 시작 (사용자 경험상 즉시가 좋음)
-          setTimeout(() => {
-            start();
-          }, 100);
+          setTimeout(() => start(), 100);
           io.disconnect();
         }
       },
-      { threshold: 0.1 } // 더 낮은 임계값으로 일찍 시작
+      { threshold: 0.1 }
     );
     io.observe(node);
     return () => io.disconnect();
@@ -265,11 +232,8 @@ function BrandStatItem({ stat, index }) {
         <div className="bs-fill" style={{ width: `${progress}%` }} />
         <div className="bs-dot" style={{ left: `${progress}%`, opacity: progress > 0 ? 1 : 0 }} />
       </div>
-      <div
-        className="bs-number"
-        role="text"
-        aria-live="polite"
-      >
+      {label && <p className="bs-label">{label}</p>}
+      <div className="bs-number" role="text" aria-live="polite">
         <span>{formatted}</span>
         {suffix && <span className="bs-suffix">{suffix}</span>}
       </div>
@@ -277,4 +241,3 @@ function BrandStatItem({ stat, index }) {
     </div>
   );
 }
-
