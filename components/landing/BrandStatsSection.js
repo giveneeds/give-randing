@@ -151,7 +151,7 @@ export default function BrandStatsSection({ title, subtitle, content = {} }) {
         }
         
         .bs-number {
-          font-size: clamp(72px, 12vw, 160px); /* 크기 대폭 확대 */
+          font-size: clamp(80px, 18vw, 220px);
           font-weight: 900;
           letter-spacing: -0.05em;
           color: #ffffff;
