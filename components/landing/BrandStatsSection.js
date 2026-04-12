@@ -6,6 +6,8 @@ export default function BrandStatsSection({ title, subtitle, content = {} }) {
   const {
     title_main = title || 'We are',
     title_dim = subtitle || 'brand marketing agency',
+    bg_image = '',
+    bg_opacity = 0.08,
     stats = [
       { value: 500, suffix: '+', label: '누적 클라이언트', description: '기브니즈와 함께한 500+ 누적 클라이언트입니다.' },
       { value: 95, suffix: '%', label: '고객 만족도', description: '프로젝트 종료 후 고객 만족도 95%를 기록했습니다.' },
@@ -20,8 +22,26 @@ export default function BrandStatsSection({ title, subtitle, content = {} }) {
         }
       `}</style>
 
+      {/* 배경 이미지 (전체 노출, 투명도로 은은하게) */}
+      {bg_image && (
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            backgroundImage: `url(${bg_image})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            opacity: bg_opacity,
+            pointerEvents: 'none',
+          }}
+        />
+      )}
+
       <div
         style={{
+          position: 'relative',
+          zIndex: 1,
           maxWidth: 1400,
           margin: '0 auto',
           padding: 'clamp(80px, 12vw, 180px) clamp(24px, 8vw, 100px)',
@@ -31,7 +51,7 @@ export default function BrandStatsSection({ title, subtitle, content = {} }) {
           style={{
             fontWeight: 800,
             letterSpacing: '-0.05em',
-            lineHeight: 1.05,
+            lineHeight: 1.15,
             fontSize: 'clamp(36px, 7vw, 84px)',
             margin: '0 0 clamp(80px, 10vw, 160px) 0',
             maxWidth: 1400,

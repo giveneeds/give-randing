@@ -887,6 +887,33 @@ function SectionContentEditor({ type, content, onChange }) {
           </div>
 
           <div className="space-y-4 pt-6 border-t border-zinc-100">
+            <label className="text-[10px] font-bold text-zinc-900 uppercase tracking-widest ml-1 block mb-4">배경 이미지 설정</label>
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <label className="text-[9px] font-bold text-zinc-400">이미지 URL (비워두면 배경 없음)</label>
+                <input
+                  className="w-full p-2 bg-white rounded border border-zinc-100 text-xs font-mono"
+                  value={content.bg_image || ''}
+                  onChange={e => updateContent('bg_image', e.target.value)}
+                  placeholder="/images/building.jpg 또는 https://..."
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[9px] font-bold text-zinc-400">투명도 (0 ~ 1, 기본 0.08)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="1"
+                  className="w-32 p-2 bg-white rounded border border-zinc-100 text-xs font-bold"
+                  value={content.bg_opacity ?? 0.08}
+                  onChange={e => updateContent('bg_opacity', parseFloat(e.target.value) || 0)}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4 pt-6 border-t border-zinc-100">
             <label className="text-[10px] font-bold text-zinc-900 uppercase tracking-widest ml-1 block">카운트업 지표 구성</label>
             {stats.map((s, i) => (
               <div key={i} className="p-5 bg-zinc-50 rounded-lg border border-zinc-200 space-y-3 relative">
