@@ -155,20 +155,17 @@ export default function ChatPage() {
 
       if (affirmative) {
         setAwaitingLoginConfirm(false);
-        setIsTyping(true);
-        setTimeout(() => {
-          setMessages((prev) => [
-            ...prev,
-            {
-              role: 'assistant',
-              content: '좋아요! 로그인 창을 띄워드릴게요 ✨',
-              choices: [],
-              step,
-            },
-          ]);
-          setIsTyping(false);
-          setShowGateModal(true);
-        }, 500);
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: 'assistant',
+            content: '좋아요! 로그인 창을 띄워드릴게요 ✨',
+            choices: [],
+            step,
+          },
+        ]);
+        // 즉시 팝업 표시
+        setShowGateModal(true);
       } else {
         setIsTyping(true);
         setTimeout(() => {
@@ -328,9 +325,9 @@ export default function ChatPage() {
   return (
     <>
       <LandingNavbar />
-      <main className="min-h-screen bg-zinc-50 flex flex-col pt-24">
+      <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col pt-24">
         {/* Chat Header */}
-        <div className="bg-white border-b border-zinc-100 py-4 md:py-6 px-4 md:px-12 flex items-center justify-between sticky top-24 z-10">
+        <div className="bg-white dark:bg-zinc-900 border-b border-zinc-100 dark:border-zinc-800 py-4 md:py-6 px-4 md:px-12 flex items-center justify-between sticky top-24 z-10">
           <div className="flex items-center gap-3 md:gap-4">
             <button
               onClick={() => {
@@ -391,7 +388,7 @@ export default function ChatPage() {
                         className={`p-4 md:p-6 rounded-3xl text-sm leading-relaxed whitespace-pre-wrap ${
                           msg.role === 'user'
                             ? 'bg-zinc-900 text-white rounded-tr-none'
-                            : 'bg-white border border-zinc-100 text-zinc-800 rounded-tl-none shadow-sm'
+                            : 'bg-white dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700 text-zinc-800 dark:text-zinc-100 rounded-tl-none shadow-sm'
                         }`}
                       >
                         {msg.content}
@@ -405,7 +402,7 @@ export default function ChatPage() {
                               key={`${c.value}-${idx}`}
                               type="button"
                               onClick={() => handleChoiceClick(c)}
-                              className="px-4 py-2.5 bg-white border border-zinc-200 hover:border-zinc-900 hover:bg-zinc-900 hover:text-white text-xs font-bold text-zinc-800 rounded-full transition-all active:scale-[0.98]"
+                              className="px-4 py-2.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 hover:border-zinc-900 hover:bg-zinc-900 hover:text-white dark:hover:bg-white dark:hover:text-zinc-900 text-xs font-bold text-zinc-800 dark:text-zinc-200 rounded-full transition-all active:scale-[0.98]"
                             >
                               {c.label}
                             </button>
@@ -422,7 +419,7 @@ export default function ChatPage() {
                   <div className="w-8 h-8 rounded-full bg-zinc-900 flex items-center justify-center text-white">
                     <Sparkles size={16} />
                   </div>
-                  <div className="flex gap-1 p-4 bg-white border border-zinc-100 rounded-3xl rounded-tl-none">
+                  <div className="flex gap-1 p-4 bg-white dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700 rounded-3xl rounded-tl-none">
                     <div className="w-1.5 h-1.5 bg-zinc-200 rounded-full animate-bounce" />
                     <div className="w-1.5 h-1.5 bg-zinc-200 rounded-full animate-bounce [animation-delay:0.2s]" />
                     <div className="w-1.5 h-1.5 bg-zinc-200 rounded-full animate-bounce [animation-delay:0.4s]" />
@@ -434,7 +431,7 @@ export default function ChatPage() {
         </div>
 
         {/* Chat Input */}
-        <div className="bg-zinc-50 border-t border-zinc-200 p-4 md:p-6 sticky bottom-0">
+        <div className="bg-zinc-50 dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800 p-4 md:p-6 sticky bottom-0">
           <form onSubmit={handleFormSubmit} className="max-w-screen-md mx-auto relative group">
             <input
               type="text"
@@ -446,7 +443,7 @@ export default function ChatPage() {
                   ? '위 선택지 중 하나를 고르거나 직접 입력하세요...'
                   : '기브니즈 AI에게 질문하세요...'
               }
-              className="w-full pl-5 md:pl-8 pr-16 md:pr-20 py-5 md:py-6 bg-white border border-zinc-200 rounded-[28px] md:rounded-[32px] text-sm focus:ring-4 focus:ring-zinc-900/5 transition-all shadow-sm disabled:bg-zinc-100 disabled:cursor-not-allowed"
+              className="w-full pl-5 md:pl-8 pr-16 md:pr-20 py-5 md:py-6 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-white rounded-[28px] md:rounded-[32px] text-sm focus:ring-4 focus:ring-zinc-900/5 dark:focus:ring-white/10 transition-all shadow-sm disabled:bg-zinc-100 dark:disabled:bg-zinc-800 disabled:cursor-not-allowed placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
             />
             <button
               type="submit"

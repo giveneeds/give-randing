@@ -50,6 +50,7 @@ export default function MarketingHookSection({ title, subtitle, content }) {
       "-=1.5"
     );
 
+
   }, { scope: container });
 
   return (
@@ -95,6 +96,7 @@ export default function MarketingHookSection({ title, subtitle, content }) {
               {content.footer}
             </p>
           </div>
+
         </div>
       </div>
 

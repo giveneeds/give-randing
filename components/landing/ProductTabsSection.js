@@ -35,7 +35,7 @@ const iconMap = {
   Target: Target,
 };
 
-export default function ProductTabsSection({ title, content }) {
+export default function ProductTabsSection({ title, subtitle, content }) {
   const items = useMemo(() => content?.items || [], [content]);
   const [activeTab, setActiveTab] = useState(items[0]?.id);
   
@@ -53,7 +53,7 @@ export default function ProductTabsSection({ title, content }) {
             <h2 className="text-3xl font-black text-zinc-900 dark:text-white tracking-widest uppercase mb-2">
               {title}
             </h2>
-            <p className="text-zinc-500 dark:text-zinc-400 font-medium">기브니즈만의 압도적인 마케팅 솔루션</p>
+            <p className="text-zinc-500 dark:text-zinc-400 font-medium">{subtitle || '당신의 비즈니스에 맞는 최적의 조합을 찾아드립니다'}</p>
           </div>
         </div>
 
