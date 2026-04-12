@@ -145,7 +145,7 @@ function BrandStatItem({ stat }) {
           left: 0,
           height: 2,
           width: `${progress}%`,
-          background: '#f59e0b',
+          background: '#2563eb',
           transition: 'width 1.2s cubic-bezier(0.19, 1, 0.22, 1)',
         }}
       />
@@ -158,7 +158,7 @@ function BrandStatItem({ stat }) {
           width: 10,
           height: 10,
           marginLeft: -5,
-          background: '#f59e0b',
+          background: '#2563eb',
           borderRadius: '50%',
           boxShadow: '0 0 20px rgba(245, 158, 11, 0.8)',
           opacity: progress > 0 ? 1 : 0,
