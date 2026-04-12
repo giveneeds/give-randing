@@ -4,10 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 
 /**
  * BrandStatsSection
- * 레이아웃: 헤드라인(상단) → 카운트업 숫자(하단)
- * - shimmer 텍스트 효과
- * - 통계 숫자 count-up (IntersectionObserver + rAF)
- * - 검은 배경 / 모바일 반응형 / 접근성
+ * 헤드라인(상단) + 카운트업 숫자(하단)
+ * 2번 사진 기준: 오렌지 프로그레스바 + 큰 숫자 + 설명
  */
 export default function BrandStatsSection({ title, subtitle, content = {} }) {
   const {
@@ -20,158 +18,59 @@ export default function BrandStatsSection({ title, subtitle, content = {} }) {
   } = content;
 
   return (
-    <section
-      className="bs-section relative w-full bg-black text-white overflow-hidden"
-      aria-label={`${title_main} ${title_dim}`.trim()}
-    >
-      <style jsx>{`
-        .bs-section {
-          padding: clamp(80px, 12vw, 180px) clamp(24px, 8vw, 100px);
-        }
-
-        /* ── 헤드라인 (상단) ── */
-        .bs-headline {
-          font-weight: 800;
-          letter-spacing: -0.05em;
-          line-height: 1.05;
-          font-size: clamp(36px, 7vw, 84px);
-          margin: 0 0 clamp(80px, 10vw, 160px) 0;
-          max-width: 1400px;
-        }
-        .bs-headline .bs-line {
-          display: block;
-        }
-        .bs-main {
-          color: #ffffff;
-        }
-        .bs-shimmer {
-          display: inline-block;
-          color: #555;
-          background: linear-gradient(
-            to right,
-            #444 20%,
-            #888 40%,
-            #fff 50%,
-            #888 60%,
-            #444 80%
-          );
-          background-size: 200% auto;
-          -webkit-background-clip: text;
-          background-clip: text;
-          -webkit-text-fill-color: transparent;
-          animation: bs-shine 5s linear infinite;
-        }
+    <section className="relative w-full bg-black text-white overflow-hidden">
+      {/* 글로벌 keyframes */}
+      <style>{`
         @keyframes bs-shine {
           to { background-position: 200% center; }
         }
-
-        /* ── 카운트업 그리드 (하단) ── */
-        .bs-stats-row {
-          display: grid;
-          grid-template-columns: 1fr;
-          gap: clamp(60px, 8vw, 80px);
-        }
-        @media (min-width: 640px) {
-          .bs-stats-row {
-            grid-template-columns: repeat(${stats.length}, 1fr);
-            gap: clamp(40px, 5vw, 80px);
-          }
-        }
-
-        .bs-stat {
-          position: relative;
-          width: 100%;
-          padding-top: 28px;
-        }
-        .bs-stat::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 1.5px;
-          background: rgba(255, 255, 255, 0.1);
-        }
-
-        .bs-track-wrapper {
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 1.5px;
-        }
-        .bs-fill {
-          position: absolute;
-          top: 0;
-          left: 0;
-          height: 100%;
-          width: 0%;
-          background: #f59e0b;
-          transition: width 1.2s cubic-bezier(0.19, 1, 0.22, 1);
-        }
-        .bs-dot {
-          position: absolute;
-          top: 50%;
-          left: 0%;
-          width: 10px;
-          height: 10px;
-          margin-left: -5px;
-          margin-top: -5px;
-          background: #f59e0b;
-          border-radius: 50%;
-          box-shadow: 0 0 20px rgba(245, 158, 11, 0.82);
-          transition: left 1.2s cubic-bezier(0.19, 1, 0.22, 1);
-        }
-
-        .bs-number {
-          font-size: clamp(56px, 10vw, 120px);
-          font-weight: 900;
-          letter-spacing: -0.04em;
-          color: #ffffff;
-          line-height: 1;
-          display: flex;
-          align-items: baseline;
-          margin-bottom: 16px;
-        }
-        .bs-suffix {
-          font-size: 0.45em;
-          font-weight: 700;
-          margin-left: 4px;
-          color: rgba(255, 255, 255, 0.35);
-        }
-        .bs-label {
-          font-size: clamp(13px, 1.2vw, 16px);
-          font-weight: 700;
-          color: rgba(255, 255, 255, 0.5);
-          margin-bottom: 8px;
-          letter-spacing: 0.02em;
-        }
-        .bs-desc {
-          font-size: clamp(13px, 1.2vw, 16px);
-          font-weight: 500;
-          line-height: 1.6;
-          color: #666;
-          max-width: 320px;
-          word-break: keep-all;
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          .bs-fill, .bs-dot { transition: none; }
-          .bs-shimmer { animation: none; color: #777; -webkit-text-fill-color: #777; }
-        }
       `}</style>
 
-      <div style={{ maxWidth: 1400, margin: '0 auto' }}>
+      <div
+        style={{
+          maxWidth: 1400,
+          margin: '0 auto',
+          padding: 'clamp(80px, 12vw, 180px) clamp(24px, 8vw, 100px)',
+        }}
+      >
         {/* 상단: 헤드라인 */}
-        <h2 className="bs-headline">
-          <span className="bs-line bs-main">{title_main}</span>
-          <span className="bs-line bs-shimmer">{title_dim}</span>
+        <h2
+          style={{
+            fontWeight: 800,
+            letterSpacing: '-0.05em',
+            lineHeight: 1.05,
+            fontSize: 'clamp(36px, 7vw, 84px)',
+            margin: '0 0 clamp(80px, 10vw, 160px) 0',
+            maxWidth: 1400,
+          }}
+        >
+          <span style={{ display: 'block', color: '#ffffff' }}>{title_main}</span>
+          <span
+            style={{
+              display: 'inline-block',
+              color: '#555',
+              background: 'linear-gradient(to right, #444 20%, #888 40%, #fff 50%, #888 60%, #444 80%)',
+              backgroundSize: '200% auto',
+              WebkitBackgroundClip: 'text',
+              backgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              animation: 'bs-shine 5s linear infinite',
+            }}
+          >
+            {title_dim}
+          </span>
         </h2>
 
         {/* 하단: 카운트업 숫자 */}
-        <div className="bs-stats-row">
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: stats.length > 1 ? `repeat(${stats.length}, 1fr)` : '1fr',
+            gap: 'clamp(40px, 5vw, 80px)',
+          }}
+        >
           {stats.map((s, i) => (
-            <BrandStatItem key={i} stat={s} index={i} />
+            <BrandStatItem key={i} stat={s} />
           ))}
         </div>
       </div>
@@ -179,7 +78,7 @@ export default function BrandStatsSection({ title, subtitle, content = {} }) {
   );
 }
 
-function BrandStatItem({ stat, index }) {
+function BrandStatItem({ stat }) {
   const { value = 0, suffix = '+', label = '', description = '' } = stat || {};
   const ref = useRef(null);
   const startedRef = useRef(false);
@@ -202,8 +101,7 @@ function BrandStatItem({ stat, index }) {
 
       const step = (timestamp) => {
         if (!startTs) startTs = timestamp;
-        const progressTime = timestamp - startTs;
-        const t = Math.min(progressTime / duration, 1);
+        const t = Math.min((timestamp - startTs) / duration, 1);
         const eased = t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
         setDisplay(Math.round(target * eased));
         if (t < 1) window.requestAnimationFrame(step);
@@ -222,22 +120,110 @@ function BrandStatItem({ stat, index }) {
     );
     io.observe(node);
     return () => io.disconnect();
-  }, [value, index]);
+  }, [value]);
 
   const formatted = new Intl.NumberFormat('en-US').format(display);
 
   return (
-    <div className="bs-stat" ref={ref}>
-      <div className="bs-track-wrapper" aria-hidden="true">
-        <div className="bs-fill" style={{ width: `${progress}%` }} />
-        <div className="bs-dot" style={{ left: `${progress}%`, opacity: progress > 0 ? 1 : 0 }} />
-      </div>
-      {label && <p className="bs-label">{label}</p>}
-      <div className="bs-number" role="text" aria-live="polite">
+    <div ref={ref} style={{ position: 'relative', width: '100%', paddingTop: 32 }}>
+      {/* 배경 트랙 */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: 2,
+          background: 'rgba(255,255,255,0.1)',
+        }}
+      />
+      {/* 오렌지 프로그레스 */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          height: 2,
+          width: `${progress}%`,
+          background: '#f59e0b',
+          transition: 'width 1.2s cubic-bezier(0.19, 1, 0.22, 1)',
+        }}
+      />
+      {/* 오렌지 도트 */}
+      <div
+        style={{
+          position: 'absolute',
+          top: -4,
+          left: `${progress}%`,
+          width: 10,
+          height: 10,
+          marginLeft: -5,
+          background: '#f59e0b',
+          borderRadius: '50%',
+          boxShadow: '0 0 20px rgba(245, 158, 11, 0.8)',
+          opacity: progress > 0 ? 1 : 0,
+          transition: 'left 1.2s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.3s',
+        }}
+      />
+
+      {/* 라벨 */}
+      {label && (
+        <p
+          style={{
+            fontSize: 'clamp(12px, 1.2vw, 15px)',
+            fontWeight: 600,
+            color: 'rgba(255,255,255,0.4)',
+            marginBottom: 8,
+            letterSpacing: '0.02em',
+          }}
+        >
+          {label}
+        </p>
+      )}
+
+      {/* 숫자 */}
+      <div
+        style={{
+          fontSize: 'clamp(72px, 14vw, 160px)',
+          fontWeight: 900,
+          letterSpacing: '-0.04em',
+          color: '#ffffff',
+          lineHeight: 0.9,
+          display: 'flex',
+          alignItems: 'baseline',
+          marginBottom: 20,
+        }}
+      >
         <span>{formatted}</span>
-        {suffix && <span className="bs-suffix">{suffix}</span>}
+        {suffix && (
+          <span
+            style={{
+              fontSize: '0.4em',
+              fontWeight: 700,
+              marginLeft: 6,
+              color: 'rgba(255,255,255,0.35)',
+            }}
+          >
+            {suffix}
+          </span>
+        )}
       </div>
-      {description && <p className="bs-desc">{description}</p>}
+
+      {/* 설명 */}
+      {description && (
+        <p
+          style={{
+            fontSize: 'clamp(13px, 1.2vw, 16px)',
+            fontWeight: 500,
+            lineHeight: 1.6,
+            color: '#666',
+            maxWidth: 320,
+            wordBreak: 'keep-all',
+          }}
+        >
+          {description}
+        </p>
+      )}
     </div>
   );
 }
