@@ -78,17 +78,20 @@ export default function ChatPage() {
   }, [user, ensureSession]);
 
   // 어시스턴트 메시지를 DB에 저장 (RLS — 본인 세션만)
-  async function persistMessage({ role, content, choices = null, stepId = null, sid }) {
+  async function persistMessage({ role, content, choices = null, stepId = null, sid, scores = null }) {
     if (!supabase || !sid) return;
     try {
-      await supabase.from('chat_messages').insert({
+      const row = {
         session_uuid: sid,
-        session_id: sid, // 레거시 text 컬럼 호환
+        session_id: sid,
         role,
         content,
         choices: choices && choices.length ? choices : null,
         step: stepId,
-      });
+      };
+      // scores 컬럼이 있으면 저장 (없어도 에러 무시)
+      if (scores) row.metadata = JSON.stringify({ scores });
+      await supabase.from('chat_messages').insert(row);
     } catch (e) {
       console.warn('persistMessage failed:', e?.message);
     }
@@ -287,13 +290,14 @@ export default function ChatPage() {
 
       const reply = data.reply || '죄송해요, 응답을 불러오지 못했어요.';
       const aiChoices = Array.isArray(data.choices) ? data.choices : [];
+      const aiScores = data.scores || null;
       const nextStepFromAi = data.nextStep || (localNext === STEPS.RECOMMENDATION ? STEPS.FREE_CHAT : localNext);
 
       const asMsg = { role: 'assistant', content: reply, choices: aiChoices, step: nextStepFromAi };
       setMessages((prev) => [...prev, asMsg]);
       setStep(nextStepFromAi);
       setCurrentChoices(aiChoices);
-      persistMessage({ role: 'assistant', content: reply, choices: aiChoices, stepId: nextStepFromAi, sid });
+      persistMessage({ role: 'assistant', content: reply, choices: aiChoices, stepId: nextStepFromAi, sid, scores: aiScores });
       updateSessionState({ sid, nextStep: nextStepFromAi, nextAnswers });
     } catch (err) {
       console.error(err);

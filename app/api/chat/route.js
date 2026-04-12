@@ -31,6 +31,25 @@ const SYSTEM_PROMPT_BASE = `당신은 '기브니즈(GIVENEEDS)'의 라이트 AI 
 - 출처 없는 단정, 허위 통계 금지.
 - "자세한 건 상담에서"라며 회피하지 말고, 가능한 한 구체적으로 답변 후 기브니즈 상담을 제안합니다.
 
+[내부 자가 평가 — 반드시 매 답변마다 수행]
+- 전략을 제안할 때 내부적으로 아래 항목을 스스로 채점합니다 (사용자에게 보이지 않음, JSON의 scores 필드에 기록):
+  · relevance (관련성): 사용자의 업종·고민에 얼마나 맞는가 (1~10)
+  · actionability (실행 가능성): 사용자가 바로 실행할 수 있는가 (1~10)
+  · impact (기대 효과): 실행 시 예상 효과 크기 (1~10)
+  · confidence (확신도): 이 제안에 대한 AI의 자체 확신 (1~10)
+- 점수가 낮은 항목(6점 이하)이 있으면, 해당 부분을 보완하는 방향으로 답변을 보강합니다.
+- 이 점수는 대화 로그와 함께 저장되어 향후 분석에 활용됩니다.
+
+[중간 체크인 — 대화 흐름 관리]
+- 전략 제안을 2~3회 연속으로 한 뒤에는 반드시 사용자에게 가볍게 만족도를 확인합니다.
+  예) "지금까지 제안드린 방향이 괜찮으신가요? 혹시 다른 쪽으로 더 알아보고 싶으시면 말씀해 주세요."
+  예) "이 전략이 맞는 방향인지 확인 한번 해볼까요?"
+- 사용자가 부정적 반응("별로", "아닌 것 같아", "다른 거", "글쎄" 등)을 보이면:
+  1) "어떤 부분이 맞지 않으셨는지" 한 가지만 물어봅니다.
+  2) 이전 대화를 분석해서 새로운 각도의 전략을 제시합니다.
+  3) "앞서 제안드린 {이전 전략}은 {업종}에서 {문제점}이 있을 수 있습니다. 대신 {새 전략}을 추천드립니다." 식으로 자체 개선합니다.
+- 사용자가 긍정적 반응이면 더 깊이 있는 실행 계획(일정, 예산, KPI)으로 자연스럽게 넘어갑니다.
+
 [재질의 규칙]
 - 사용자의 답변이 모호하거나, 구체적 전략을 수립하기에 정보가 부족하다고 판단되면 추측하지 말고:
   1) 사용자가 한 말을 1~2문장으로 요약해 돌려주고,
@@ -44,7 +63,8 @@ const SYSTEM_PROMPT_BASE = `당신은 '기브니즈(GIVENEEDS)'의 라이트 AI 
 {
   "reply": "<사용자에게 보일 본문 텍스트>",
   "choices": [{"label": "...", "value": "..."}],  // 다음 단계 선택지 2~4개, 없으면 [] (자유 입력 단계)
-  "nextStep": "<mainConcern | subDetail | industry | strength | recommendation | freeChat>"
+  "nextStep": "<mainConcern | subDetail | industry | strength | recommendation | freeChat>",
+  "scores": {"relevance": 8, "actionability": 7, "impact": 9, "confidence": 8}
 }
 - JSON 외 어떤 텍스트도 출력하지 않습니다. 코드 블록 없이 raw JSON만.
 `;
@@ -226,7 +246,7 @@ export async function POST(request) {
       body: JSON.stringify({
         model,
         temperature: 0.7,
-        max_tokens: 800,
+        max_tokens: 1200,
         response_format: { type: 'json_object' },
         messages: [{ role: 'system', content: systemPrompt }, ...cleaned],
       }),
@@ -256,8 +276,9 @@ export async function POST(request) {
           .slice(0, 4)
       : [];
     const nextStep = typeof parsed?.nextStep === 'string' ? parsed.nextStep : null;
+    const scores = parsed?.scores || null;
 
-    return NextResponse.json({ reply, choices, nextStep });
+    return NextResponse.json({ reply, choices, nextStep, scores });
   } catch (err) {
     console.error('Chat route error:', err);
     return NextResponse.json(
