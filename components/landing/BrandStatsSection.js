@@ -13,12 +13,9 @@ export default function BrandStatsSection({ title, subtitle, content = {} }) {
   } = content;
 
   return (
-    <section className="relative w-full bg-zinc-950 dark:bg-zinc-950 text-white overflow-hidden">
+    <section className="relative w-full bg-white dark:bg-zinc-950 overflow-hidden">
       <style>{`
-        @keyframes bs-shine-dark {
-          to { background-position: 200% center; }
-        }
-        @keyframes bs-shine-light {
+        @keyframes bs-shine {
           to { background-position: 200% center; }
         }
       `}</style>
@@ -40,16 +37,16 @@ export default function BrandStatsSection({ title, subtitle, content = {} }) {
             maxWidth: 1400,
           }}
         >
-          <span className="block text-white">{title_main}</span>
+          <span className="block text-zinc-900 dark:text-white">{title_main}</span>
           <span
-            className="inline-block shimmer-text"
+            className="inline-block shimmer-light dark:shimmer-dark"
             style={{
-              background: 'linear-gradient(to right, #444 20%, #6388e0 40%, #93b5ff 50%, #6388e0 60%, #444 80%)',
+              background: 'linear-gradient(to right, #bbb 20%, #3b82f6 40%, #60a5fa 50%, #3b82f6 60%, #bbb 80%)',
               backgroundSize: '200% auto',
               WebkitBackgroundClip: 'text',
               backgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
-              animation: 'bs-shine-dark 5s linear infinite',
+              animation: 'bs-shine 5s linear infinite',
             }}
           >
             {title_dim}
@@ -121,7 +118,9 @@ function BrandStatItem({ stat }) {
   return (
     <div ref={ref} style={{ position: 'relative', width: '100%', paddingTop: 32 }}>
       {/* 배경 트랙 */}
-      <div className="absolute top-0 left-0 w-full" style={{ height: 2, background: 'rgba(255,255,255,0.1)' }} />
+      <div className="absolute top-0 left-0 w-full" style={{ height: 2 }}>
+        <div className="w-full h-full bg-zinc-200 dark:bg-white/10" />
+      </div>
       {/* 프로그레스 */}
       <div
         className="absolute top-0 left-0"
@@ -150,13 +149,13 @@ function BrandStatItem({ stat }) {
       />
 
       {label && (
-        <p className="text-white/40" style={{ fontSize: 'clamp(12px, 1.2vw, 15px)', fontWeight: 600, marginBottom: 8, letterSpacing: '0.02em' }}>
+        <p className="text-zinc-400 dark:text-white/40" style={{ fontSize: 'clamp(12px, 1.2vw, 15px)', fontWeight: 600, marginBottom: 8, letterSpacing: '0.02em' }}>
           {label}
         </p>
       )}
 
       <div
-        className="text-white"
+        className="text-zinc-900 dark:text-white"
         style={{
           fontSize: 'clamp(48px, 8vw, 96px)',
           fontWeight: 900,
@@ -169,7 +168,7 @@ function BrandStatItem({ stat }) {
       >
         <span>{formatted}</span>
         {suffix && (
-          <span className="text-white/35" style={{ fontSize: '0.4em', fontWeight: 700, marginLeft: 6 }}>
+          <span className="text-zinc-300 dark:text-white/35" style={{ fontSize: '0.4em', fontWeight: 700, marginLeft: 6 }}>
             {suffix}
           </span>
         )}

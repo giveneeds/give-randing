@@ -129,7 +129,7 @@ export default function ConvictionSection({ content = {} }) {
           {act1_title}
         </p>
         <p
-          className="text-zinc-400 dark:text-white/45"
+          className="text-zinc-500 dark:text-white/45"
           style={{ fontSize: 'clamp(14px, 2vw, 22px)', fontWeight: 500, lineHeight: 1.5 }}
         >
           {act1_sub}
