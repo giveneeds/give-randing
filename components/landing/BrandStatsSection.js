@@ -2,11 +2,6 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-/**
- * BrandStatsSection
- * 헤드라인(상단) + 카운트업 숫자(하단)
- * 2번 사진 기준: 오렌지 프로그레스바 + 큰 숫자 + 설명
- */
 export default function BrandStatsSection({ title, subtitle, content = {} }) {
   const {
     title_main = title || 'We are',
@@ -18,10 +13,12 @@ export default function BrandStatsSection({ title, subtitle, content = {} }) {
   } = content;
 
   return (
-    <section className="relative w-full bg-black text-white overflow-hidden">
-      {/* 글로벌 keyframes */}
+    <section className="relative w-full bg-zinc-950 dark:bg-zinc-950 text-white overflow-hidden">
       <style>{`
-        @keyframes bs-shine {
+        @keyframes bs-shine-dark {
+          to { background-position: 200% center; }
+        }
+        @keyframes bs-shine-light {
           to { background-position: 200% center; }
         }
       `}</style>
@@ -33,7 +30,6 @@ export default function BrandStatsSection({ title, subtitle, content = {} }) {
           padding: 'clamp(80px, 12vw, 180px) clamp(24px, 8vw, 100px)',
         }}
       >
-        {/* 상단: 헤드라인 */}
         <h2
           style={{
             fontWeight: 800,
@@ -44,24 +40,22 @@ export default function BrandStatsSection({ title, subtitle, content = {} }) {
             maxWidth: 1400,
           }}
         >
-          <span style={{ display: 'block', color: '#ffffff' }}>{title_main}</span>
+          <span className="block text-white">{title_main}</span>
           <span
+            className="inline-block shimmer-text"
             style={{
-              display: 'inline-block',
-              color: '#555',
-              background: 'linear-gradient(to right, #444 20%, #888 40%, #fff 50%, #888 60%, #444 80%)',
+              background: 'linear-gradient(to right, #444 20%, #6388e0 40%, #93b5ff 50%, #6388e0 60%, #444 80%)',
               backgroundSize: '200% auto',
               WebkitBackgroundClip: 'text',
               backgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
-              animation: 'bs-shine 5s linear infinite',
+              animation: 'bs-shine-dark 5s linear infinite',
             }}
           >
             {title_dim}
           </span>
         </h2>
 
-        {/* 하단: 카운트업 숫자 */}
         <div
           style={{
             display: 'grid',
@@ -127,32 +121,21 @@ function BrandStatItem({ stat }) {
   return (
     <div ref={ref} style={{ position: 'relative', width: '100%', paddingTop: 32 }}>
       {/* 배경 트랙 */}
+      <div className="absolute top-0 left-0 w-full" style={{ height: 2, background: 'rgba(255,255,255,0.1)' }} />
+      {/* 프로그레스 */}
       <div
+        className="absolute top-0 left-0"
         style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: 2,
-          background: 'rgba(255,255,255,0.1)',
-        }}
-      />
-      {/* 오렌지 프로그레스 */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
           height: 2,
           width: `${progress}%`,
           background: '#2563eb',
           transition: 'width 1.2s cubic-bezier(0.19, 1, 0.22, 1)',
         }}
       />
-      {/* 오렌지 도트 */}
+      {/* 도트 */}
       <div
+        className="absolute"
         style={{
-          position: 'absolute',
           top: -4,
           left: `${progress}%`,
           width: 10,
@@ -160,34 +143,24 @@ function BrandStatItem({ stat }) {
           marginLeft: -5,
           background: '#2563eb',
           borderRadius: '50%',
-          boxShadow: '0 0 20px rgba(245, 158, 11, 0.8)',
+          boxShadow: '0 0 20px rgba(37, 99, 235, 0.8)',
           opacity: progress > 0 ? 1 : 0,
           transition: 'left 1.2s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.3s',
         }}
       />
 
-      {/* 라벨 */}
       {label && (
-        <p
-          style={{
-            fontSize: 'clamp(12px, 1.2vw, 15px)',
-            fontWeight: 600,
-            color: 'rgba(255,255,255,0.4)',
-            marginBottom: 8,
-            letterSpacing: '0.02em',
-          }}
-        >
+        <p className="text-white/40" style={{ fontSize: 'clamp(12px, 1.2vw, 15px)', fontWeight: 600, marginBottom: 8, letterSpacing: '0.02em' }}>
           {label}
         </p>
       )}
 
-      {/* 숫자 */}
       <div
+        className="text-white"
         style={{
-          fontSize: 'clamp(72px, 14vw, 160px)',
+          fontSize: 'clamp(48px, 8vw, 96px)',
           fontWeight: 900,
           letterSpacing: '-0.04em',
-          color: '#ffffff',
           lineHeight: 0.9,
           display: 'flex',
           alignItems: 'baseline',
@@ -196,31 +169,14 @@ function BrandStatItem({ stat }) {
       >
         <span>{formatted}</span>
         {suffix && (
-          <span
-            style={{
-              fontSize: '0.4em',
-              fontWeight: 700,
-              marginLeft: 6,
-              color: 'rgba(255,255,255,0.35)',
-            }}
-          >
+          <span className="text-white/35" style={{ fontSize: '0.4em', fontWeight: 700, marginLeft: 6 }}>
             {suffix}
           </span>
         )}
       </div>
 
-      {/* 설명 */}
       {description && (
-        <p
-          style={{
-            fontSize: 'clamp(13px, 1.2vw, 16px)',
-            fontWeight: 500,
-            lineHeight: 1.6,
-            color: '#666',
-            maxWidth: 320,
-            wordBreak: 'keep-all',
-          }}
-        >
+        <p className="text-zinc-500" style={{ fontSize: 'clamp(13px, 1.2vw, 16px)', fontWeight: 500, lineHeight: 1.6, maxWidth: 320, wordBreak: 'keep-all' }}>
           {description}
         </p>
       )}

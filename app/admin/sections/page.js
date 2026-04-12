@@ -949,6 +949,102 @@ function SectionContentEditor({ type, content, onChange }) {
       );
     }
 
+    case 'conviction': {
+      const act2 = content.act2_lines || [];
+      const act3 = content.act3_lines || [];
+      const updateLine = (key, i, val) => {
+        const arr = [...(content[key] || [])];
+        arr[i] = val;
+        onChange({ ...content, [key]: arr });
+      };
+      const addLine = (key) => onChange({ ...content, [key]: [...(content[key] || []), '새 줄'] });
+      const removeLine = (key, i) => onChange({ ...content, [key]: (content[key] || []).filter((_, idx) => idx !== i) });
+
+      return (
+        <div className="space-y-8">
+          <p className="text-[10px] text-indigo-600 bg-indigo-50 p-3 rounded font-bold leading-relaxed">
+            * 3막 스크롤 애니메이션 섹션입니다. 구체 배경 위에 텍스트가 단계별로 전환됩니다.<br/>
+            * 빈 줄을 추가하면 문단 간격이 생깁니다.
+          </p>
+
+          <div className="space-y-4">
+            <label className="text-[10px] font-bold text-zinc-900 uppercase tracking-widest ml-1 block">1막 — 공감</label>
+            <div className="space-y-2">
+              <label className="text-[9px] font-bold text-zinc-400 ml-1">메인 문구 (줄바꿈: \n)</label>
+              <textarea
+                className="w-full p-3 bg-zinc-50 border border-zinc-200 rounded-md text-sm font-bold h-24"
+                value={content.act1_title || ''}
+                onChange={e => updateContent('act1_title', e.target.value)}
+                placeholder="여러 회사에 문의 해보셨다면\n느끼고 계실겁니다."
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[9px] font-bold text-zinc-400 ml-1">부제</label>
+              <input
+                className="w-full p-3 bg-zinc-50 border border-zinc-200 rounded-md text-sm"
+                value={content.act1_sub || ''}
+                onChange={e => updateContent('act1_sub', e.target.value)}
+                placeholder="대부분 비슷한 이야기를 한다는 것을."
+              />
+            </div>
+          </div>
+
+          <div className="space-y-4 pt-6 border-t border-zinc-100">
+            <label className="text-[10px] font-bold text-zinc-900 uppercase tracking-widest ml-1 block">2막 — 진단 키워드</label>
+            {act2.map((line, i) => (
+              <div key={i} className="flex gap-2 items-center">
+                <input
+                  className="flex-1 p-2 bg-zinc-50 border border-zinc-200 rounded text-sm"
+                  value={line}
+                  onChange={e => updateLine('act2_lines', i, e.target.value)}
+                />
+                <button onClick={() => removeLine('act2_lines', i)} className="text-zinc-300 hover:text-red-500 p-1">
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            ))}
+            <button
+              onClick={() => addLine('act2_lines')}
+              className="w-full py-2 border-2 border-dashed border-zinc-200 rounded text-[10px] font-bold text-zinc-400 hover:border-indigo-400 hover:text-indigo-500 transition-all uppercase tracking-widest flex items-center justify-center gap-2"
+            >
+              <Plus size={12} /> 줄 추가
+            </button>
+          </div>
+
+          <div className="space-y-4 pt-6 border-t border-zinc-100">
+            <label className="text-[10px] font-bold text-zinc-900 uppercase tracking-widest ml-1 block">3막 — 선언문 (빈 줄 = 문단 구분)</label>
+            {act3.map((line, i) => (
+              <div key={i} className="flex gap-2 items-center">
+                <input
+                  className={`flex-1 p-2 border border-zinc-200 rounded text-sm ${line === '' ? 'bg-zinc-100 italic text-zinc-400' : 'bg-zinc-50 font-bold'}`}
+                  value={line}
+                  onChange={e => updateLine('act3_lines', i, e.target.value)}
+                  placeholder={line === '' ? '(빈 줄 — 문단 간격)' : '선언문 줄'}
+                />
+                <button onClick={() => removeLine('act3_lines', i)} className="text-zinc-300 hover:text-red-500 p-1">
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            ))}
+            <div className="flex gap-2">
+              <button
+                onClick={() => addLine('act3_lines')}
+                className="flex-1 py-2 border-2 border-dashed border-zinc-200 rounded text-[10px] font-bold text-zinc-400 hover:border-indigo-400 hover:text-indigo-500 transition-all uppercase tracking-widest flex items-center justify-center gap-2"
+              >
+                <Plus size={12} /> 줄 추가
+              </button>
+              <button
+                onClick={() => onChange({ ...content, act3_lines: [...act3, ''] })}
+                className="px-4 py-2 border-2 border-dashed border-zinc-200 rounded text-[10px] font-bold text-zinc-400 hover:border-zinc-400 hover:text-zinc-500 transition-all uppercase tracking-widest"
+              >
+                빈 줄
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     case 'magazine':
 
     default:
