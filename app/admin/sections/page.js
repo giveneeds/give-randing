@@ -750,8 +750,12 @@ function SectionContentEditor({ type, content, onChange }) {
             <input className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-md font-bold text-lg" value={content.title || ''} onChange={e => updateContent('title', e.target.value)} />
           </div>
           <div className="space-y-2">
-            <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">핵심 강조 단어 (보라색 포인트)</label>
+            <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">핵심 강조 단어 (파란색 포인트)</label>
             <input className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-md font-black text-2xl text-indigo-600" value={content.highlight || ''} onChange={e => updateContent('highlight', e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">강조 단어 뒤 접미 문구 (예: 이 아닙니다.)</label>
+            <input className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-md font-bold text-lg" value={content.suffix || ''} onChange={e => updateContent('suffix', e.target.value)} placeholder="이 아닙니다." />
           </div>
           <div className="space-y-2">
             <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">하단 마무리 문구</label>
@@ -840,6 +844,119 @@ function SectionContentEditor({ type, content, onChange }) {
           </button>
         </div>
       );
+
+    case 'brand_stats': {
+      const stats = content.stats || [];
+      const updateStat = (i, field, val) => {
+        const next = [...stats];
+        next[i] = { ...next[i], [field]: field === 'value' ? Number(val) || 0 : val };
+        onChange({ ...content, stats: next });
+      };
+      const addStat = () => onChange({
+        ...content,
+        stats: [...stats, { value: 100, suffix: '+', label: '새 지표', description: '설명 문구' }],
+      });
+      const removeStat = (i) => onChange({ ...content, stats: stats.filter((_, idx) => idx !== i) });
+
+      return (
+        <div className="space-y-8">
+          <p className="text-[10px] text-amber-600 bg-amber-50 p-3 rounded font-bold leading-relaxed">
+            * 검은 배경 + shimmer 타이틀 + 카운트업 숫자 섹션입니다.<br/>
+            * 상단 "공통 헤더 타이틀/서브타이틀"은 무시되고 아래 필드가 사용됩니다.
+          </p>
+
+          <div className="space-y-4">
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">상단 Eyebrow (예: GIVENEEDS)</label>
+              <input
+                className="w-full p-3 bg-zinc-50 border border-zinc-200 rounded-md text-sm font-bold outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900"
+                value={content.eyebrow || ''}
+                onChange={e => updateContent('eyebrow', e.target.value)}
+                placeholder="GIVENEEDS"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">헤드라인 - 메인 (흰색)</label>
+              <input
+                className="w-full p-3 bg-zinc-50 border border-zinc-200 rounded-md text-sm font-black outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900"
+                value={content.title_main || ''}
+                onChange={e => updateContent('title_main', e.target.value)}
+                placeholder="We are"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">헤드라인 - 강조 (shimmer 적용)</label>
+              <input
+                className="w-full p-3 bg-zinc-50 border border-zinc-200 rounded-md text-sm font-black outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900"
+                value={content.title_dim || ''}
+                onChange={e => updateContent('title_dim', e.target.value)}
+                placeholder="brand marketing agency"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-4 pt-6 border-t border-zinc-100">
+            <label className="text-[10px] font-bold text-zinc-900 uppercase tracking-widest ml-1 block">카운트업 지표 구성</label>
+            {stats.map((s, i) => (
+              <div key={i} className="p-5 bg-zinc-50 rounded-lg border border-zinc-200 space-y-3 relative">
+                <div className="grid grid-cols-[1fr_100px_auto] gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-bold text-zinc-400">목표값 (숫자)</label>
+                    <input
+                      type="number"
+                      className="w-full p-2 bg-white rounded border border-zinc-100 text-xs font-black text-amber-600"
+                      value={s.value ?? 0}
+                      onChange={e => updateStat(i, 'value', e.target.value)}
+                      placeholder="1024"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-bold text-zinc-400">접미사</label>
+                    <input
+                      className="w-full p-2 bg-white rounded border border-zinc-100 text-xs font-bold"
+                      value={s.suffix ?? ''}
+                      onChange={e => updateStat(i, 'suffix', e.target.value)}
+                      placeholder="+"
+                    />
+                  </div>
+                  <button
+                    onClick={() => removeStat(i)}
+                    className="self-end p-2 text-zinc-300 hover:text-red-500 transition-colors"
+                    title="지표 삭제"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold text-zinc-400">짧은 라벨</label>
+                  <input
+                    className="w-full p-2 bg-white rounded border border-zinc-100 text-xs font-bold"
+                    value={s.label ?? ''}
+                    onChange={e => updateStat(i, 'label', e.target.value)}
+                    placeholder="누적 프로젝트"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold text-zinc-400">설명 문구</label>
+                  <textarea
+                    className="w-full p-2 bg-white rounded border border-zinc-100 text-xs h-16"
+                    value={s.description ?? ''}
+                    onChange={e => updateStat(i, 'description', e.target.value)}
+                    placeholder="1024+ 누적 프로젝트를 진행하였습니다."
+                  />
+                </div>
+              </div>
+            ))}
+            <button
+              onClick={addStat}
+              className="w-full py-3 border-2 border-dashed border-zinc-200 rounded-lg text-[10px] font-bold text-zinc-400 hover:border-amber-500 hover:text-amber-600 transition-all uppercase tracking-widest flex items-center justify-center gap-2"
+            >
+              <Plus size={14} /> 지표 추가
+            </button>
+          </div>
+        </div>
+      );
+    }
 
     case 'magazine':
 

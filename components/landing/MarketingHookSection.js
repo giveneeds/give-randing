@@ -85,12 +85,12 @@ export default function MarketingHookSection({ title, subtitle, content }) {
               </span>
             </div>
 
-            {/* "이 아닙니다." (반드시 '이 아닙니다.'로 출력되도록 고정) */}
-            <span 
+            {/* 강조 단어 뒤에 오는 접미 문구 (어드민에서 편집 가능) */}
+            <span
               ref={subtitleRef}
               className="text-zinc-900 dark:text-white"
             >
-              이 아닙니다.
+              {content?.suffix || '이 아닙니다.'}
             </span>
           </div>
 
