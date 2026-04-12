@@ -170,14 +170,8 @@ export async function POST(request) {
       );
     }
 
-    // 인증 확인 — 비로그인 호출은 거부 (/chat 게이트와 동일)
+    // 인증 확인 — 비로그인도 수집 단계 대화는 허용 (5회 제한은 클라이언트에서 관리)
     const { user } = await verifyAuth(request);
-    if (!user) {
-      return NextResponse.json(
-        { error: '로그인이 필요합니다.' },
-        { status: 401 }
-      );
-    }
 
     const body = await request.json();
     const incoming = Array.isArray(body?.messages) ? body.messages : [];

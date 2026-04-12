@@ -223,11 +223,13 @@ export default function ChatPage() {
     if (sid) persistMessage({ role: 'user', content, stepId: step, sid });
 
     // 다음 단계가 아직 "수집 단계"면 로컬 프롬프트로 진행 (AI 호출 X)
+    // 단, 선택지를 고른 경우에만. 자유 입력이면 AI에 넘겨서 실제 대화.
     const localNext = nextLocalStep(step, nextAnswers);
     const collectSteps = new Set([STEPS.SUB_DETAIL, STEPS.INDUSTRY, STEPS.STRENGTH]);
+    const usedChoice = !!selectedValue; // 선택지 버튼을 클릭했는지 여부
 
-    if (collectSteps.has(localNext)) {
-      // 로컬 프롬프트 메시지 생성
+    if (usedChoice && collectSteps.has(localNext)) {
+      // 선택지 클릭 → 로컬 프롬프트로 빠르게 다음 단계
       let choices = [];
       if (localNext === STEPS.SUB_DETAIL) {
         choices = SUB_DETAIL_CHOICES[nextAnswers.mainConcern] || [];
@@ -248,8 +250,9 @@ export default function ChatPage() {
       return;
     }
 
-    // 비로그인 사용자가 AI 단계(recommendation/freeChat)에 도달 → 로그인 질의
-    if (!user) {
+    // 비로그인 + 수집 단계 끝(recommendation/freeChat) → 로그인 질의
+    const isAiOnlyStep = !collectSteps.has(localNext) && localNext !== STEPS.MAIN_CONCERN;
+    if (!user && isAiOnlyStep) {
       setTimeout(() => {
         setIsTyping(false);
         pushAssistantLoginPrompt();
@@ -257,18 +260,20 @@ export default function ChatPage() {
       return;
     }
 
-    // 이후 단계는 AI 호출 (recommendation / freeChat) — 로그인 사용자만
+    // AI 호출 (수집 단계 자유 입력 + recommendation + freeChat)
     try {
-      const { data: sess } = await supabase.auth.getSession();
-      const token = sess?.session?.access_token;
-      if (!token) throw new Error('로그인이 필요합니다.');
+      let token = null;
+      if (user) {
+        const { data: sess } = await supabase.auth.getSession();
+        token = sess?.session?.access_token;
+      }
+
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers.Authorization = `Bearer ${token}`;
 
       const res = await fetch('/api/chat', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers,
         body: JSON.stringify({
           messages: nextMessagesLocal.map(({ role, content }) => ({ role, content })),
           trail: getTrail(),
@@ -325,9 +330,9 @@ export default function ChatPage() {
   return (
     <>
       <LandingNavbar />
-      <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col pt-24">
+      <main className="h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col pt-24 overflow-hidden">
         {/* Chat Header */}
-        <div className="bg-white dark:bg-zinc-900 border-b border-zinc-100 dark:border-zinc-800 py-4 md:py-6 px-4 md:px-12 flex items-center justify-between sticky top-24 z-10">
+        <div className="bg-white dark:bg-zinc-900 border-b border-zinc-100 dark:border-zinc-800 py-4 md:py-6 px-4 md:px-12 flex items-center justify-between shrink-0 z-10">
           <div className="flex items-center gap-3 md:gap-4">
             <button
               onClick={() => {
@@ -431,7 +436,7 @@ export default function ChatPage() {
         </div>
 
         {/* Chat Input */}
-        <div className="bg-zinc-50 dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800 p-4 md:p-6 sticky bottom-0">
+        <div className="bg-zinc-50 dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800 p-4 md:p-6 shrink-0">
           <form onSubmit={handleFormSubmit} className="max-w-screen-md mx-auto relative group">
             <input
               type="text"
@@ -458,7 +463,6 @@ export default function ChatPage() {
           </p>
         </div>
       </main>
-      <LandingFooter />
       {showGateModal && <PremiumGateModal redirectPath="/chat" />}
     </>
   );
