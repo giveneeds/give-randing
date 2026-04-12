@@ -42,21 +42,11 @@ export default function ConvictionSection({ content = {} }) {
   useGSAP(() => {
     const isMobile = window.matchMedia('(max-width: 767px)').matches;
 
-    if (isMobile) {
-      gsap.set(sphereRef.current, { scale: 0.6, opacity: 0.7 });
-      gsap.set(act1Ref.current, { opacity: 1 });
-      gsap.set(act2Ref.current, { opacity: 1 });
-      gsap.set(act3Ref.current, { opacity: 1 });
-      act2LinesRef.current.forEach(el => el && gsap.set(el, { opacity: 1, y: 0 }));
-      act3LinesRef.current.forEach(el => el && gsap.set(el, { opacity: 1, y: 0 }));
-      return;
-    }
-
     const tl = gsap.timeline({
       scrollTrigger: {
         trigger: containerRef.current,
         start: 'top top',
-        end: '+=300%',
+        end: isMobile ? '+=200%' : '+=300%',
         scrub: 1,
         pin: true,
       },
@@ -86,15 +76,15 @@ export default function ConvictionSection({ content = {} }) {
     <section
       ref={containerRef}
       className="relative w-full bg-white dark:bg-zinc-950 overflow-hidden"
-      style={{ minHeight: '100vh', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+      style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
     >
       {/* 구체 — 밝은 모드에서 더 밝게 */}
       <div
         ref={sphereRef}
         className="absolute opacity-40 dark:opacity-100"
         style={{
-          width: 'min(50vw, 400px)',
-          height: 'min(50vw, 400px)',
+          width: 'min(40vw, 400px)',
+          height: 'min(40vw, 400px)',
           borderRadius: '50%',
           background: 'radial-gradient(circle at 35% 35%, #888 0%, #555 40%, #333 70%, #111 100%)',
           boxShadow: 'inset -20px -20px 60px rgba(0,0,0,0.8), inset 10px 10px 40px rgba(255,255,255,0.05), 0 0 80px rgba(0,0,0,0.1)',

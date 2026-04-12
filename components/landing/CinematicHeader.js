@@ -24,22 +24,10 @@ export default function CinematicHeader() {
   const listItemsRef = useRef([]);
 
   useGSAP(() => {
-    // 🚫 모바일(<768px)에서는 무거운 시네마틱 타임라인을 건너뜀.
-    //    데스크탑 효과는 브라우저 폭이 좁을 때 시각적으로 깨지고
-    //    GSAP pin/scrub이 모바일 주소창 토글과 충돌한다.
-    if (typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches) {
-      // 모바일 폴백: 검색 팔레트와 상품 리스트를 즉시 노출
-      if (searchBarRef.current) {
-        gsap.set(searchBarRef.current, { opacity: 1, autoAlpha: 1, scale: 1, y: 0 });
-      }
-      listItemsRef.current.forEach((el) => {
-        if (el) gsap.set(el, { opacity: 1, x: 0, filter: 'blur(0px)' });
-      });
-      return;
-    }
+    const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
 
-    // 📏 정확한 해상도 기반 높이 계산 (1000vh + 200vh 여유분)
-    const getScrollDist = () => window.innerHeight * 12;
+    // 📏 해상도 기반 높이 계산 (모바일은 짧게)
+    const getScrollDist = () => window.innerHeight * (isMobile ? 3 : 12);
 
     // 🧱 마스터 타임라인 - 고정과 애니메이션을 단 하나로 병합
     const masterTl = gsap.timeline({
@@ -108,22 +96,22 @@ export default function CinematicHeader() {
   return (
     <div
       ref={container}
-      className="w-full min-h-screen md:h-screen relative flex items-center justify-center overflow-hidden bg-white dark:bg-zinc-950 z-40 py-20 md:py-0"
+      className="w-full h-screen relative flex items-center justify-center overflow-hidden bg-white dark:bg-zinc-950 z-40"
     >
-      <div className="relative flex flex-col md:block items-center justify-center w-full h-full pointer-events-none px-4 sm:px-8 gap-8 md:gap-0">
-        {/* 브랜드 로고 — 모바일에선 정적으로 상단 노출, 데스크탑은 GSAP 절대배치 */}
+      <div className="relative w-full h-full pointer-events-none px-4 sm:px-8">
+        {/* 브랜드 로고 — 모바일/데스크탑 모두 절대배치 중앙 */}
         <h1
           ref={heroTextRef}
-          className="md:absolute md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 text-[18vw] md:text-[16vw] font-black tracking-tighter text-zinc-900 dark:text-white drop-shadow-2xl select-none uppercase z-10 text-center leading-none"
+          className="absolute top-[50%] md:top-[45%] left-1/2 -translate-x-1/2 -translate-y-1/2 text-[12vw] md:text-[16vw] font-black tracking-tighter text-zinc-900 dark:text-white drop-shadow-2xl select-none uppercase z-10 text-center leading-none whitespace-nowrap"
         >
           GIVENEEDS
         </h1>
 
-        {/* 시네마틱 검색 팔레트 — 센터링 wrapper (GSAP transform 충돌 방지) */}
-        <div className="md:absolute md:inset-0 md:flex md:items-center md:justify-center md:px-4 z-20 pointer-events-none">
+        {/* 시네마틱 검색 팔레트 — 모바일도 절대배치 중앙 약간 위 */}
+        <div className="absolute inset-0 flex items-center justify-center px-4 z-20 pointer-events-none" style={{ paddingBottom: '5vh' }}>
         <div
           ref={searchBarRef}
-          className="md:max-h-[88vh] md:overflow-y-auto w-full max-w-[92vw] sm:max-w-[560px] bg-white/95 dark:bg-zinc-900/85 backdrop-blur-3xl border border-zinc-200 dark:border-white/10 rounded-3xl md:rounded-[2.5rem] shadow-[0_40px_120px_rgba(0,0,0,0.15)] md:shadow-[0_120px_300px_rgba(0,0,0,0.3)] dark:shadow-[0_120px_300px_rgba(0,0,0,1)] p-5 sm:p-6 pointer-events-auto md:opacity-0 md:invisible"
+          className="max-h-[88vh] overflow-y-auto w-full max-w-[92vw] sm:max-w-[560px] bg-white/95 dark:bg-zinc-900/85 backdrop-blur-3xl border border-zinc-200 dark:border-white/10 rounded-3xl md:rounded-[2.5rem] shadow-[0_40px_120px_rgba(0,0,0,0.15)] md:shadow-[0_120px_300px_rgba(0,0,0,0.3)] dark:shadow-[0_120px_300px_rgba(0,0,0,1)] p-5 sm:p-6 pointer-events-auto opacity-0 invisible"
         >
           <div className="flex items-center gap-3 sm:gap-5 pb-5 sm:pb-8 border-b border-zinc-100 dark:border-white/5 mb-5 sm:mb-6 min-w-0">
             <div className="shrink-0 w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-blue-500/10 flex items-center justify-center shadow-inner">

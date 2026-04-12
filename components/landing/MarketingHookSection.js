@@ -13,18 +13,13 @@ export default function MarketingHookSection({ title, subtitle, content }) {
   const subtitleRef = useRef(null);
 
   useGSAP(() => {
-    // 모바일에선 pin 애니메이션 비활성화 (주소창 토글/오버플로우 충돌 방지)
-    if (typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches) {
-      if (bigTextRef.current) gsap.set(bigTextRef.current, { scale: 1, opacity: 1, y: 0, color: '#3B82F6', filter: 'blur(0px)' });
-      if (subtitleRef.current) gsap.set(subtitleRef.current, { opacity: 1, x: 0, filter: 'blur(0px)' });
-      return;
-    }
+    const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
     const tl = gsap.timeline({
       scrollTrigger: {
         trigger: container.current,
         start: 'top top',
-        end: '+=150%',
-        scrub: 1.5,
+        end: isMobile ? '+=100%' : '+=150%',
+        scrub: isMobile ? 1 : 1.5,
         pin: true,
       }
     });
