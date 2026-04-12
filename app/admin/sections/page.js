@@ -867,15 +867,6 @@ function SectionContentEditor({ type, content, onChange }) {
 
           <div className="space-y-4">
             <div className="space-y-1">
-              <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">상단 Eyebrow (예: GIVENEEDS)</label>
-              <input
-                className="w-full p-3 bg-zinc-50 border border-zinc-200 rounded-md text-sm font-bold outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900"
-                value={content.eyebrow || ''}
-                onChange={e => updateContent('eyebrow', e.target.value)}
-                placeholder="GIVENEEDS"
-              />
-            </div>
-            <div className="space-y-1">
               <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">헤드라인 - 메인 (흰색)</label>
               <input
                 className="w-full p-3 bg-zinc-50 border border-zinc-200 rounded-md text-sm font-black outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900"
