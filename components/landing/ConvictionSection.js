@@ -88,10 +88,10 @@ export default function ConvictionSection({ content = {} }) {
       className="relative w-full bg-white dark:bg-zinc-950 overflow-hidden"
       style={{ minHeight: '100vh', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
     >
-      {/* 구체 */}
+      {/* 구체 — 밝은 모드에서 더 밝게 */}
       <div
         ref={sphereRef}
-        className="absolute"
+        className="absolute opacity-40 dark:opacity-100"
         style={{
           width: 'min(50vw, 400px)',
           height: 'min(50vw, 400px)',
