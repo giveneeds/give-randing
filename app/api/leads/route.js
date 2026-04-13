@@ -9,7 +9,7 @@ const BUDGET_LABELS = {
   undecided: '미정',
 };
 
-async function getKakaoAccessToken() {
+async function getKakaoAccessToken(refreshToken) {
   const res = await fetch('https://kauth.kakao.com/oauth/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -17,7 +17,7 @@ async function getKakaoAccessToken() {
       grant_type: 'refresh_token',
       client_id: process.env.KAKAO_REST_API_KEY,
       client_secret: process.env.KAKAO_CLIENT_SECRET,
-      refresh_token: process.env.KAKAO_REFRESH_TOKEN,
+      refresh_token: refreshToken,
     }),
   });
   const data = await res.json();
@@ -25,8 +25,25 @@ async function getKakaoAccessToken() {
   return data.access_token;
 }
 
+async function sendKakaoMemo(accessToken, text) {
+  await fetch('https://kapi.kakao.com/v2/api/talk/memo/default/send', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Authorization': `Bearer ${accessToken}`,
+    },
+    body: new URLSearchParams({
+      template_object: JSON.stringify({
+        object_type: 'text',
+        text,
+        link: { web_url: 'https://give-randing.vercel.app/admin/leads' },
+      }),
+    }),
+  });
+}
+
 async function sendKakaoWebhook(lead) {
-  if (!process.env.KAKAO_REST_API_KEY || !process.env.KAKAO_REFRESH_TOKEN) return;
+  if (!process.env.KAKAO_REST_API_KEY) return;
 
   const budgetText = BUDGET_LABELS[lead.budget] || lead.budget || '미입력';
   const now = new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' });
@@ -44,22 +61,17 @@ async function sendKakaoWebhook(lead) {
     `🕐 ${now}`,
   ].filter(Boolean).join('\n');
 
-  const accessToken = await getKakaoAccessToken();
+  const refreshTokens = [
+    process.env.KAKAO_REFRESH_TOKEN,
+    process.env.KAKAO_REFRESH_TOKEN_2,
+  ].filter(Boolean);
 
-  await fetch('https://kapi.kakao.com/v2/api/talk/memo/default/send', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'Authorization': `Bearer ${accessToken}`,
-    },
-    body: new URLSearchParams({
-      template_object: JSON.stringify({
-        object_type: 'text',
-        text,
-        link: { web_url: 'https://give-randing.vercel.app/admin/leads' },
-      }),
-    }),
-  });
+  await Promise.all(
+    refreshTokens.map(async (token) => {
+      const accessToken = await getKakaoAccessToken(token);
+      await sendKakaoMemo(accessToken, text);
+    })
+  );
 }
 
 export async function POST(request) {
