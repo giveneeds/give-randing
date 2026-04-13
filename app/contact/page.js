@@ -92,7 +92,7 @@ export default function ContactPage() {
 
               <div className="px-8 flex flex-col gap-2">
                 <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Contact Info</p>
-                <p className="text-base font-bold text-zinc-900 dark:text-white underline underline-offset-4">hello@giveneeds.com</p>
+                <p className="text-base font-bold text-zinc-900 dark:text-white underline underline-offset-4">giveneeds1@naver.com</p>
                 <p className="text-base font-bold text-zinc-900 dark:text-white">평일 10:00 - 19:00</p>
               </div>
             </div>

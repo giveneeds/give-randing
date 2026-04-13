@@ -90,7 +90,6 @@ export default function ContactForm() {
       if (!res.ok) throw new Error(resData.error || '제출 실패');
 
       setSubmitted(true);
-      setTimeout(() => { router.back(); }, 1500);
     } catch (err) {
       console.error('Inquiry submission failed:', err);
       alert(`문의 제출 중 오류가 발생했습니다: ${err.message}`);
@@ -99,36 +98,56 @@ export default function ContactForm() {
     }
   };
 
-  if (submitted) {
-    return (
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col items-center justify-center p-12 md:p-24 bg-white/5 backdrop-blur-3xl rounded-[3rem] text-center border border-white/10 shadow-2xl relative overflow-hidden"
-      >
-        {/* 상단 장식 요소 */}
-        <div className="absolute top-0 left-1/4 w-64 h-64 bg-primary/20 rounded-full blur-[100px] -z-10 animate-pulse" />
-        <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-violet-500/10 rounded-full blur-[100px] -z-10" />
-
-        <div className="w-24 h-24 bg-white text-zinc-900 rounded-full flex items-center justify-center mb-8 shadow-[0_0_40px_rgba(255,255,255,0.3)]">
-          <CheckCircle2 size={48} strokeWidth={1.5} />
-        </div>
-        <h3 className="text-3xl md:text-4xl font-black mb-4 tracking-tighter">소중한 문의가 접수되었습니다.</h3>
-        <p className="text-zinc-500 dark:text-zinc-400 mb-12 text-lg max-w-md leading-relaxed">
-          마케팅 전문가가 비즈니스를 정밀 분석한 후,<br/>
-          영업일 기준 2일 이내에 연락드리겠습니다.
-        </p>
-        <button 
-          onClick={() => window.location.href = '/'} 
-          className="px-10 py-4 bg-zinc-100 dark:bg-white/10 text-zinc-900 dark:text-white rounded-full font-bold hover:bg-zinc-200 dark:hover:bg-white/20 transition-all active:scale-95"
-        >
-          홈으로 돌아가기
-        </button>
-      </motion.div>
-    );
-  }
-
   return (
+    <>
+    {/* 신청 완료 팝업 모달 */}
+    <AnimatePresence>
+      {submitted && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-6"
+          onClick={() => { setSubmitted(false); window.location.href = '/'; }}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 30 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 30 }}
+            onClick={e => e.stopPropagation()}
+            className="bg-white dark:bg-zinc-900 rounded-[2rem] p-10 md:p-14 max-w-md w-full text-center shadow-2xl relative overflow-hidden"
+          >
+            <div className="absolute top-0 left-1/4 w-48 h-48 bg-primary/10 rounded-full blur-[80px] -z-10" />
+
+            <div className="w-20 h-20 bg-primary/10 text-primary rounded-full flex items-center justify-center mb-6 mx-auto">
+              <CheckCircle2 size={40} strokeWidth={1.5} />
+            </div>
+            <h3 className="text-2xl md:text-3xl font-black mb-3 tracking-tighter text-zinc-900 dark:text-white">
+              신청이 완료되었습니다
+            </h3>
+            <p className="text-zinc-500 dark:text-zinc-400 mb-10 text-base leading-relaxed">
+              담당자가 확인 후<br/>
+              <strong className="text-zinc-700 dark:text-zinc-300">영업일 기준 3일 이내</strong> 회신 드리겠습니다.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <button
+                onClick={() => { setSubmitted(false); window.location.href = '/'; }}
+                className="px-8 py-3.5 bg-zinc-100 dark:bg-white/10 text-zinc-900 dark:text-white rounded-full font-bold text-sm hover:bg-zinc-200 dark:hover:bg-white/20 transition-all active:scale-95"
+              >
+                홈으로 돌아가기
+              </button>
+              <button
+                onClick={() => setSubmitted(false)}
+                className="px-8 py-3.5 bg-primary text-white rounded-full font-bold text-sm hover:bg-primary/90 transition-all active:scale-95"
+              >
+                닫기
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+
     <div className="w-full max-w-4xl mx-auto">
       <form onSubmit={handleSubmit} className="space-y-12">
         {/* STEP 1: 기본 정보 */}
@@ -328,5 +347,6 @@ export default function ContactForm() {
         </button>
       </form>
     </div>
+    </>
   );
 }
