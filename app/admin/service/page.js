@@ -112,6 +112,27 @@ export default function ServiceAdminPage() {
         <p className="text-[10px] text-blue-600 bg-blue-50 p-3 rounded font-bold">
           * 성과 스크린샷 이미지 + 수치 캡션 카드 섹션입니다.
         </p>
+
+        {/* 이미지 높이 조절 */}
+        <div className="bg-zinc-50 rounded-xl p-4 space-y-3 border border-zinc-200">
+          <div className="flex items-center justify-between">
+            <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">이미지 높이</label>
+            <span className="text-sm font-black text-zinc-900">{content.image_height || 480}px</span>
+          </div>
+          <input
+            type="range"
+            min={200}
+            max={800}
+            step={20}
+            value={content.image_height || 480}
+            onChange={e => updateContent('image_height', Number(e.target.value))}
+            className="w-full accent-zinc-900"
+          />
+          <div className="flex justify-between text-[10px] text-zinc-400 font-medium">
+            <span>200px (작게)</span>
+            <span>800px (크게)</span>
+          </div>
+        </div>
         {(content.items || []).map((item, i) => (
           <div key={i} className="bg-zinc-50 p-5 rounded-xl border border-zinc-200 space-y-4 relative overflow-hidden">
             <div className="absolute top-0 left-0 w-1 h-full bg-blue-500" />
