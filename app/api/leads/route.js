@@ -1,6 +1,41 @@
 import { NextResponse } from 'next/server';
 import { supabase, isDummyMode } from '@/lib/supabase';
 
+const BUDGET_LABELS = {
+  under_100: '100만원 이하',
+  '100_500': '100~500만원',
+  '500_1000': '500~1000만원',
+  over_1000: '1000만원 이상',
+  undecided: '미정',
+};
+
+async function sendKakaoWebhook(lead) {
+  const webhookUrl = process.env.KAKAO_WEBHOOK_URL;
+  if (!webhookUrl) return;
+
+  const budgetText = BUDGET_LABELS[lead.budget] || lead.budget || '미입력';
+  const now = new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' });
+
+  const text = [
+    `🔔 새 문의가 접수되었습니다`,
+    ``,
+    `📌 ${lead.name} | ${lead.company_name || '회사명 미입력'}`,
+    `📞 ${lead.phone || '연락처 없음'}`,
+    `📧 ${lead.email || '이메일 없음'}`,
+    `💰 예산: ${budgetText}`,
+    lead.message ? `💬 ${lead.message.slice(0, 100)}${lead.message.length > 100 ? '...' : ''}` : '',
+    ``,
+    `📍 유입: ${lead.source_page || '직접'}`,
+    `🕐 ${now}`,
+  ].filter(Boolean).join('\n');
+
+  await fetch(webhookUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text }),
+  });
+}
+
 export async function POST(request) {
   try {
     const body = await request.json();
@@ -55,7 +90,11 @@ export async function POST(request) {
 
     console.log('--- Lead Captured ---');
     console.log(`Name: ${name} | Type: ${lead_type} | Source: ${source_page}`);
-    
+
+    // 카카오 채널 웹훅 알림 (비동기, 실패해도 리드 저장에 영향 없음)
+    sendKakaoWebhook({ name, phone, email, company_name, budget, message, lead_type, source_page })
+      .catch(err => console.error('Kakao webhook failed:', err));
+
     return NextResponse.json({ success: true, message: '리드가 성공적으로 등록되었습니다.' });
   } catch (error) {
     console.error('Lead Capture Error:', error);
