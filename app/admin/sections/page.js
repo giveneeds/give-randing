@@ -72,6 +72,7 @@ export default function SectionsPage() {
       case 'resources': return <FileBox size={20} />;
       case 'testimonials': return <MessageSquare size={20} />;
       case 'case_studies': return <ImageIcon size={20} />;
+      case 'client_logos': return <ImageIcon size={20} />;
       case 'faq': return <HelpCircle size={20} />;
       case 'cta': return <MousePointer2 size={20} />;
       case 'gallery': return <ImageIcon size={20} />;
@@ -693,6 +694,73 @@ function SectionContentEditor({ type, content, onChange }) {
           </button>
         </div>
       );
+
+    case 'client_logos': {
+      const uploadLogo = async (i, file) => {
+        const fd = new FormData();
+        fd.append('file', file);
+        fd.append('folder', 'logos');
+        const res = await fetch('/api/upload', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (data.url) updateItemField(i, 'image_url', data.url);
+      };
+
+      return (
+        <div className="space-y-4">
+          <p className="text-[10px] text-zinc-500 bg-zinc-50 p-3 rounded font-bold">
+            * 로고 이미지를 하나씩 업로드하세요. PNG/SVG 권장, 흰 배경 없는 투명 이미지가 가장 잘 보입니다.
+          </p>
+          <div className="grid grid-cols-2 gap-4">
+            {(content.items || []).map((item, i) => (
+              <div key={i} className="bg-zinc-50 rounded-xl border border-zinc-200 overflow-hidden relative">
+                {/* 미리보기 */}
+                <div className="bg-zinc-900 aspect-[3/2] flex items-center justify-center p-4">
+                  {item.image_url ? (
+                    <img src={item.image_url} alt={item.name} className="max-w-full max-h-full object-contain" />
+                  ) : (
+                    <span className="text-zinc-600 text-xs font-medium">이미지 없음</span>
+                  )}
+                </div>
+                {/* 컨트롤 */}
+                <div className="p-3 space-y-2">
+                  <input
+                    className="w-full bg-white p-2 rounded text-xs border border-zinc-200 text-zinc-500"
+                    value={item.name || ''}
+                    onChange={e => updateItemField(i, 'name', e.target.value)}
+                    placeholder="브랜드명 (선택)"
+                  />
+                  <label className="flex items-center justify-center gap-2 w-full py-2 bg-zinc-900 text-white text-[10px] font-black rounded cursor-pointer hover:bg-zinc-700 transition-colors uppercase tracking-widest">
+                    <ImageIcon size={12} />
+                    {item.image_url ? '이미지 교체' : '이미지 업로드'}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={e => e.target.files?.[0] && uploadLogo(i, e.target.files[0])}
+                    />
+                  </label>
+                </div>
+                <button
+                  onClick={() => removeItem(i)}
+                  className="absolute top-2 right-2 w-6 h-6 bg-black/50 text-white rounded-full flex items-center justify-center hover:bg-red-500 transition-colors"
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            ))}
+
+            {/* 추가 버튼 */}
+            <button
+              onClick={() => addItem({ image_url: '', name: '' })}
+              className="aspect-[3/2] border-2 border-dashed border-zinc-200 rounded-xl flex flex-col items-center justify-center gap-2 text-zinc-400 hover:border-zinc-500 hover:text-zinc-700 transition-all"
+            >
+              <Plus size={24} />
+              <span className="text-[10px] font-black uppercase tracking-widest">로고 추가</span>
+            </button>
+          </div>
+        </div>
+      );
+    }
 
     case 'case_studies':
       return (

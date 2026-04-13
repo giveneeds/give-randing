@@ -17,6 +17,7 @@ import MagazineList from './MagazineList';
 import BrandStatsSection from './BrandStatsSection';
 import ConvictionSection from './ConvictionSection';
 import CaseStudiesSection from './CaseStudiesSection';
+import ClientLogosSection from './ClientLogosSection';
 
 export default function SectionRenderer({ type, content, settings, title, subtitle }) {
   const commonProps = { title, subtitle, content, settings };
@@ -60,6 +61,8 @@ export default function SectionRenderer({ type, content, settings, title, subtit
       return <ConvictionSection {...commonProps} />;
     case 'case_studies':
       return <CaseStudiesSection {...commonProps} />;
+    case 'client_logos':
+      return <ClientLogosSection {...commonProps} />;
     default:
       return (
         <div className="px-4 py-12 md:px-8 md:py-16 text-center text-sm text-zinc-500 break-keep">
