@@ -71,6 +71,7 @@ export default function SectionsPage() {
       case 'services': return <List size={20} />;
       case 'resources': return <FileBox size={20} />;
       case 'testimonials': return <MessageSquare size={20} />;
+      case 'case_studies': return <ImageIcon size={20} />;
       case 'faq': return <HelpCircle size={20} />;
       case 'cta': return <MousePointer2 size={20} />;
       case 'gallery': return <ImageIcon size={20} />;
@@ -689,6 +690,75 @@ function SectionContentEditor({ type, content, onChange }) {
           ))}
            <button onClick={() => addItem({ icon: '⚡', title: '새 솔루션', description: '' })} className="w-full py-4 border-2 border-dashed border-zinc-200 rounded-md text-[10px] font-bold text-zinc-400 hover:border-zinc-600 hover:text-zinc-900 transition-all uppercase tracking-widest flex items-center justify-center gap-2">
             <Plus size={16} /> 서비스 항목 추가
+          </button>
+        </div>
+      );
+
+    case 'case_studies':
+      return (
+        <div className="space-y-6">
+          <p className="text-[10px] text-blue-600 bg-blue-50 p-3 rounded font-bold leading-relaxed">
+            * 이미지는 Supabase Storage에 업로드 후 URL을 붙여넣으세요.<br/>
+            * 서비스 페이지 헤더 하단에 자동으로 표시됩니다.
+          </p>
+          {(content.items || []).map((item, i) => (
+            <div key={i} className="bg-zinc-50 p-6 rounded-xl border border-zinc-200 space-y-4 shadow-sm relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
+              <div className="flex items-center gap-3">
+                <span className="text-[10px] font-black text-zinc-400 bg-white w-7 h-7 rounded-full flex items-center justify-center border border-zinc-200 shadow-sm">{i + 1}</span>
+                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">성공사례 #{i + 1}</span>
+                <button onClick={() => removeItem(i)} className="ml-auto p-2 text-zinc-300 hover:text-red-500 transition-colors"><Trash2 size={16} /></button>
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-zinc-400 ml-1">이미지 URL (Supabase Storage)</label>
+                {item.image_url && (
+                  <div className="w-full aspect-video bg-zinc-100 rounded-lg overflow-hidden mb-2">
+                    <img src={item.image_url} alt="preview" className="w-full h-full object-cover" />
+                  </div>
+                )}
+                <input
+                  className="w-full bg-white p-3 rounded-lg text-[10px] font-mono border-none shadow-sm focus:ring-2 focus:ring-blue-500/20"
+                  value={item.image_url || ''}
+                  onChange={e => updateItemField(i, 'image_url', e.target.value)}
+                  placeholder="https://... (URL 붙여넣기)"
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-zinc-400 ml-1">도입 문구</label>
+                  <input
+                    className="w-full bg-white p-2 rounded-lg text-xs border-none shadow-sm focus:ring-2 focus:ring-blue-500/20"
+                    value={item.metric_label || ''}
+                    onChange={e => updateItemField(i, 'metric_label', e.target.value)}
+                    placeholder="마케팅 4개월 만에"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-zinc-400 ml-1">성과 결과</label>
+                  <input
+                    className="w-full bg-white p-2 rounded-lg text-xs font-bold border-none shadow-sm focus:ring-2 focus:ring-blue-500/20"
+                    value={item.metric_result || ''}
+                    onChange={e => updateItemField(i, 'metric_result', e.target.value)}
+                    placeholder="병원 매출 2배 상승한"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-zinc-400 ml-1">업종</label>
+                  <input
+                    className="w-full bg-white p-2 rounded-lg text-xs border-none shadow-sm focus:ring-2 focus:ring-blue-500/20"
+                    value={item.client_type || ''}
+                    onChange={e => updateItemField(i, 'client_type', e.target.value)}
+                    placeholder="피부과"
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+          <button
+            onClick={() => addItem({ image_url: '', metric_label: '마케팅 X개월 만에', metric_result: '성과 결과', client_type: '업종' })}
+            className="w-full py-4 border-2 border-dashed border-zinc-200 rounded-xl text-[10px] font-bold text-zinc-400 hover:border-blue-500 hover:text-blue-600 transition-all uppercase tracking-widest flex items-center justify-center gap-2"
+          >
+            <Plus size={16} /> 성공사례 추가
           </button>
         </div>
       );

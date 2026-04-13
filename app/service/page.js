@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { ArrowRight, Sparkles, X } from 'lucide-react';
 import AiSolutionBlock from '@/components/ui/AiSolutionBlock';
+import CaseStudiesSection from '@/components/landing/CaseStudiesSection';
 
 const SECTORS = [
   {
@@ -56,6 +57,7 @@ const SECTORS = [
 
 export default function ServicePage() {
   const [services, setServices] = useState([]);
+  const [caseStudies, setCaseStudies] = useState(null);
   const [comingSoonModal, setComingSoonModal] = useState(null);
 
   useEffect(() => {
@@ -66,6 +68,14 @@ export default function ServicePage() {
         setServices(active);
       })
       .catch(() => setServices([]));
+
+    fetch('/api/sections')
+      .then(r => r.json())
+      .then(data => {
+        const found = (data.sections || []).find(s => s.type === 'case_studies' && s.is_active);
+        if (found) setCaseStudies(found);
+      })
+      .catch(() => {});
   }, []);
 
   const groupedServices = SECTORS.map(sector => ({
@@ -79,7 +89,7 @@ export default function ServicePage() {
       
       <main className="pt-32 pb-40">
         {/* Page Header */}
-        <header className="container mx-auto px-4 mb-24">
+        <header className="container mx-auto px-4 mb-40">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -87,29 +97,23 @@ export default function ServicePage() {
           >
             {/* 상단 작은 라벨 */}
             <p className="text-xs font-black tracking-[0.35em] text-zinc-400 dark:text-zinc-500 uppercase mb-8">
-              What We Do For You
+              더 많은 고객, 더 높은 매출
             </p>
 
-            {/* 메인 헤드라인: 고객이 얻는 것 */}
-            <h1 className="text-[clamp(3rem,10vw,8rem)] font-black tracking-[-0.05em] text-zinc-900 dark:text-white leading-[0.88] uppercase mb-10">
-              더 많은 고객,<br />
-              <span className="text-zinc-400 dark:text-zinc-600">더 높은 매출.</span>
+            {/* 메인 헤드라인 */}
+            <h1 className="text-[clamp(2.5rem,7vw,6rem)] font-black tracking-[-0.03em] text-zinc-900 dark:text-white leading-[1.05] mb-10 uppercase">
+              What We Do<br />For You
             </h1>
 
-            {/* 서브카피: 공감 → 해법 흐름 */}
+            {/* 서브카피 */}
             <div className="grid md:grid-cols-2 gap-6 max-w-4xl">
-              <p className="text-lg md:text-xl font-semibold text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                광고비는 쓰는데, 매출은 그대로인가요?<br />
-                <span className="text-zinc-900 dark:text-white font-bold">
-                  지금 놓치고 있는 고객을<br />
-                  기브니즈와 함께 되찾아 보세요.
-                </span>
+              <p className="text-xl md:text-2xl font-bold text-zinc-900 dark:text-white leading-snug">
+                우리 비즈니스에 맞는<br />서비스는?
               </p>
               <p className="text-base md:text-lg font-medium text-zinc-400 dark:text-zinc-500 leading-relaxed">
-                검색하면 내 브랜드가 먼저 뜨고,
-                리뷰가 신뢰를 대신 말해주며,
-                콘텐츠가 잠든 고객을 다시 불러옵니다.
-                모든 결과는 숫자로 보여드립니다.
+                검색하면 내 브랜드가 먼저 뜨고,<br />
+                리뷰가 신뢰를 대신 말해주며,<br />
+                콘텐츠가 잠재 고객을 다시 불러옵니다.
               </p>
             </div>
 
@@ -127,6 +131,15 @@ export default function ServicePage() {
             </div>
           </motion.div>
         </header>
+
+        {/* Case Studies Section */}
+        {caseStudies && (
+          <CaseStudiesSection
+            title={caseStudies.title}
+            subtitle={caseStudies.subtitle}
+            content={caseStudies.content}
+          />
+        )}
 
         {/* Sectors & Grid Tiles */}
         <div className="space-y-48">
