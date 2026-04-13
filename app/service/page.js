@@ -14,7 +14,7 @@ const SECTORS = [
     id: 'ADS',
     title: 'VIRAL MARKETING',
     badge: 'V',
-    desc: '단순 배포가 아닌 상위 노출과 고관여 타겟의 유입을 목적으로 하는 전략적 입소문 시스템',
+    desc: '광고비 없이도 잠재 고객이 먼저 찾아옵니다. 검색 상단에 내 브랜드가 자연스럽게 노출되고, 관심 있는 고객의 유입이 늘어납니다.',
     bg: 'bg-[#1E4181]',
     text: 'text-white',
     hoverBg: 'hover:bg-[#152e5d]',
@@ -24,7 +24,7 @@ const SECTORS = [
     id: 'GROWTH',
     title: 'REVIEW MANAGEMENT',
     badge: 'R',
-    desc: '부정적 여론 방어와 진정성 있는 리뷰 축적으로 전환율 최대화',
+    desc: '고객의 진짜 목소리가 새 손님을 데려옵니다. 긍정 리뷰는 쌓고, 부정 여론은 선제 관리해 첫 방문 고객의 신뢰를 높입니다.',
     bg: 'bg-[#16A34A]',
     text: 'text-white',
     hoverBg: 'hover:bg-[#117a37]',
@@ -34,7 +34,7 @@ const SECTORS = [
     id: 'LOCAL',
     title: 'LOCAL SEO',
     badge: 'L',
-    desc: '스토어, 플레이스, 070, 카카오맵 — 지역 기반 검색 최상단 선점 토탈 솔루션',
+    desc: '지도 앱에서 내 가게가 가장 먼저 보입니다. 근처를 검색하는 고객이 경쟁사보다 내 매장을 먼저 발견하게 됩니다.',
     bg: 'bg-zinc-900',
     text: 'text-white',
     hoverBg: 'hover:bg-zinc-800',
@@ -44,7 +44,7 @@ const SECTORS = [
     id: 'TECH',
     title: 'TECH & CREATIVE',
     badge: 'T',
-    desc: 'AI 자동화, 프리미엄 웹사이트 — 기술과 크리에이티브의 결합으로 브랜드 가치 극대화',
+    desc: '처음 방문한 고객도 "여기다" 싶게 만듭니다. 세련된 웹사이트와 AI 자동화로 브랜드 신뢰를 높이고 운영 시간도 줄입니다.',
     bg: 'bg-zinc-100',
     text: 'text-zinc-900',
     hoverBg: 'hover:bg-zinc-50',
@@ -81,17 +81,50 @@ export default function ServicePage() {
         {/* Page Header */}
         <header className="container mx-auto px-4 mb-24">
           <motion.div
-            initial={{ opacity: 0, x: -50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8 }}
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.9 }}
           >
-            <h1 className="text-[clamp(3rem,12vw,5rem)] md:text-[10rem] font-black tracking-[-0.05em] text-zinc-900 dark:text-white leading-[0.85] uppercase mb-12">
-              Our<br />
-              Services
-            </h1>
-            <p className="text-xl md:text-3xl font-bold text-zinc-400 max-w-3xl leading-snug">
-              기브니즈는 데이터와 미학, 그리고 기술의 정점에서 당신의 비즈니스를 위한 최적의 성장을 설계합니다.
+            {/* 상단 작은 라벨 */}
+            <p className="text-xs font-black tracking-[0.35em] text-zinc-400 dark:text-zinc-500 uppercase mb-8">
+              What We Do For You
             </p>
+
+            {/* 메인 헤드라인: 고객이 얻는 것 */}
+            <h1 className="text-[clamp(3rem,10vw,8rem)] font-black tracking-[-0.05em] text-zinc-900 dark:text-white leading-[0.88] uppercase mb-10">
+              더 많은 고객,<br />
+              <span className="text-zinc-400 dark:text-zinc-600">더 높은 매출.</span>
+            </h1>
+
+            {/* 서브카피: 공감 → 해법 흐름 */}
+            <div className="grid md:grid-cols-2 gap-6 max-w-4xl">
+              <p className="text-lg md:text-xl font-semibold text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                광고비는 쓰는데, 매출은 그대로인가요?<br />
+                <span className="text-zinc-900 dark:text-white font-bold">
+                  지금 놓치고 있는 고객을<br />
+                  기브니즈와 함께 되찾아 보세요.
+                </span>
+              </p>
+              <p className="text-base md:text-lg font-medium text-zinc-400 dark:text-zinc-500 leading-relaxed">
+                검색하면 내 브랜드가 먼저 뜨고,
+                리뷰가 신뢰를 대신 말해주며,
+                콘텐츠가 잠든 고객을 다시 불러옵니다.
+                모든 결과는 숫자로 보여드립니다.
+              </p>
+            </div>
+
+            {/* 신뢰 배지 */}
+            <div className="flex flex-wrap items-center gap-4 mt-10">
+              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-sm font-bold">
+                ✓ 누적 클라이언트 500+
+              </span>
+              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-sm font-bold">
+                ✓ 고객 만족도 95%
+              </span>
+              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-sm font-bold">
+                ✓ 전략 · 실행 · 성과 ONE-STOP
+              </span>
+            </div>
           </motion.div>
         </header>
 
