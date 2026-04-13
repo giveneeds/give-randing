@@ -710,50 +710,21 @@ function SectionContentEditor({ type, content, onChange }) {
       return (
         <div className="space-y-4">
           <p className="text-[10px] text-zinc-500 bg-zinc-50 p-3 rounded font-bold">
-            * 로고 이미지를 하나씩 업로드하세요. PNG/SVG 권장, 흰 배경 없는 투명 이미지가 가장 잘 보입니다.
+            * PNG/SVG 권장. 투명 배경 이미지가 가장 잘 보입니다.
           </p>
           <div className="grid grid-cols-2 gap-4">
             {(content.items || []).map((item, i) => (
-              <div key={i} className="bg-zinc-50 rounded-xl border border-zinc-200 overflow-hidden relative">
-                {/* 미리보기 */}
-                <div className="bg-zinc-900 aspect-[3/2] flex items-center justify-center p-4">
-                  {item.image_url ? (
-                    <img src={item.image_url} alt={item.name} className="max-w-full max-h-full object-contain" />
-                  ) : (
-                    <span className="text-zinc-600 text-xs font-medium">이미지 없음</span>
-                  )}
-                </div>
-                {/* 컨트롤 */}
-                <div className="p-3 space-y-2">
-                  <input
-                    className="w-full bg-white p-2 rounded text-xs border border-zinc-200 text-zinc-500"
-                    value={item.name || ''}
-                    onChange={e => updateItemField(i, 'name', e.target.value)}
-                    placeholder="브랜드명 (선택)"
-                  />
-                  <label className="flex items-center justify-center gap-2 w-full py-2 bg-zinc-900 text-white text-[10px] font-black rounded cursor-pointer hover:bg-zinc-700 transition-colors uppercase tracking-widest">
-                    <ImageIcon size={12} />
-                    {item.image_url ? '이미지 교체' : '이미지 업로드'}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={e => e.target.files?.[0] && uploadLogo(i, e.target.files[0])}
-                    />
-                  </label>
-                </div>
-                <button
-                  onClick={() => removeItem(i)}
-                  className="absolute top-2 right-2 w-6 h-6 bg-black/50 text-white rounded-full flex items-center justify-center hover:bg-red-500 transition-colors"
-                >
-                  <X size={12} />
-                </button>
-              </div>
+              <LogoCardEditor
+                key={i}
+                item={item}
+                index={i}
+                onUpload={uploadLogo}
+                onFieldChange={updateItemField}
+                onRemove={removeItem}
+              />
             ))}
-
-            {/* 추가 버튼 */}
             <button
-              onClick={() => addItem({ image_url: '', name: '' })}
+              onClick={() => addItem({ image_url: '', name: '', logo_height: 40 })}
               className="aspect-[3/2] border-2 border-dashed border-zinc-200 rounded-xl flex flex-col items-center justify-center gap-2 text-zinc-400 hover:border-zinc-500 hover:text-zinc-700 transition-all"
             >
               <Plus size={24} />
@@ -1217,4 +1188,100 @@ function SectionContentEditor({ type, content, onChange }) {
     default:
       return <div className="p-10 border border-dashed border-zinc-200 rounded-md text-center text-xs text-zinc-500">이 섹션 타입({type})은 현재 편집기 최적화 중입니다.</div>;
   }
+}
+
+// ─── 로고 카드 에디터 (붙여넣기 존 + 크기 슬라이더) ────────────────────────
+function LogoCardEditor({ item, index, onUpload, onFieldChange, onRemove }) {
+  const [focused, setFocused] = useState(false);
+  const [pasted, setPasted] = useState(false);
+
+  async function handlePaste(e) {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (const ci of Array.from(items)) {
+      if (ci.type.startsWith('image/')) {
+        e.preventDefault();
+        const file = ci.getAsFile();
+        if (!file) break;
+        await onUpload(index, file);
+        setPasted(true);
+        setTimeout(() => setPasted(false), 2000);
+        break;
+      }
+    }
+  }
+
+  return (
+    <div className="bg-zinc-50 rounded-xl border border-zinc-200 overflow-hidden relative">
+      {/* 이미지 미리보기 */}
+      <div className="bg-zinc-900 aspect-[3/2] flex items-center justify-center p-4">
+        {item.image_url
+          ? <img src={item.image_url} alt={item.name} className="max-w-full max-h-full object-contain" />
+          : <span className="text-zinc-600 text-xs font-medium">이미지 없음</span>}
+      </div>
+
+      <div className="p-3 space-y-2">
+        {/* 붙여넣기 존 */}
+        <div
+          tabIndex={0}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          onPaste={handlePaste}
+          className={`w-full rounded-lg border-2 border-dashed py-3 px-3 flex items-center justify-center gap-2 cursor-pointer outline-none transition-all select-none ${
+            pasted
+              ? 'border-emerald-400 bg-emerald-50'
+              : focused
+              ? 'border-blue-400 bg-blue-50'
+              : 'border-zinc-200 bg-white hover:border-zinc-400'
+          }`}
+        >
+          {pasted ? (
+            <><Check size={12} className="text-emerald-500" /><span className="text-[10px] font-black text-emerald-600">업로드 완료!</span></>
+          ) : focused ? (
+            <><Clipboard size={12} className="text-blue-500 animate-pulse" /><span className="text-[10px] font-black text-blue-600">Ctrl+V 로 붙여넣기</span></>
+          ) : (
+            <><Clipboard size={12} className="text-zinc-400" /><span className="text-[10px] font-bold text-zinc-400">클릭 후 Ctrl+V 붙여넣기</span></>
+          )}
+        </div>
+
+        {/* 파일 업로드 */}
+        <label className="flex items-center justify-center gap-1.5 w-full py-2 bg-zinc-900 text-white text-[10px] font-black rounded cursor-pointer hover:bg-zinc-700 transition-colors uppercase tracking-widest">
+          <ImageIcon size={11} /> 파일로 업로드
+          <input type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && onUpload(index, e.target.files[0])} />
+        </label>
+
+        {/* 브랜드명 */}
+        <input
+          className="w-full bg-white p-2 rounded text-xs border border-zinc-200 text-zinc-500"
+          value={item.name || ''}
+          onChange={e => onFieldChange(index, 'name', e.target.value)}
+          placeholder="브랜드명 (선택)"
+        />
+
+        {/* 로고 높이 슬라이더 */}
+        <div className="bg-white rounded-lg border border-zinc-200 p-2 space-y-1.5">
+          <div className="flex items-center justify-between">
+            <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">로고 높이</label>
+            <span className="text-[10px] font-black text-zinc-700">{item.logo_height || 40}px</span>
+          </div>
+          <input
+            type="range" min={20} max={100} step={4}
+            value={item.logo_height || 40}
+            onChange={e => onFieldChange(index, 'logo_height', Number(e.target.value))}
+            className="w-full accent-zinc-900 h-1"
+          />
+          <div className="flex justify-between text-[9px] text-zinc-300 font-medium">
+            <span>20px</span><span>100px</span>
+          </div>
+        </div>
+      </div>
+
+      <button
+        onClick={() => onRemove(index)}
+        className="absolute top-2 right-2 w-6 h-6 bg-black/50 text-white rounded-full flex items-center justify-center hover:bg-red-500 transition-colors"
+      >
+        <X size={12} />
+      </button>
+    </div>
+  );
 }
