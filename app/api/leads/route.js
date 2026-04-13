@@ -127,8 +127,8 @@ export async function POST(request) {
     console.log('--- Lead Captured ---');
     console.log(`Name: ${name} | Type: ${lead_type} | Source: ${source_page}`);
 
-    // 카카오 채널 웹훅 알림 (비동기, 실패해도 리드 저장에 영향 없음)
-    sendKakaoWebhook({ name, phone, email, company_name, budget, message, lead_type, source_page })
+    // 카카오 알람 (응답 전에 await — Vercel 서버리스는 응답 후 비동기 중단됨)
+    await sendKakaoWebhook({ name, phone, email, company_name, budget, message, lead_type, source_page })
       .catch(err => console.error('Kakao webhook failed:', err));
 
     return NextResponse.json({ success: true, message: '리드가 성공적으로 등록되었습니다.' });
