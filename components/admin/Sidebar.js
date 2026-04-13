@@ -24,6 +24,7 @@ export default function Sidebar({ handleLogout }) {
   const navItems = [
     { href: '/admin', icon: LayoutDashboard, label: '대시보드' },
     { href: '/admin/sections', icon: Component, label: '웹사이트 수정' },
+    { href: '/admin/service', icon: Rocket, label: '서비스 페이지 수정' },
     { href: '/admin/services', icon: Rocket, label: '상품/솔루션 관리' },
     { href: '/admin/campaigns', icon: Component, label: '랜딩페이지 빌더' },
     { href: '/admin/magazines', icon: BookOpen, label: '매거진 콘텐츠' },

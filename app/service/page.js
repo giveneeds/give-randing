@@ -69,10 +69,10 @@ export default function ServicePage() {
       })
       .catch(() => setServices([]));
 
-    fetch('/api/sections')
+    fetch('/api/sections?page=service')
       .then(r => r.json())
       .then(data => {
-        const found = (data.sections || []).find(s => s.type === 'case_studies' && s.is_active);
+        const found = (data.sections || []).find(s => s.type === 'case_studies');
         if (found) setCaseStudies(found);
       })
       .catch(() => {});

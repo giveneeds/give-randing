@@ -4,16 +4,18 @@ import { supabase, isDummyMode, DUMMY_SECTIONS } from '@/lib/supabase';
 // In-memory state for dummy mode to persist changes locally
 let inMemoryDummySections = null;
 
-// GET: 모든 활성 섹션 가져오기
+// GET: 섹션 가져오기
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
-  const all = searchParams.get('all'); // admin에서 전체 조회 시
+  const all = searchParams.get('all');       // admin 전체 조회
+  const page = searchParams.get('page');     // 'home' | 'service' | null(전체)
 
   if (isDummyMode) {
     if (!inMemoryDummySections) {
       inMemoryDummySections = JSON.parse(JSON.stringify(DUMMY_SECTIONS));
     }
-    const sections = all ? inMemoryDummySections : inMemoryDummySections.filter(s => s.is_active);
+    let sections = all ? inMemoryDummySections : inMemoryDummySections.filter(s => s.is_active);
+    if (page) sections = sections.filter(s => (s.content?._page || 'home') === page);
     return NextResponse.json({ sections });
   }
 
@@ -23,8 +25,14 @@ export async function GET(request) {
       .select('*')
       .order('order_index', { ascending: true });
 
-    if (!all) {
-      query = query.eq('is_active', true);
+    if (!all) query = query.eq('is_active', true);
+
+    // _page 필드로 서비스/홈 페이지 구분 (content JSONB 내 필드)
+    if (page === 'service') {
+      query = query.contains('content', { _page: 'service' });
+    } else if (page === 'home') {
+      // _page 필드가 없거나 'home'인 섹션
+      query = query.or('content->_page.is.null,content->>_page.eq.home');
     }
 
     const { data, error } = await query;
