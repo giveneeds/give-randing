@@ -123,18 +123,6 @@ export default function ServicePage() {
               </p>
             </div>
 
-            {/* 신뢰 배지 */}
-            <div className="flex flex-wrap justify-center gap-3 mt-10">
-              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-sm font-bold">
-                ✓ 누적 클라이언트 500+
-              </span>
-              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-sm font-bold">
-                ✓ 고객 만족도 95%
-              </span>
-              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-sm font-bold">
-                ✓ 전략 · 실행 · 성과 ONE-STOP
-              </span>
-            </div>
           </motion.div>
         </header>
 
