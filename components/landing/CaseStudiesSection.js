@@ -44,7 +44,7 @@ export default function CaseStudiesSection({ title, subtitle, content }) {
               className="bg-white dark:bg-zinc-900 rounded-2xl shadow-[0_2px_20px_rgba(0,0,0,0.08)] border border-zinc-100 dark:border-zinc-800 overflow-hidden"
             >
               {/* 이미지 */}
-              <div className="w-full aspect-[4/3] bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
+              <div className="w-full aspect-[3/4] bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
                 {item.image_url ? (
                   <img
                     src={item.image_url}
