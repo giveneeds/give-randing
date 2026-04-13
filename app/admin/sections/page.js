@@ -27,7 +27,9 @@ import {
   FileBox,
   MousePointer2,
   Save,
-  BookOpen
+  BookOpen,
+  Clipboard,
+  Check
 } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -58,7 +60,7 @@ export default function SectionsPage() {
 
   async function loadSections() {
     try {
-      const res = await fetch('/api/sections?all=true');
+      const res = await fetch('/api/sections?all=true&page=home');
       const data = await res.json();
       setSections((data.sections || []).sort((a, b) => a.order_index - b.order_index));
     } catch (e) { console.error(e); }
@@ -91,7 +93,7 @@ export default function SectionsPage() {
       type,
       title: masterData?.name || SECTION_TYPES[type]?.label || '새 섹션',
       subtitle: masterData?.subtitle || '',
-      content: template,
+      content: { ...template, _page: 'home' },
       order_index: sections.length,
       is_active: true,
     };

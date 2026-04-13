@@ -95,7 +95,7 @@ export default function ServicePage() {
       
       <main className="pt-32 pb-40">
         {/* Page Header */}
-        <header className="container mx-auto px-4 mb-40">
+        <header className="container mx-auto px-4 mb-24 md:mb-40 text-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -112,7 +112,7 @@ export default function ServicePage() {
             </h1>
 
             {/* 서브카피 */}
-            <div className="grid md:grid-cols-2 gap-6 max-w-4xl">
+            <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto text-left">
               <p className="text-xl md:text-2xl font-bold text-zinc-900 dark:text-white leading-snug">
                 우리 비즈니스에 맞는<br />서비스는?
               </p>
@@ -124,7 +124,7 @@ export default function ServicePage() {
             </div>
 
             {/* 신뢰 배지 */}
-            <div className="flex flex-wrap items-center gap-4 mt-10">
+            <div className="flex flex-wrap justify-center gap-3 mt-10">
               <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-sm font-bold">
                 ✓ 누적 클라이언트 500+
               </span>

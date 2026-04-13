@@ -29,7 +29,7 @@ export async function GET(request) {
 
     // _page 필드로 서비스/홈 페이지 구분 (content JSONB 내 필드)
     if (page === 'service') {
-      query = query.contains('content', { _page: 'service' });
+      query = query.filter('content->>_page', 'eq', 'service');
     } else if (page === 'home') {
       // _page 필드가 없거나 'home'인 섹션
       query = query.or('content->_page.is.null,content->>_page.eq.home');

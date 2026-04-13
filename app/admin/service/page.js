@@ -71,7 +71,7 @@ export default function ServiceAdminPage() {
   }
 
   async function handleToggle(section) {
-    const updated = { ...section, is_active: !section.is_active };
+    const updated = { ...section, is_active: !section.is_active, content: { ...section.content, _page: 'service' } };
     await fetch('/api/sections', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) });
     setSections(prev => prev.map(s => s.id === updated.id ? updated : s));
   }
@@ -262,8 +262,8 @@ export default function ServiceAdminPage() {
                 {section.subtitle && <p className="text-xs text-zinc-400 truncate">{section.subtitle}</p>}
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={() => handleToggle(section)} className={`px-3 py-1.5 rounded-lg text-[10px] font-black transition-all ${section.is_active ? 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'}`}>
-                  {section.is_active ? '비활성화' : '활성화'}
+                <button onClick={() => handleToggle(section)} className={`px-3 py-1.5 rounded-lg text-[10px] font-black transition-all ${section.is_active ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 'bg-zinc-100 text-zinc-500 hover:bg-zinc-200'}`}>
+                  {section.is_active ? '활성화' : '비활성화'}
                 </button>
                 <button onClick={() => setEditingSection(JSON.parse(JSON.stringify(section)))} className="p-2 rounded-lg hover:bg-zinc-100 text-zinc-500 transition-all">
                   <Edit3 size={16} />
