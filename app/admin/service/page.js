@@ -1,8 +1,8 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import SectionRenderer from '@/components/landing/SectionRenderer';
 import { SECTION_TYPES, SECTION_TEMPLATES } from '@/lib/constants';
-import { Plus, Trash2, Edit3, ChevronUp, ChevronDown, X, ImageIcon, Save, Eye, CheckCircle2 } from 'lucide-react';
+import { Plus, Trash2, Edit3, ChevronUp, ChevronDown, X, ImageIcon, Save, Eye, CheckCircle2, Clipboard } from 'lucide-react';
 
 // 서비스 페이지에서 사용 가능한 섹션 타입
 const SERVICE_SECTION_TYPES = ['case_studies', 'client_logos'];
@@ -13,8 +13,47 @@ export default function ServiceAdminPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [pasteTargetIdx, setPasteTargetIdx] = useState(null);
+
+  // ref로 최신 값 유지 (클로저 stale 방지)
+  const pasteTargetIdxRef = useRef(null);
+  const updateItemFieldRef = useRef(null);
+
+  function selectPasteTarget(idx) {
+    pasteTargetIdxRef.current = idx;
+    setPasteTargetIdx(idx);
+  }
 
   useEffect(() => { loadSections(); }, []);
+
+  // 전역 paste 이벤트 등록 (한 번만)
+  useEffect(() => {
+    async function handleGlobalPaste(e) {
+      const idx = pasteTargetIdxRef.current;
+      if (idx === null) return;
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (const item of Array.from(items)) {
+        if (item.type.startsWith('image/')) {
+          const file = item.getAsFile();
+          if (!file) break;
+          const fd = new FormData();
+          fd.append('file', file);
+          fd.append('folder', 'logos');
+          const res = await fetch('/api/upload', { method: 'POST', body: fd });
+          const data = await res.json();
+          if (data.url && updateItemFieldRef.current) {
+            updateItemFieldRef.current(idx, 'image_url', data.url);
+          }
+          pasteTargetIdxRef.current = null;
+          setPasteTargetIdx(null);
+          break;
+        }
+      }
+    }
+    document.addEventListener('paste', handleGlobalPaste);
+    return () => document.removeEventListener('paste', handleGlobalPaste);
+  }, []);
 
   async function loadSections() {
     try {
@@ -85,6 +124,9 @@ export default function ServiceAdminPage() {
     items[i] = { ...items[i], [field]: val };
     updateContent('items', items);
   }
+
+  // ref를 항상 최신 함수로 유지
+  updateItemFieldRef.current = updateItemField;
 
   function addItem(defaults) {
     updateContent('items', [...(editingSection.content.items || []), defaults]);
@@ -185,25 +227,83 @@ export default function ServiceAdminPage() {
           <p className="text-[10px] text-zinc-500 bg-zinc-50 p-3 rounded font-bold">
             * PNG/SVG 권장. 투명 배경 이미지가 가장 잘 보입니다.
           </p>
+          {pasteTargetIdx !== null && (
+            <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
+              <span className="text-[11px] font-black text-blue-600">
+                #{pasteTargetIdx + 1} 카드 선택됨 — 이제 <kbd className="bg-blue-100 px-1.5 py-0.5 rounded text-[10px]">Ctrl+V</kbd> 로 붙여넣기
+              </span>
+              <button onClick={() => selectPasteTarget(null)} className="text-[10px] text-blue-400 hover:text-blue-600 font-bold">취소</button>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-4">
-            {(content.items || []).map((item, i) => (
-              <div key={i} className="bg-zinc-50 rounded-xl border border-zinc-200 overflow-hidden relative">
-                <div className="bg-zinc-900 aspect-[3/2] flex items-center justify-center p-4">
-                  {item.image_url ? <img src={item.image_url} alt={item.name} className="max-w-full max-h-full object-contain" /> : <span className="text-zinc-600 text-xs">이미지 없음</span>}
+            {(content.items || []).map((item, i) => {
+              const isPasteTarget = pasteTargetIdx === i;
+              return (
+                <div
+                  key={i}
+                  className={`bg-zinc-50 rounded-xl border overflow-hidden relative transition-all ${
+                    isPasteTarget ? 'border-blue-400 ring-2 ring-blue-200' : 'border-zinc-200'
+                  }`}
+                >
+                  <div className="bg-zinc-900 aspect-[3/2] flex items-center justify-center p-4 relative">
+                    {item.image_url
+                      ? <img src={item.image_url} alt={item.name} className="max-w-full max-h-full object-contain" />
+                      : <span className="text-zinc-600 text-xs">이미지 없음</span>}
+                    {isPasteTarget && (
+                      <div className="absolute inset-0 bg-blue-500/20 flex items-center justify-center">
+                        <span className="bg-blue-500 text-white text-[10px] font-black px-3 py-1.5 rounded-full animate-pulse">
+                          Ctrl+V 로 붙여넣기
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-3 space-y-2">
+                    <input className="w-full bg-white p-2 rounded text-xs border border-zinc-200 text-zinc-500" value={item.name || ''} onChange={e => updateItemField(i, 'name', e.target.value)} placeholder="브랜드명 (선택)" />
+                    {/* 로고 높이 슬라이더 */}
+                    <div className="bg-white rounded-lg border border-zinc-200 p-2 space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">로고 높이</label>
+                        <span className="text-[10px] font-black text-zinc-700">{item.logo_height || 40}px</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={20}
+                        max={100}
+                        step={4}
+                        value={item.logo_height || 40}
+                        onChange={e => updateItemField(i, 'logo_height', Number(e.target.value))}
+                        className="w-full accent-zinc-900 h-1"
+                      />
+                      <div className="flex justify-between text-[9px] text-zinc-300 font-medium">
+                        <span>20px</span>
+                        <span>100px</span>
+                      </div>
+                    </div>
+                    {/* 업로드 / 붙여넣기 버튼 2열 */}
+                    <div className="grid grid-cols-2 gap-2">
+                      <label className="flex items-center justify-center gap-1.5 w-full py-2 bg-zinc-900 text-white text-[10px] font-black rounded cursor-pointer hover:bg-zinc-700 transition-colors uppercase tracking-widest">
+                        <ImageIcon size={11} /> 파일
+                        <input type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && uploadLogo(i, e.target.files[0])} />
+                      </label>
+                      <button
+                        onClick={() => selectPasteTarget(isPasteTarget ? null : i)}
+                        className={`flex items-center justify-center gap-1.5 w-full py-2 text-[10px] font-black rounded transition-colors uppercase tracking-widest ${
+                          isPasteTarget
+                            ? 'bg-blue-500 text-white hover:bg-blue-600'
+                            : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'
+                        }`}
+                      >
+                        <Clipboard size={11} /> {isPasteTarget ? '대기 중' : '붙여넣기'}
+                      </button>
+                    </div>
+                  </div>
+                  <button onClick={() => removeItem(i)} className="absolute top-2 right-2 w-6 h-6 bg-black/50 text-white rounded-full flex items-center justify-center hover:bg-red-500">
+                    <X size={12} />
+                  </button>
                 </div>
-                <div className="p-3 space-y-2">
-                  <input className="w-full bg-white p-2 rounded text-xs border border-zinc-200 text-zinc-500" value={item.name || ''} onChange={e => updateItemField(i, 'name', e.target.value)} placeholder="브랜드명 (선택)" />
-                  <label className="flex items-center justify-center gap-2 w-full py-2 bg-zinc-900 text-white text-[10px] font-black rounded cursor-pointer hover:bg-zinc-700 transition-colors uppercase tracking-widest">
-                    <ImageIcon size={12} /> {item.image_url ? '이미지 교체' : '업로드'}
-                    <input type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && uploadLogo(i, e.target.files[0])} />
-                  </label>
-                </div>
-                <button onClick={() => removeItem(i)} className="absolute top-2 right-2 w-6 h-6 bg-black/50 text-white rounded-full flex items-center justify-center hover:bg-red-500">
-                  <X size={12} />
-                </button>
-              </div>
-            ))}
-            <button onClick={() => addItem({ image_url: '', name: '' })} className="aspect-[3/2] border-2 border-dashed border-zinc-200 rounded-xl flex flex-col items-center justify-center gap-2 text-zinc-400 hover:border-zinc-500 hover:text-zinc-700 transition-all">
+              );
+            })}
+            <button onClick={() => addItem({ image_url: '', name: '', logo_height: 40 })} className="aspect-[3/2] border-2 border-dashed border-zinc-200 rounded-xl flex flex-col items-center justify-center gap-2 text-zinc-400 hover:border-zinc-500 hover:text-zinc-700 transition-all">
               <Plus size={24} />
               <span className="text-[10px] font-black uppercase tracking-widest">로고 추가</span>
             </button>

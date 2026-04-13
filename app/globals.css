@@ -821,6 +821,32 @@ a {
   }
 }
 
+/* ============ Marquee Scroll Animation ============ */
+@keyframes marqueeLeft {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+@keyframes marqueeRight {
+  0%   { transform: translateX(-50%); }
+  100% { transform: translateX(0); }
+}
+.marquee-track-left {
+  display: flex;
+  width: max-content;
+  animation: marqueeLeft 28s linear infinite;
+  will-change: transform;
+}
+.marquee-track-right {
+  display: flex;
+  width: max-content;
+  animation: marqueeRight 32s linear infinite;
+  will-change: transform;
+}
+.marquee-track-left:hover,
+.marquee-track-right:hover {
+  animation-play-state: paused;
+}
+
 /* ============ Magazine Rich Editor (scoped) ============ */
 .magazine-editor .ProseMirror { outline: none; min-height: 600px; padding: 2.5rem; }
 .magazine-editor .ProseMirror h1 { font-size: 2.25rem; font-weight: 900; letter-spacing: -0.03em; margin: 1.5rem 0 1rem; line-height: 1.15; color: #18181b; }

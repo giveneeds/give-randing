@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { ArrowRight, Sparkles, X } from 'lucide-react';
 import AiSolutionBlock from '@/components/ui/AiSolutionBlock';
 import CaseStudiesSection from '@/components/landing/CaseStudiesSection';
+import ClientLogosSection from '@/components/landing/ClientLogosSection';
 
 const SECTORS = [
   {
@@ -58,6 +59,7 @@ const SECTORS = [
 export default function ServicePage() {
   const [services, setServices] = useState([]);
   const [caseStudies, setCaseStudies] = useState(null);
+  const [clientLogos, setClientLogos] = useState(null);
   const [comingSoonModal, setComingSoonModal] = useState(null);
 
   useEffect(() => {
@@ -72,10 +74,14 @@ export default function ServicePage() {
     fetch('/api/sections?page=service')
       .then(r => r.json())
       .then(data => {
-        const found = (data.sections || []).find(s => s.type === 'case_studies');
-        if (found) setCaseStudies(found);
+        if (data.error) { console.error('[service] sections API error:', data.error); return; }
+        const sections = data.sections || [];
+        const foundCase = sections.find(s => s.type === 'case_studies' && s.is_active);
+        if (foundCase) setCaseStudies(foundCase);
+        const foundLogos = sections.find(s => s.type === 'client_logos' && s.is_active);
+        if (foundLogos) setClientLogos(foundLogos);
       })
-      .catch(() => {});
+      .catch(e => console.error('[service] sections fetch failed:', e));
   }, []);
 
   const groupedServices = SECTORS.map(sector => ({
@@ -132,7 +138,7 @@ export default function ServicePage() {
           </motion.div>
         </header>
 
-        {/* Case Studies Section */}
+        {/* Case Studies Section — 헤더 바로 아래 */}
         {caseStudies && (
           <CaseStudiesSection
             title={caseStudies.title}
@@ -141,8 +147,17 @@ export default function ServicePage() {
           />
         )}
 
+        {/* Client Logos Section */}
+        {clientLogos && (
+          <ClientLogosSection
+            title={clientLogos.title}
+            subtitle={clientLogos.subtitle}
+            content={clientLogos.content}
+          />
+        )}
+
         {/* Sectors & Grid Tiles */}
-        <div className="space-y-48">
+        <div className={`space-y-48 ${(caseStudies || clientLogos) ? 'mt-24' : ''}`}>
           {groupedServices.map((sector, sIdx) => (
             <section key={sector.id} className="container mx-auto px-0 md:px-4">
               <motion.div 
