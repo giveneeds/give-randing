@@ -9,9 +9,24 @@ const BUDGET_LABELS = {
   undecided: '미정',
 };
 
+async function getKakaoAccessToken() {
+  const res = await fetch('https://kauth.kakao.com/oauth/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'refresh_token',
+      client_id: process.env.KAKAO_REST_API_KEY,
+      client_secret: process.env.KAKAO_CLIENT_SECRET,
+      refresh_token: process.env.KAKAO_REFRESH_TOKEN,
+    }),
+  });
+  const data = await res.json();
+  if (!data.access_token) throw new Error('카카오 토큰 갱신 실패: ' + JSON.stringify(data));
+  return data.access_token;
+}
+
 async function sendKakaoWebhook(lead) {
-  const webhookUrl = process.env.KAKAO_WEBHOOK_URL;
-  if (!webhookUrl) return;
+  if (!process.env.KAKAO_REST_API_KEY || !process.env.KAKAO_REFRESH_TOKEN) return;
 
   const budgetText = BUDGET_LABELS[lead.budget] || lead.budget || '미입력';
   const now = new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' });
@@ -29,10 +44,21 @@ async function sendKakaoWebhook(lead) {
     `🕐 ${now}`,
   ].filter(Boolean).join('\n');
 
-  await fetch(webhookUrl, {
+  const accessToken = await getKakaoAccessToken();
+
+  await fetch('https://kapi.kakao.com/v2/api/talk/memo/default/send', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text }),
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Authorization': `Bearer ${accessToken}`,
+    },
+    body: new URLSearchParams({
+      template_object: JSON.stringify({
+        object_type: 'text',
+        text,
+        link: { web_url: 'https://give-randing.vercel.app/admin/leads' },
+      }),
+    }),
   });
 }
 
