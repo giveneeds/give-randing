@@ -72,7 +72,6 @@ export async function POST(request) {
       company_name, website_url, inquiry_type,
       budget, message, category,
       lead_type, source_page, source_referrer, click_element,
-      user_id
     } = body;
 
     // 1. Validation
@@ -100,12 +99,11 @@ export async function POST(request) {
         source_page: source_page || null,
         source_referrer: source_referrer || null,
         click_element: click_element || null,
-        user_id: user_id || null,
         status: 'new',
         created_at: new Date().toISOString()
       };
 
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('leads')
         .insert(insertData)
         .select()
