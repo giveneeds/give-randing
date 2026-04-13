@@ -29,7 +29,7 @@ export default function HomePage() {
         const [mRes, sRes, secRes] = await Promise.all([
           supabase.from('magazines').select('*').eq('status', 'published').order('created_at', { ascending: false }),
           supabase.from('landing_settings').select('*').single(),
-          supabase.from('global_sections').select('*').eq('is_active', true).order('order_index', { ascending: true })
+          supabase.from('global_sections').select('*').eq('is_active', true).or('content->_page.is.null,content->>_page.eq.home').order('order_index', { ascending: true })
         ]);
 
         // 매거진 데이터 (없으면 더미)
