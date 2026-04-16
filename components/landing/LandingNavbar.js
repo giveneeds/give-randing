@@ -41,9 +41,10 @@ export default function LandingNavbar({ settings }) {
   const ctaGlobal = settings?.cta_global || {};
   // settings를 안 넘기는 페이지(/chat 등)에서도 메뉴가 비지 않도록 폴백 링크 제공
   const DEFAULT_NAV_LINKS = [
+    { label: 'we', url: '/#hero' },
+    { label: 'do', url: '/service' },
+    { label: 'foryou', url: '/for-you' },
     { label: '매거진', url: '/magazine' },
-    { label: '회사소개', url: '/#hero' },
-    { label: '서비스', url: '/service' },
     { label: '문의하기', url: '/contact' },
   ];
   const navbar = settings?.navbar || {};
@@ -82,12 +83,12 @@ export default function LandingNavbar({ settings }) {
           <a href="/" className="nav-brand-minimal">
             {brand.name || 'GIVENEEDS'}
           </a>
-          {/* 모바일 — 회사소개 빠른 진입 */}
+          {/* 모바일 — we(회사소개) 빠른 진입 */}
           <a
             href="/#hero"
             className="md:hidden text-[10px] font-bold tracking-widest text-zinc-500 dark:text-zinc-400 uppercase px-2 py-1 rounded-md border border-zinc-200 dark:border-white/10 ml-1"
           >
-            회사소개
+            we
           </a>
         </div>
 

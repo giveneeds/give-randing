@@ -41,9 +41,10 @@ VALUES (
     }'::jsonb,
     '{
         "links": [
+            { "label": "we", "url": "/#hero" },
+            { "label": "do", "url": "/service" },
+            { "label": "foryou", "url": "/for-you" },
             { "label": "매거진", "url": "/magazine" },
-            { "label": "회사소개", "url": "/#hero" },
-            { "label": "서비스", "url": "/service" },
             { "label": "문의하기", "url": "/contact" }
         ],
         "show_cta": true

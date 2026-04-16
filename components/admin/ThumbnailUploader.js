@@ -2,7 +2,7 @@
 import { useRef, useState } from 'react';
 import { Upload, Loader2, X } from 'lucide-react';
 
-export default function ThumbnailUploader({ value, onChange }) {
+export default function ThumbnailUploader({ value, onChange, endpoint = '/api/upload/magazine-image' }) {
   const fileRef = useRef(null);
   const [uploading, setUploading] = useState(false);
 
@@ -16,7 +16,7 @@ export default function ThumbnailUploader({ value, onChange }) {
     try {
       const fd = new FormData();
       fd.append('file', file);
-      const res = await fetch('/api/upload/magazine-image', { method: 'POST', body: fd });
+      const res = await fetch(endpoint, { method: 'POST', body: fd });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || '업로드 실패');
       onChange(data.url);

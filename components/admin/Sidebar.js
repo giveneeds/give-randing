@@ -1,15 +1,16 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { 
-  LayoutDashboard, 
-  Rocket, 
-  BookOpen, 
-  Component, 
-  Settings, 
-  ExternalLink, 
+import {
+  LayoutDashboard,
+  Rocket,
+  BookOpen,
+  Component,
+  Settings,
+  ExternalLink,
   LogOut,
-  Users
+  Users,
+  Briefcase
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -28,6 +29,7 @@ export default function Sidebar({ handleLogout }) {
     { href: '/admin/services', icon: Rocket, label: '상품/솔루션 관리' },
     { href: '/admin/campaigns', icon: Component, label: '랜딩페이지 빌더' },
     { href: '/admin/magazines', icon: BookOpen, label: '매거진 콘텐츠' },
+    { href: '/admin/cases', icon: Briefcase, label: '고객 사례 (For You)' },
     { href: '/admin/leads', icon: Users, label: '고객 리드 조회' },
     { href: '/admin/settings', icon: Settings, label: '시스템 설정' },
     { href: '/admin/settings/admins', icon: Users, label: '관리자 계정' },
