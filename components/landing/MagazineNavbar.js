@@ -63,12 +63,12 @@ export default function MagazineNavbar({ activeCategory = '', onCategoryChange }
           <Link href="/magazine" className="text-sm font-black tracking-tighter text-zinc-900 dark:text-white uppercase">
             GIVENEEDS
           </Link>
-          {/* 메인 / 회사소개 — 모바일에서도 노출 */}
+          {/* 메인 / we(회사소개) — 모바일에서도 노출 */}
           <Link
             href="/"
             className="text-[10px] md:text-[11px] font-bold tracking-widest text-zinc-400 dark:text-zinc-500 uppercase hover:text-zinc-900 dark:hover:text-white transition-colors px-2 py-1 rounded-md border border-zinc-200 dark:border-white/10 md:border-0 md:px-0 md:py-0"
           >
-            회사소개
+            we
           </Link>
         </div>
 
@@ -171,7 +171,7 @@ export default function MagazineNavbar({ activeCategory = '', onCategoryChange }
                 onClick={() => setMobileOpen(false)}
                 className="inline-flex items-center gap-2 text-xs font-bold tracking-widest uppercase text-zinc-500 dark:text-zinc-400"
               >
-                <Home size={14} /> 메인 / 회사소개로
+                <Home size={14} /> 메인 / we로
               </Link>
             </div>
           </nav>
