@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { DUMMY_SERVICE_PRODUCTS } from '@/lib/supabase';
 import MarkdownContent from '@/lib/markdownRender';
+import ServiceCaseTabs from '@/components/admin/ServiceCaseTabs';
 
 // 항목 옆에 ? 아이콘 + 마우스 호버 시 한국어 도움말 툴팁을 노출
 function HelpTip({ text }) {
@@ -307,6 +308,7 @@ export default function AdminServicesPage() {
     <div className="space-y-8 max-w-6xl mx-auto pb-20">
       <div className="flex justify-between items-end">
         <div>
+          <ServiceCaseTabs />
           <h1 className="text-3xl font-bold text-zinc-900 tracking-tight">서비스/솔루션 마스터 관리</h1>
           <p className="text-zinc-500 mt-1">DB 연동을 통해 16대 서비스 상품의 상세 내용을 관리합니다.</p>
         </div>

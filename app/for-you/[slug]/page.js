@@ -5,7 +5,7 @@ import { supabase, isDummyMode, DUMMY_SETTINGS } from '@/lib/supabase';
 import LandingNavbar from '@/components/landing/LandingNavbar';
 import LandingFooter from '@/components/landing/LandingFooter';
 import CaseCard from '@/components/landing/CaseCard';
-import { ArrowLeft, Calendar, Share2 } from 'lucide-react';
+import { ArrowLeft, Share2 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function CaseDetailPage() {
@@ -81,13 +81,6 @@ export default function CaseDetailPage() {
     );
 
   const cover = item.cover_url || item.thumbnail_url;
-  const dateStr = item.created_at
-    ? new Date(item.created_at).toLocaleDateString('ko-KR', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      })
-    : '';
 
   return (
     <>
@@ -138,12 +131,6 @@ export default function CaseDetailPage() {
                   <span className="text-sm font-black text-zinc-900 dark:text-white tracking-tight">
                     {item.client_name}
                   </span>
-                </div>
-              )}
-              {dateStr && (
-                <div className="flex items-center gap-2 text-zinc-400 dark:text-zinc-500">
-                  <Calendar size={14} />
-                  <span className="text-[10px] font-bold uppercase tracking-widest">{dateStr}</span>
                 </div>
               )}
               {item.services && item.services.length > 0 && (

@@ -2,10 +2,11 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
-  Plus, Search, Edit3, Trash2, Eye, FileText, Clock,
+  Plus, Search, Edit3, Trash2, Eye, FileText,
   ChevronUp, ChevronDown, Star, Archive, Send, Filter
 } from 'lucide-react';
 import { clsx } from 'clsx';
+import ServiceCaseTabs from '@/components/admin/ServiceCaseTabs';
 
 export default function CaseListPage() {
   const [cases, setCases] = useState([]);
@@ -65,6 +66,7 @@ export default function CaseListPage() {
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
+          <ServiceCaseTabs />
           <h1 className="text-2xl font-black text-zinc-900 tracking-tighter uppercase">Case Studies Management</h1>
           <p className="text-zinc-500 text-sm mt-1 tracking-tight">고객 사례(For You)를 관리하고 노출 순서를 조정하세요.</p>
         </div>
@@ -185,14 +187,8 @@ export default function CaseListPage() {
                             </>
                           )}
                           {c.category && (
-                            <>
-                              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">{c.category}</span>
-                              <span className="w-1 h-1 bg-zinc-200 rounded-full" />
-                            </>
+                            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">{c.category}</span>
                           )}
-                          <span className="text-[10px] font-medium text-zinc-400 tracking-tight flex items-center gap-1">
-                            <Clock size={10} /> {new Date(c.created_at).toLocaleDateString('ko-KR')}
-                          </span>
                         </div>
                         {c.result_summary && (
                           <div className="text-[11px] font-bold text-amber-600 mt-1.5 line-clamp-1">▲ {c.result_summary}</div>

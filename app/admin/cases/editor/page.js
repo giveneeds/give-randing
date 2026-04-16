@@ -2,11 +2,10 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
-  ArrowLeft, Eye, Monitor, Smartphone, CheckCircle2,
-  Archive, Send, X,
+  ArrowLeft, Monitor, Smartphone, CheckCircle2,
+  Archive, Send,
 } from 'lucide-react';
 import { clsx } from 'clsx';
-import MagazineRichEditor from '@/components/admin/MagazineRichEditor';
 import ThumbnailUploader from '@/components/admin/ThumbnailUploader';
 
 export default function CaseEditor() {
@@ -36,7 +35,6 @@ export default function CaseEditor() {
   const [loading, setLoading] = useState(!!id);
   const [tagInput, setTagInput] = useState('');
   const [serviceInput, setServiceInput] = useState('');
-  const [previewOpen, setPreviewOpen] = useState(false);
 
   useEffect(() => { if (id) loadCase(); }, [id]);
 
@@ -110,13 +108,6 @@ export default function CaseEditor() {
           </button>
           <h1 className="text-xs font-black uppercase tracking-widest text-zinc-900">Case Editor</h1>
         </div>
-
-        <button
-          onClick={() => setPreviewOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 rounded-md text-[10px] font-black uppercase tracking-widest border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
-        >
-          <Eye size={14} /> Preview
-        </button>
 
         <div className="flex items-center gap-2">
           <button
@@ -259,19 +250,9 @@ export default function CaseEditor() {
           </div>
         </aside>
 
-        <main className="flex-1 bg-white overflow-hidden flex flex-col">
-          <MagazineRichEditor
-            value={caseData.content_html}
-            onChange={(html) => setCaseData((c) => ({ ...c, content_html: html }))}
-          />
-        </main>
-      </div>
-
-      {/* ─── Preview Modal ─── */}
-      {previewOpen && (
-        <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex flex-col animate-in fade-in duration-200">
-          <div className="h-16 flex items-center justify-between px-6 bg-white border-b border-zinc-100 shrink-0">
-            <h2 className="text-xs font-black uppercase tracking-widest text-zinc-900">Live Preview</h2>
+        <main className="flex-1 bg-zinc-100 overflow-hidden flex flex-col">
+          <div className="h-14 flex items-center justify-between px-6 bg-white border-b border-zinc-100 shrink-0">
+            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-900">Live Preview</label>
             <div className="flex bg-zinc-100 p-1 rounded-lg border border-zinc-200">
               <button
                 onClick={() => setPreviewMode('desktop')}
@@ -292,17 +273,14 @@ export default function CaseEditor() {
                 <Smartphone size={14} /> Mobile
               </button>
             </div>
-            <button onClick={() => setPreviewOpen(false)} className="p-2 hover:bg-zinc-100 rounded-lg">
-              <X size={18} className="text-zinc-600" />
-            </button>
           </div>
-          <div className="flex-1 bg-zinc-100 overflow-y-auto flex flex-col items-center">
+          <div className="flex-1 overflow-y-auto flex flex-col items-center py-6 custom-scrollbar">
             <div
               className={clsx(
-                'bg-white shadow-2xl transition-all duration-500 ease-in-out border-zinc-200 overflow-hidden',
+                'bg-white shadow-xl transition-all duration-500 ease-in-out border border-zinc-200 overflow-hidden',
                 previewMode === 'mobile'
-                  ? 'w-[393px] h-[852px] my-10 rounded-[3rem] border-[12px] border-zinc-900 relative shrink-0'
-                  : 'w-full min-h-full'
+                  ? 'w-[393px] h-[780px] rounded-[2.5rem] border-[10px] border-zinc-900 shrink-0'
+                  : 'w-full max-w-4xl mx-4 rounded-xl'
               )}
             >
               <div className="h-full overflow-y-auto scroll-smooth custom-scrollbar">
@@ -310,8 +288,8 @@ export default function CaseEditor() {
               </div>
             </div>
           </div>
-        </div>
-      )}
+        </main>
+      </div>
     </div>
   );
 }
