@@ -2,9 +2,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import {
-  Users, Loader2, User, Smartphone, Monitor, Clock,
+  Loader2, User, Smartphone, Monitor, Clock,
   Eye, FileText, MousePointer2, CheckCircle2, CornerUpLeft,
-  ChevronRight,
+  ChevronRight, ArrowLeft,
 } from 'lucide-react';
 
 // ── 이벤트 타입 메타 ──────────────────────────────
@@ -142,8 +142,6 @@ function VisitorCard({ visitor, expanded, onToggle }) {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [expanded, visitor.anonymous_id, detail]);
-
-  const nodes = detail ? buildJourneyNodes(detail.events || []) : [];
 
   // 세션별 노드 그룹핑
   const sessionGroups = detail
@@ -286,9 +284,14 @@ export default function FunnelUserPage() {
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6">
       {/* 헤더 */}
-      <div>
-        <h1 className="text-xl font-black text-zinc-900 tracking-tight">방문자 여정</h1>
-        <p className="text-xs text-zinc-400 mt-1">각 방문자가 어떤 페이지를 어떤 순서로 이동했는지 확인합니다. ↩ 는 뒤로가기입니다.</p>
+      <div className="flex items-center gap-3">
+        <Link href="/admin/funnel" className="p-1.5 rounded-lg hover:bg-zinc-100 text-zinc-400 hover:text-zinc-700 transition">
+          <ArrowLeft size={18} />
+        </Link>
+        <div>
+          <h1 className="text-xl font-black text-zinc-900 tracking-tight">방문자 여정</h1>
+          <p className="text-xs text-zinc-400 mt-0.5">각 방문자가 어떤 페이지를 어떤 순서로 이동했는지 확인합니다. ↩ 는 뒤로가기입니다.</p>
+        </div>
       </div>
 
       {/* 검색 */}

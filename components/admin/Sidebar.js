@@ -33,7 +33,6 @@ export default function Sidebar({ handleLogout }) {
     { href: '/admin/cases', icon: Briefcase, label: '고객 사례 (For You)' },
     { href: '/admin/leads', icon: Users, label: '고객 리드 조회' },
     { href: '/admin/funnel', icon: BarChart2, label: '퍼널 분석' },
-    { href: '/admin/funnel/user', icon: Users, label: '방문자 여정' },
     { href: '/admin/settings', icon: Settings, label: '시스템 설정' },
     { href: '/admin/settings/admins', icon: Users, label: '관리자 계정' },
   ];

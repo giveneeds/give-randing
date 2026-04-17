@@ -304,14 +304,23 @@ export default function FunnelPage() {
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="w-9 h-9 bg-zinc-900 rounded-xl flex items-center justify-center">
-          <BarChart2 size={18} className="text-white" />
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 bg-zinc-900 rounded-xl flex items-center justify-center">
+            <BarChart2 size={18} className="text-white" />
+          </div>
+          <div>
+            <h1 className="text-lg font-black text-zinc-900 tracking-tight">퍼널 분석</h1>
+            <p className="text-xs text-zinc-400">각 단계를 클릭하면 세부 내역을 확인할 수 있습니다</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-lg font-black text-zinc-900 tracking-tight">퍼널 분석</h1>
-          <p className="text-xs text-zinc-400">각 단계를 클릭하면 세부 내역을 확인할 수 있습니다</p>
-        </div>
+        <Link
+          href="/admin/funnel/user"
+          className="flex items-center gap-2 px-4 py-2 bg-zinc-900 text-white text-xs font-bold rounded-xl hover:bg-zinc-700 transition-colors"
+        >
+          <Users size={14} />
+          방문자 여정
+        </Link>
       </div>
 
       {/* Funnel Steps (clickable) */}
