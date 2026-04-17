@@ -33,7 +33,7 @@ export default function MagazineEditor() {
 
   async function loadMagazine() {
     try {
-      const res = await fetch(`/api/magazines?id=${id}`);
+      const res = await fetch(`/api/magazines?id=${id}&admin=true`);
       const data = await res.json();
       if (data.magazine) {
         setMagazine(data.magazine);
@@ -63,14 +63,24 @@ export default function MagazineEditor() {
   async function handleSave(status) {
     setSaving(true);
     const updatedData = { ...magazine, status: status || magazine.status || 'draft' };
+    // DB에 없는 클라이언트 전용 필드 제거
+    const { show_ai_block, ...dbData } = updatedData;
     try {
       const res = await fetch('/api/magazines', {
         method: id ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(id ? { ...updatedData, id } : updatedData)
+        body: JSON.stringify(id ? { ...dbData, id } : dbData)
       });
-      if (res.ok) router.push('/admin/magazines');
-    } catch (e) { console.error(e); }
+      const result = await res.json();
+      if (res.ok) {
+        router.push('/admin/magazines');
+      } else {
+        alert(`저장 실패: ${result.error || '알 수 없는 오류'}`);
+      }
+    } catch (e) {
+      console.error(e);
+      alert('네트워크 오류가 발생했습니다.');
+    }
     finally { setSaving(false); }
   }
 

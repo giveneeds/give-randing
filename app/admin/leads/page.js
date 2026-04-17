@@ -291,14 +291,17 @@ export default function AdminLeads() {
                       <td className="px-5 py-5 text-right">
                         <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
                           <Link
+                            href={`/admin/leads/${lead.id}`}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-zinc-200 text-[11px] font-bold text-zinc-600 hover:bg-zinc-900 hover:text-white hover:border-zinc-900 transition-all"
+                          >
+                            <ExternalLink size={11}/> 상세
+                          </Link>
+                          <Link
                             href={`/admin/leads/${lead.id}/chat`}
                             className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-zinc-200 text-[11px] font-bold text-zinc-600 hover:bg-zinc-900 hover:text-white hover:border-zinc-900 transition-all"
                           >
                             <MessageSquare size={11}/> 대화
                           </Link>
-                          <button className="p-1.5 hover:bg-zinc-100 rounded-md text-zinc-400 hover:text-zinc-700 transition-all">
-                            <MoreHorizontal size={16}/>
-                          </button>
                         </div>
                       </td>
                     </tr>

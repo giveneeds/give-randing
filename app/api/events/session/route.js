@@ -21,6 +21,9 @@ export async function POST(request) {
       channel_group,
       device_type,
       browser,
+      user_id,
+      kakao_name,
+      kakao_phone,
     } = body;
 
     if (!anonymous_id) {
@@ -42,6 +45,9 @@ export async function POST(request) {
         channel_group: channel_group || 'direct',
         device_type: device_type || null,
         browser: browser || null,
+        user_id: user_id || null,
+        kakao_name: kakao_name || null,
+        kakao_phone: kakao_phone || null,
       }])
       .select('id')
       .single();
