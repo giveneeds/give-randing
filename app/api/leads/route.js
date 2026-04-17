@@ -84,6 +84,11 @@ export async function POST(request) {
       company_name, website_url, inquiry_type,
       budget, message, category,
       lead_type, source_page, source_referrer, click_element,
+      // CRM 추적 필드
+      anonymous_id, first_visit_url, last_touch_url,
+      device_type, browser,
+      utm_source, utm_medium, utm_campaign, utm_term, utm_content,
+      channel_group,
     } = body;
 
     // 1. Validation
@@ -112,16 +117,37 @@ export async function POST(request) {
         source_referrer: source_referrer || null,
         click_element: click_element || null,
         status: 'new',
+        // CRM 추적 필드
+        anonymous_id: anonymous_id || null,
+        first_visit_url: first_visit_url || null,
+        last_touch_url: last_touch_url || null,
+        device_type: device_type || null,
+        browser: browser || null,
+        utm_source: utm_source || null,
+        utm_medium: utm_medium || null,
+        utm_campaign: utm_campaign || null,
+        utm_term: utm_term || null,
+        utm_content: utm_content || null,
+        channel_group: channel_group || null,
+        pipeline_stage: 'new',
         created_at: new Date().toISOString()
       };
 
-      const { error } = await supabase
+      const { data: leadRow, error } = await supabase
         .from('leads')
         .insert(insertData)
-        .select()
+        .select('id')
         .single();
 
       if (error) throw error;
+
+      // ID 스티칭: 익명 세션/이벤트를 이 리드에 소급 연결
+      if (anonymous_id && leadRow?.id) {
+        await Promise.all([
+          supabase.from('lead_sessions').update({ lead_id: leadRow.id }).eq('anonymous_id', anonymous_id),
+          supabase.from('lead_events').update({ lead_id: leadRow.id }).eq('anonymous_id', anonymous_id),
+        ]).catch(e => console.error('ID stitching partial failure:', e));
+      }
     }
 
     console.log('--- Lead Captured ---');
@@ -147,6 +173,8 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const leadType = searchParams.get('lead_type');
     const status = searchParams.get('status');
+    const pipelineStage = searchParams.get('pipeline_stage');
+    const channelGroup = searchParams.get('channel_group');
 
     let query = supabase
       .from('leads')
@@ -158,6 +186,12 @@ export async function GET(request) {
     }
     if (status && status !== 'all') {
       query = query.eq('status', status);
+    }
+    if (pipelineStage && pipelineStage !== 'all') {
+      query = query.eq('pipeline_stage', pipelineStage);
+    }
+    if (channelGroup && channelGroup !== 'all') {
+      query = query.eq('channel_group', channelGroup);
     }
 
     const { data, error } = await query;

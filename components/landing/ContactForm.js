@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase, isDummyMode } from '@/lib/supabase';
 import { appendCTA } from '@/lib/userTrail';
+import { getTrackingSnapshot, trackEvent } from '@/lib/tracker';
 import { 
   CheckCircle2, 
   ArrowRight, 
@@ -72,13 +73,16 @@ export default function ContactForm() {
     setLoading(true);
     
     try {
+      const tracking = getTrackingSnapshot();
       const payload = {
         ...formData,
         lead_type: 'consultation',
         source_page: typeof window !== 'undefined' ? window.location.pathname : '/contact',
         source_referrer: typeof document !== 'undefined' ? document.referrer : '',
         click_element: 'contact_form_cta',
+        ...tracking,
       };
+      trackEvent('form_submit', { form: 'contact_form', page: payload.source_page });
 
       const res = await fetch('/api/leads', {
         method: 'POST',

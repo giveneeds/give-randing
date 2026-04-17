@@ -30,6 +30,22 @@ const STATUS_CONFIG = {
   rejected:  { label: '거절', icon: <XCircle size={10}/>, color: 'bg-red-50 text-red-600' },
 };
 
+const PIPELINE_CONFIG = {
+  new:       { label: '신규', color: 'bg-amber-50 text-amber-700 border-amber-200' },
+  contacted: { label: '컨택', color: 'bg-sky-50 text-sky-700 border-sky-200' },
+  qualified: { label: '적격', color: 'bg-blue-50 text-blue-700 border-blue-200' },
+  proposal:  { label: '제안', color: 'bg-violet-50 text-violet-700 border-violet-200' },
+  won:       { label: '계약', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  lost:      { label: '이탈', color: 'bg-red-50 text-red-600 border-red-200' },
+};
+const PIPELINE_STAGES = Object.keys(PIPELINE_CONFIG);
+
+const CHANNEL_LABELS = {
+  direct: 'Direct', organic: 'Organic', paid_search: 'Paid Search',
+  paid_social: 'Paid Social', email: 'Email', referral: 'Referral',
+  kakao: 'Kakao', organic_social: 'Social', other: 'Other',
+};
+
 const PAGE_SIZE = 10;
 
 export default function AdminLeads() {
@@ -38,12 +54,13 @@ export default function AdminLeads() {
   const [searchQuery, setSearchQuery] = useState('');
   const [leadTypeFilter, setLeadTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [pipelineFilter, setPipelineFilter] = useState('all');
   const [expandedId, setExpandedId] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     loadLeads();
-  }, [leadTypeFilter, statusFilter]);
+  }, [leadTypeFilter, statusFilter, pipelineFilter]);
 
   async function loadLeads() {
     setLoading(true);
@@ -51,6 +68,7 @@ export default function AdminLeads() {
       const params = new URLSearchParams();
       if (leadTypeFilter !== 'all') params.set('lead_type', leadTypeFilter);
       if (statusFilter !== 'all') params.set('status', statusFilter);
+      if (pipelineFilter !== 'all') params.set('pipeline_stage', pipelineFilter);
       const res = await fetch(`/api/leads?${params.toString()}`);
       const data = await res.json();
       setLeads(data.leads || []);
@@ -59,6 +77,17 @@ export default function AdminLeads() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handlePipelineChange(leadId, newStage) {
+    try {
+      await fetch(`/api/leads/${leadId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pipeline_stage: newStage }),
+      });
+      setLeads(prev => prev.map(l => l.id === leadId ? { ...l, pipeline_stage: newStage } : l));
+    } catch (e) { console.error('Pipeline update failed:', e); }
   }
 
   const filteredLeads = leads.filter(lead => {
@@ -94,12 +123,15 @@ export default function AdminLeads() {
 
   async function handleExportCSV() {
     if (filteredLeads.length === 0) return;
-    const headers = ['이름', '연락처', '이메일', '회사명', '홈페이지', '예산', '리드유형', '유입페이지', '클릭요소', '상태', '수집일'];
+    const headers = ['이름', '연락처', '이메일', '회사명', '홈페이지', '예산', '리드유형', '유입페이지', '클릭요소', '상태', '파이프라인', '채널', 'UTM Source', 'UTM Campaign', '디바이스', '수집일'];
     const rows = filteredLeads.map(l => [
       l.name, l.phone, l.email, l.company_name, l.website_url,
       BUDGET_LABEL[l.budget] || l.budget,
       LEAD_TYPE_CONFIG[l.lead_type]?.label || l.lead_type,
       l.source_page, l.click_element, l.status,
+      PIPELINE_CONFIG[l.pipeline_stage]?.label || l.pipeline_stage,
+      CHANNEL_LABELS[l.channel_group] || l.channel_group,
+      l.utm_source, l.utm_campaign, l.device_type,
       new Date(l.created_at).toLocaleDateString('ko-KR')
     ]);
     const csv = [headers, ...rows].map(r => r.map(c => `"${c || ''}"`).join(',')).join('\n');
@@ -130,10 +162,10 @@ export default function AdminLeads() {
       </div>
 
       {/* Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
         <div className="md:col-span-2 relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={16} />
-          <input 
+          <input
             type="text" placeholder="이름, 이메일, 연락처, 회사명 검색..."
             value={searchQuery} onChange={e => { setSearchQuery(e.target.value); setCurrentPage(1); }}
             className="w-full pl-11 pr-4 py-3 bg-white border border-[var(--admin-border)] rounded-md text-sm outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 transition-all shadow-sm"
@@ -141,7 +173,7 @@ export default function AdminLeads() {
         </div>
         <div className="relative">
           <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={16} />
-          <select 
+          <select
             className="w-full pl-11 pr-4 py-3 bg-white border border-[var(--admin-border)] rounded-md text-sm outline-none appearance-none cursor-pointer shadow-sm"
             value={leadTypeFilter} onChange={e => { setLeadTypeFilter(e.target.value); setCurrentPage(1); }}
           >
@@ -150,6 +182,18 @@ export default function AdminLeads() {
             <option value="campaign">캠페인 LP</option>
             <option value="magazine">매거진 회원가입</option>
             <option value="organic">기타</option>
+          </select>
+        </div>
+        <div className="relative">
+          <Tag className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={16} />
+          <select
+            className="w-full pl-11 pr-4 py-3 bg-white border border-[var(--admin-border)] rounded-md text-sm outline-none appearance-none cursor-pointer shadow-sm"
+            value={pipelineFilter} onChange={e => { setPipelineFilter(e.target.value); setCurrentPage(1); }}
+          >
+            <option value="all">모든 파이프라인</option>
+            {PIPELINE_STAGES.map(s => (
+              <option key={s} value={s}>{PIPELINE_CONFIG[s].label}</option>
+            ))}
           </select>
         </div>
         <div className="relative">
@@ -176,8 +220,8 @@ export default function AdminLeads() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-zinc-50/50 border-b border-zinc-100">
-                  {['고객 정보', '연락처', '유입 경로', '예산', '상태', '수집일', ''].map((h, i) => (
-                    <th key={i} className="px-6 py-4 text-[11px] font-black text-zinc-500 uppercase tracking-widest whitespace-nowrap">{h}</th>
+                  {['고객 정보', '연락처', '유입 경로', '예산', '파이프라인', '채널', '수집일', ''].map((h, i) => (
+                    <th key={i} className="px-5 py-4 text-[11px] font-black text-zinc-500 uppercase tracking-widest whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -221,13 +265,30 @@ export default function AdminLeads() {
                           <span className="text-xs font-bold text-zinc-700">{BUDGET_LABEL[lead.budget] || lead.budget}</span>
                         ) : <span className="text-zinc-300 text-xs">-</span>}
                       </td>
-                      <td className="px-6 py-5">{getStatusBadge(lead.status || 'new')}</td>
-                      <td className="px-6 py-5">
+                      <td className="px-5 py-5" onClick={(e) => e.stopPropagation()}>
+                        <select
+                          value={lead.pipeline_stage || 'new'}
+                          onChange={(e) => handlePipelineChange(lead.id, e.target.value)}
+                          className={`text-[10px] font-bold px-2 py-1 rounded-full border outline-none cursor-pointer ${PIPELINE_CONFIG[lead.pipeline_stage || 'new']?.color || 'bg-zinc-50 text-zinc-500 border-zinc-200'}`}
+                        >
+                          {PIPELINE_STAGES.map(s => (
+                            <option key={s} value={s}>{PIPELINE_CONFIG[s].label}</option>
+                          ))}
+                        </select>
+                      </td>
+                      <td className="px-5 py-5">
+                        {lead.channel_group ? (
+                          <span className="text-[10px] font-bold text-zinc-500 bg-zinc-100 px-2 py-1 rounded-full">
+                            {CHANNEL_LABELS[lead.channel_group] || lead.channel_group}
+                          </span>
+                        ) : <span className="text-zinc-300 text-[10px]">—</span>}
+                      </td>
+                      <td className="px-5 py-5">
                         <div className="flex items-center gap-1.5 text-xs text-zinc-400 font-medium whitespace-nowrap">
                           <Calendar size={11}/>{new Date(lead.created_at).toLocaleDateString('ko-KR')}
                         </div>
                       </td>
-                      <td className="px-6 py-5 text-right">
+                      <td className="px-5 py-5 text-right">
                         <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
                           <Link
                             href={`/admin/leads/${lead.id}/chat`}
@@ -245,7 +306,7 @@ export default function AdminLeads() {
                     {/* 상세 확장 행 */}
                     {expandedId === lead.id && (
                       <tr key={`${lead.id}-detail`} className="bg-zinc-50/50">
-                        <td colSpan={7} className="px-8 py-5">
+                        <td colSpan={8} className="px-8 py-5">
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
                             {lead.website_url && (
                               <div className="flex items-start gap-2">
@@ -274,6 +335,28 @@ export default function AdminLeads() {
                                 </div>
                               </div>
                             )}
+                            {(lead.utm_source || lead.utm_campaign) && (
+                              <div className="flex items-start gap-2">
+                                <ExternalLink size={13} className="text-zinc-400 mt-0.5 flex-shrink-0"/>
+                                <div>
+                                  <p className="text-zinc-400 font-bold uppercase tracking-wider mb-0.5">UTM</p>
+                                  <div className="flex flex-wrap gap-1">
+                                    {lead.utm_source && <code className="text-zinc-600 bg-zinc-100 px-1.5 py-0.5 rounded text-[10px]">src:{lead.utm_source}</code>}
+                                    {lead.utm_medium && <code className="text-zinc-600 bg-zinc-100 px-1.5 py-0.5 rounded text-[10px]">med:{lead.utm_medium}</code>}
+                                    {lead.utm_campaign && <code className="text-zinc-600 bg-zinc-100 px-1.5 py-0.5 rounded text-[10px]">cmp:{lead.utm_campaign}</code>}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                            {lead.device_type && (
+                              <div className="flex items-start gap-2">
+                                <Globe size={13} className="text-zinc-400 mt-0.5 flex-shrink-0"/>
+                                <div>
+                                  <p className="text-zinc-400 font-bold uppercase tracking-wider mb-0.5">디바이스</p>
+                                  <span className="text-zinc-600 text-[11px]">{lead.device_type}{lead.browser ? ` · ${lead.browser}` : ''}</span>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -281,7 +364,7 @@ export default function AdminLeads() {
                   </>
                 )) : (
                   <tr>
-                    <td colSpan={7} className="py-24 text-center">
+                    <td colSpan={8} className="py-24 text-center">
                       <div className="flex flex-col items-center gap-3 text-zinc-300">
                         <Users size={40} strokeWidth={1}/>
                         <p className="text-sm font-medium">조회 결과가 없습니다.</p>

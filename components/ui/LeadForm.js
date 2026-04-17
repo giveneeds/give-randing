@@ -11,6 +11,7 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import { isDummyMode } from '@/lib/supabase';
+import { getTrackingSnapshot, trackEvent } from '@/lib/tracker';
 
 export default function LeadForm({ title, subtitle, ctaLabel, campaignId, magazineId, category = 'organic' }) {
   const [submitted, setSubmitted] = useState(false);
@@ -42,6 +43,7 @@ export default function LeadForm({ title, subtitle, ctaLabel, campaignId, magazi
     setPhoneError('');
     
     try {
+      const tracking = getTrackingSnapshot();
       const payload = {
         ...formData,
         campaign_id: campaignId,
@@ -50,7 +52,9 @@ export default function LeadForm({ title, subtitle, ctaLabel, campaignId, magazi
         source_page: typeof window !== 'undefined' ? window.location.pathname : '',
         source_referrer: typeof document !== 'undefined' ? document.referrer : '',
         click_element: 'lead_form_cta',
+        ...tracking,
       };
+      trackEvent('form_submit', { form: 'lead_form', category, page: payload.source_page });
 
       const res = await fetch('/api/leads', {
         method: 'POST',

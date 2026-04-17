@@ -8,6 +8,52 @@ import {
 import { clsx } from 'clsx';
 import ThumbnailUploader from '@/components/admin/ThumbnailUploader';
 
+const CASE_SECTIONS = [
+  { key: 'background', label: '배경', isList: false },
+  { key: 'approach', label: '접근 방식', isList: false },
+  { key: 'operations', label: '운영 포인트', isList: true },
+  { key: 'results', label: '성과', isList: false },
+];
+
+function sectionsToHtml(sections) {
+  return CASE_SECTIONS
+    .filter((s) => sections[s.key]?.trim())
+    .map((s) => {
+      const text = sections[s.key].trim();
+      if (s.isList) {
+        const items = text.split('\n').filter(Boolean);
+        return `<h2>${s.label}</h2>\n<ul>\n${items.map((li) => `  <li>${li}</li>`).join('\n')}\n</ul>`;
+      }
+      return `<h2>${s.label}</h2>\n<p>${text}</p>`;
+    })
+    .join('\n\n');
+}
+
+function htmlToSections(html) {
+  const sections = { background: '', approach: '', operations: '', results: '' };
+  if (!html) return sections;
+
+  const parts = html.split(/<h2>/i).filter(Boolean);
+  for (const part of parts) {
+    const headingEnd = part.indexOf('</h2>');
+    if (headingEnd === -1) continue;
+    const heading = part.slice(0, headingEnd).trim();
+    const body = part.slice(headingEnd + 5).trim();
+
+    const match = CASE_SECTIONS.find((s) => heading.includes(s.label));
+    if (!match) continue;
+
+    if (match.isList) {
+      const items = [...body.matchAll(/<li>(.*?)<\/li>/gi)].map((m) => m[1].trim());
+      sections[match.key] = items.join('\n');
+    } else {
+      const pMatch = body.match(/<p>([\s\S]*?)<\/p>/i);
+      sections[match.key] = pMatch ? pMatch[1].trim() : body.replace(/<[^>]+>/g, '').trim();
+    }
+  }
+  return sections;
+}
+
 export default function CaseEditor() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -30,6 +76,10 @@ export default function CaseEditor() {
     sort_order: 0,
   });
 
+  const [sections, setSections] = useState({
+    background: '', approach: '', operations: '', results: '',
+  });
+
   const [saving, setSaving] = useState(false);
   const [previewMode, setPreviewMode] = useState('desktop');
   const [loading, setLoading] = useState(!!id);
@@ -44,6 +94,7 @@ export default function CaseEditor() {
       const data = await res.json();
       if (data.case) {
         setCaseData(data.case);
+        setSections(htmlToSections(data.case.content_html));
         setTagInput((data.case.tags || []).join(', '));
         setServiceInput((data.case.services || []).join(', '));
       }
@@ -78,7 +129,11 @@ export default function CaseEditor() {
       return;
     }
     setSaving(true);
-    const updatedData = { ...caseData, status: status || caseData.status || 'draft' };
+    const updatedData = {
+      ...caseData,
+      content_html: sectionsToHtml(sections),
+      status: status || caseData.status || 'draft',
+    };
     try {
       const res = await fetch('/api/cases', {
         method: id ? 'PUT' : 'POST',
@@ -96,6 +151,8 @@ export default function CaseEditor() {
       alert('네트워크 오류가 발생했습니다.');
     } finally { setSaving(false); }
   }
+
+  const previewHtml = sectionsToHtml(sections);
 
   if (loading) return <div className="p-20 text-center animate-pulse text-zinc-400 font-bold uppercase tracking-widest text-[10px]">Editor Loading...</div>;
 
@@ -142,7 +199,7 @@ export default function CaseEditor() {
             <div className="grid grid-cols-2 gap-3">
               <input
                 className="w-full p-3 bg-white border border-zinc-200 rounded-md text-sm outline-none shadow-sm"
-                placeholder="카테고리 (예: COMMERCE)"
+                placeholder="카테고리 (예: 검색노출)"
                 value={caseData.category}
                 onChange={(e) => setCaseData({ ...caseData, category: e.target.value })}
               />
@@ -191,10 +248,34 @@ export default function CaseEditor() {
             />
             <textarea
               className="w-full min-h-[60px] bg-white border border-amber-200 bg-amber-50/40 rounded-md p-4 text-sm leading-relaxed outline-none shadow-sm"
-              placeholder="성과 요약 (예: 매출 1,500만원 돌파 / ROAS 820% 달성)"
+              placeholder="성과 요약 (예: 검색 노출 확장)"
               value={caseData.result_summary || ''}
               onChange={(e) => setCaseData({ ...caseData, result_summary: e.target.value })}
             />
+          </div>
+
+          {/* 본문 내용 — 항목별 입력 */}
+          <div className="space-y-4 pt-6 border-t border-zinc-200">
+            <label className="text-[10px] font-bold text-zinc-900 uppercase ml-1">Content Sections</label>
+            <p className="text-[9px] text-zinc-400 ml-1 -mt-2">빈 항목은 공개 페이지에서 자동 숨김 처리됩니다.</p>
+            {CASE_SECTIONS.map((sec) => (
+              <div key={sec.key} className="space-y-1">
+                <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">
+                  {sec.label}
+                  {sec.isList && (
+                    <span className="text-zinc-300 normal-case tracking-normal font-medium ml-2">
+                      한 줄에 항목 하나씩
+                    </span>
+                  )}
+                </label>
+                <textarea
+                  className="w-full min-h-[80px] bg-white border border-zinc-200 rounded-md p-4 text-sm leading-relaxed outline-none shadow-sm focus:ring-2 focus:ring-zinc-900/10 resize-y"
+                  placeholder={`${sec.label} 내용을 입력하세요${sec.isList ? ' (한 줄에 하나씩)' : ''}`}
+                  value={sections[sec.key]}
+                  onChange={(e) => setSections((s) => ({ ...s, [sec.key]: e.target.value }))}
+                />
+              </div>
+            ))}
           </div>
 
           {/* 서비스 & 태그 */}
@@ -284,7 +365,7 @@ export default function CaseEditor() {
               )}
             >
               <div className="h-full overflow-y-auto scroll-smooth custom-scrollbar">
-                <PreviewContent item={caseData} />
+                <PreviewContent item={caseData} contentHtml={previewHtml} />
               </div>
             </div>
           </div>
@@ -294,7 +375,7 @@ export default function CaseEditor() {
   );
 }
 
-function PreviewContent({ item }) {
+function PreviewContent({ item, contentHtml }) {
   if (!item.title)
     return (
       <div className="h-full flex items-center justify-center p-20 text-center text-[10px] font-bold text-zinc-300 uppercase tracking-widest leading-loose">
@@ -319,8 +400,6 @@ function PreviewContent({ item }) {
         {item.excerpt && <p className="text-sm text-zinc-500 leading-relaxed mb-4">{item.excerpt}</p>}
         <div className="flex items-center gap-3 pt-4 border-t border-zinc-100 text-[10px] text-zinc-400">
           {item.client_name && <span className="font-bold uppercase">CLIENT: {item.client_name}</span>}
-          {item.client_name && <span>•</span>}
-          <span>순서: {item.sort_order || 0}</span>
         </div>
       </div>
       {(item.cover_url || item.thumbnail_url) && (
@@ -331,8 +410,9 @@ function PreviewContent({ item }) {
         </div>
       )}
       <article
-        className="px-8 max-w-screen-md mx-auto prose prose-zinc prose-lg max-w-none prose-p:text-zinc-600 prose-headings:font-black prose-headings:tracking-tighter"
-        dangerouslySetInnerHTML={{ __html: item.content_html || '' }}
+        className="px-8 max-w-screen-md mx-auto prose prose-zinc prose-lg max-w-none magazine-prose
+                   prose-p:text-zinc-600 prose-headings:font-black prose-headings:tracking-tighter"
+        dangerouslySetInnerHTML={{ __html: contentHtml || '' }}
       />
       {item.result_summary && (
         <div className="px-8 max-w-screen-md mx-auto mt-12">
