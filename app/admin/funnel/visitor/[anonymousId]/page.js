@@ -2,28 +2,40 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
-  ArrowLeft, User, Smartphone, Monitor, Clock,
+  ArrowLeft, User, Smartphone, Monitor,
   MousePointer2, Eye, FileText, CheckCircle2, Loader2,
-  CornerUpLeft, ChevronRight,
+  CornerUpLeft, LogIn, LogOut, Clock,
 } from 'lucide-react';
 
-// ── 이벤트 메타 ──────────────────────────────────
+// ── 이벤트 메타 ───────────────────────────────────
 const EVENT_META = {
-  page_view:     { label: '페이지',   icon: Eye,           bg: 'bg-zinc-100',     text: 'text-zinc-600',   border: 'border-zinc-200' },
-  magazine_view: { label: '매거진',   icon: FileText,      bg: 'bg-violet-50',    text: 'text-violet-600', border: 'border-violet-200' },
-  service_view:  { label: '서비스',   icon: FileText,      bg: 'bg-amber-50',     text: 'text-amber-600',  border: 'border-amber-200' },
-  cta_click:     { label: 'CTA',      icon: MousePointer2, bg: 'bg-blue-50',      text: 'text-blue-600',   border: 'border-blue-200' },
-  form_submit:   { label: '리드전환', icon: CheckCircle2,  bg: 'bg-emerald-50',   text: 'text-emerald-700',border: 'border-emerald-200' },
+  page_view:     { label: '페이지',   icon: Eye,           bg: '#f4f4f5', border: '#d4d4d8', text: '#52525b', dot: '#a1a1aa' },
+  magazine_view: { label: '매거진',   icon: FileText,      bg: '#f5f3ff', border: '#c4b5fd', text: '#7c3aed', dot: '#8b5cf6' },
+  service_view:  { label: '서비스',   icon: FileText,      bg: '#fffbeb', border: '#fcd34d', text: '#b45309', dot: '#f59e0b' },
+  cta_click:     { label: 'CTA 클릭', icon: MousePointer2, bg: '#eff6ff', border: '#93c5fd', text: '#1d4ed8', dot: '#3b82f6' },
+  form_submit:   { label: '리드전환', icon: CheckCircle2,  bg: '#f0fdf4', border: '#86efac', text: '#15803d', dot: '#22c55e' },
+};
+
+const CHANNEL_KO = {
+  direct: '직접 방문', organic: '검색 유입', paid_search: '광고 검색',
+  paid_social: '유료 SNS', email: '이메일', referral: '외부 링크',
+  kakao: '카카오', organic_social: 'SNS', other: '기타',
 };
 
 function shortUrl(url) {
   if (!url) return '?';
   const clean = url.replace(/^\//, '').split('?')[0];
   if (!clean) return '/';
-  // 슬러그 마지막 부분만 표시 (너무 길면)
   const parts = clean.split('/');
   if (parts.length > 2) return `…/${parts[parts.length - 1]}`;
-  return clean;
+  return `/${clean}`;
+}
+
+function fmtDwell(secs) {
+  if (!secs || secs <= 0) return null;
+  if (secs < 60) return `${secs}초`;
+  const m = Math.floor(secs / 60), s = secs % 60;
+  return s > 0 ? `${m}분 ${s}초` : `${m}분`;
 }
 
 function fmtTime(iso) {
@@ -32,13 +44,6 @@ function fmtTime(iso) {
     month: '2-digit', day: '2-digit',
     hour: '2-digit', minute: '2-digit',
   });
-}
-
-function fmtDwell(secs) {
-  if (!secs || secs <= 0) return null;
-  if (secs < 60) return `${secs}초`;
-  const m = Math.floor(secs / 60), s = secs % 60;
-  return s > 0 ? `${m}분 ${s}초` : `${m}분`;
 }
 
 function fmtAgo(iso) {
@@ -52,7 +57,7 @@ function fmtAgo(iso) {
   return new Date(iso).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
 }
 
-// ── 뒤로가기 감지 + 이벤트 노드 빌드 ──────────────
+// ── 뒤로가기 감지 ────────────────────────────────
 function buildNodes(events) {
   const relevant = events.filter(e =>
     ['page_view', 'magazine_view', 'service_view', 'cta_click', 'form_submit'].includes(e.event_type)
@@ -69,103 +74,174 @@ function buildNodes(events) {
   });
 }
 
-// ── 노드 컴포넌트 ──────────────────────────────────
-function FlowNode({ node, isLast }) {
+// ── 진입 노드 ─────────────────────────────────────
+function StartNode({ session }) {
+  const channel = CHANNEL_KO[session.channel_group] || session.channel_group || '직접 방문';
+  const ref = session.referrer && session.referrer !== '' ? session.referrer : null;
+  return (
+    <div className="flex flex-col items-center flex-shrink-0">
+      <div className="relative">
+        {/* 글로우 */}
+        <div className="absolute inset-0 rounded-2xl bg-emerald-400 blur-sm opacity-30" />
+        <div className="relative flex flex-col items-center gap-1.5 px-4 py-3 rounded-2xl border-2 border-emerald-400 bg-emerald-50 w-[130px]">
+          <div className="w-8 h-8 rounded-xl bg-emerald-500 flex items-center justify-center shadow">
+            <LogIn size={15} className="text-white" />
+          </div>
+          <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">진입</span>
+          <span className="text-[11px] font-bold text-emerald-800 text-center leading-tight">{channel}</span>
+          {ref && (
+            <span className="text-[9px] text-emerald-600 truncate max-w-full opacity-70" title={ref}>
+              from {ref.replace(/https?:\/\//, '').split('/')[0]}
+            </span>
+          )}
+          <span className="text-[9px] text-emerald-500 font-mono truncate max-w-full">{session.landing_url || '/'}</span>
+        </div>
+      </div>
+      <span className="text-[9px] text-zinc-400 mt-1.5">{fmtAgo(session.session_start)}</span>
+    </div>
+  );
+}
+
+// ── 이벤트 노드 ───────────────────────────────────
+function EventNode({ node }) {
   const meta = EVENT_META[node.event_type] || EVENT_META.page_view;
   const Icon = node.isBack ? CornerUpLeft : meta.icon;
 
   return (
-    <div className="flex items-start flex-shrink-0">
-      {/* 노드 */}
-      <div className="flex flex-col items-center">
-        <div
-          title={node.page_url || node.event_type}
-          className={`
-            flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold
-            whitespace-nowrap max-w-[140px]
-            ${meta.bg} ${meta.text} ${meta.border}
-            ${node.isBack ? 'opacity-70 ring-2 ring-offset-1 ring-zinc-200' : ''}
-          `}
-        >
-          <Icon size={11} className="flex-shrink-0" />
-          <span className="truncate">{shortUrl(node.page_url || node.event_type)}</span>
-        </div>
-
-        {/* 라벨 행 */}
-        <div className="flex items-center gap-1 mt-1">
-          <span className={`text-[9px] font-bold ${meta.text} opacity-70`}>{meta.label}</span>
-          {node.isBack && (
-            <span className="text-[9px] text-zinc-400 font-bold">↩ 뒤로</span>
-          )}
-        </div>
-
-        {/* 시각 */}
-        <span className="text-[9px] text-zinc-300 mt-0.5">{fmtTime(node.created_at)}</span>
-
-        {/* CTA 레이블 */}
-        {node.event_type === 'cta_click' && node.event_data?.label && (
-          <span className="text-[9px] text-blue-400 mt-0.5 max-w-[120px] truncate text-center">
-            &ldquo;{node.event_data.label}&rdquo;
-          </span>
+    <div className="flex flex-col items-center flex-shrink-0">
+      <div className="relative">
+        {/* 뒤로가기 배지 */}
+        {node.isBack && (
+          <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 z-10 flex items-center gap-0.5 bg-zinc-700 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full whitespace-nowrap shadow">
+            <CornerUpLeft size={7} /> 뒤로
+          </div>
         )}
-      </div>
 
-      {/* 화살표 + 체류시간 */}
-      {!isLast && (
-        <div className="flex flex-col items-center mx-2 pt-2 flex-shrink-0">
-          {node.dwell_seconds !== null && node.dwell_seconds !== undefined && node.dwell_seconds > 0 && (
-            <span className="text-[9px] text-zinc-300 mb-0.5 flex items-center gap-0.5">
-              <Clock size={7} />{fmtDwell(node.dwell_seconds)}
+        <div
+          className="flex flex-col items-center gap-1.5 px-3 py-3 rounded-2xl border-2 w-[120px] transition-shadow hover:shadow-md"
+          style={{
+            background: meta.bg,
+            borderColor: node.isBack ? '#d4d4d8' : meta.border,
+            opacity: node.isBack ? 0.75 : 1,
+          }}
+        >
+          <div
+            className="w-7 h-7 rounded-lg flex items-center justify-center shadow-sm"
+            style={{ background: meta.dot }}
+          >
+            <Icon size={13} className="text-white" />
+          </div>
+          <span
+            className="text-[10px] font-bold text-center leading-tight truncate max-w-full px-1"
+            style={{ color: meta.text }}
+            title={node.page_url || ''}
+          >
+            {shortUrl(node.page_url || node.event_type)}
+          </span>
+          <span
+            className="text-[8px] font-bold px-1.5 py-0.5 rounded-full"
+            style={{ background: meta.border + '60', color: meta.text }}
+          >
+            {meta.label}
+          </span>
+          {node.event_type === 'cta_click' && node.event_data?.label && (
+            <span className="text-[8px] text-blue-500 truncate max-w-full px-1 text-center">
+              &ldquo;{node.event_data.label}&rdquo;
             </span>
           )}
-          <ChevronRight size={14} className="text-zinc-200" />
         </div>
+      </div>
+      <span className="text-[9px] text-zinc-300 mt-1.5">{fmtTime(node.created_at)}</span>
+    </div>
+  );
+}
+
+// ── 종료 노드 ─────────────────────────────────────
+function EndNode({ lastEventTime }) {
+  return (
+    <div className="flex flex-col items-center flex-shrink-0">
+      <div className="relative">
+        <div className="absolute inset-0 rounded-2xl bg-zinc-400 blur-sm opacity-20" />
+        <div className="relative flex flex-col items-center gap-1.5 px-4 py-3 rounded-2xl border-2 border-zinc-300 bg-zinc-50 w-[120px]">
+          <div className="w-8 h-8 rounded-xl bg-zinc-400 flex items-center justify-center shadow">
+            <LogOut size={15} className="text-white" />
+          </div>
+          <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">종료</span>
+          <span className="text-[9px] text-zinc-400 text-center leading-snug">30분 무활동<br/>세션 종료</span>
+        </div>
+      </div>
+      {lastEventTime && (
+        <span className="text-[9px] text-zinc-300 mt-1.5">{fmtTime(lastEventTime)}</span>
       )}
     </div>
   );
 }
 
-// ── 세션 행 ────────────────────────────────────────
+// ── 화살표 연결 ───────────────────────────────────
+function Arrow({ dwell }) {
+  return (
+    <div className="flex flex-col items-center justify-center flex-shrink-0 mx-1 mt-[-18px]">
+      {dwell && dwell > 0 && (
+        <div className="flex items-center gap-0.5 bg-zinc-800 text-white text-[9px] font-black px-2 py-0.5 rounded-full mb-1 shadow">
+          <Clock size={8} />{fmtDwell(dwell)}
+        </div>
+      )}
+      <div className="flex items-center gap-0">
+        <div className="h-0.5 w-6 bg-zinc-300" />
+        <div
+          className="border-t-[5px] border-b-[5px] border-l-[8px]"
+          style={{ borderColor: 'transparent transparent transparent #a1a1aa' }}
+        />
+      </div>
+    </div>
+  );
+}
+
+// ── 세션 행 ───────────────────────────────────────
 function SessionRow({ session, events, index, total }) {
   const nodes = buildNodes(events);
-
-  const channelBadge = {
-    direct: 'Direct', organic: 'Organic', paid_search: 'Paid Search',
-    paid_social: 'Paid Social', email: 'Email', referral: 'Referral',
-    kakao: 'Kakao', organic_social: 'Social',
-  }[session.channel_group] || session.channel_group || 'Direct';
+  const lastEvent = events[events.length - 1];
 
   return (
-    <div className="bg-white rounded-2xl border border-zinc-100 overflow-hidden">
-      {/* 세션 헤더 */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-zinc-50 bg-zinc-50/60">
-        <div className="w-6 h-6 rounded-lg bg-zinc-800 text-white flex items-center justify-center text-[10px] font-black flex-shrink-0">
+    <div className="rounded-2xl overflow-hidden border border-zinc-200 shadow-sm">
+      {/* 세션 헤더 바 */}
+      <div className="flex items-center gap-3 px-5 py-3 bg-zinc-900">
+        <div className="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center text-xs font-black text-white">
           {total - index}
         </div>
-        <div className="flex items-center gap-2 flex-1 min-w-0 flex-wrap">
-          <span className="text-xs font-black text-zinc-700">세션 {total - index}</span>
-          <span className="text-[10px] text-zinc-400">{fmtAgo(session.session_start)}</span>
-          <span className="text-[10px] text-zinc-300">·</span>
-          <span className="text-[10px] font-bold bg-zinc-100 text-zinc-500 px-2 py-0.5 rounded-full">{channelBadge}</span>
+        <span className="text-sm font-black text-white tracking-tight">세션 {total - index}</span>
+        <span className="text-[10px] text-zinc-400">{fmtAgo(session.session_start)}</span>
+        <div className="ml-auto flex items-center gap-2">
           {session.device_type === 'mobile'
-            ? <Smartphone size={10} className="text-zinc-300" />
-            : <Monitor size={10} className="text-zinc-300" />}
-          {session.landing_url && (
-            <span className="text-[10px] text-zinc-300 font-mono truncate max-w-[120px]">시작: {session.landing_url}</span>
-          )}
+            ? <Smartphone size={12} className="text-zinc-400" />
+            : <Monitor size={12} className="text-zinc-400" />}
+          <span className="text-[10px] text-zinc-400">
+            {CHANNEL_KO[session.channel_group] || '직접 방문'}
+          </span>
+          <span className="text-[10px] text-zinc-500">{nodes.length}개 이벤트</span>
         </div>
-        <span className="text-[10px] text-zinc-300 flex-shrink-0">{nodes.length}개 이벤트</span>
       </div>
 
-      {/* 흐름도 */}
-      <div className="p-4 overflow-x-auto">
+      {/* 게임판 경로 */}
+      <div className="p-5 bg-zinc-50 overflow-x-auto">
         {nodes.length === 0 ? (
-          <p className="text-xs text-zinc-300 italic py-2">이벤트 없음</p>
+          <p className="text-xs text-zinc-300 italic py-4 text-center">기록된 이벤트 없음</p>
         ) : (
-          <div className="flex items-start min-w-max">
+          <div className="flex items-end min-w-max gap-0">
+            {/* 진입 */}
+            <StartNode session={session} />
+            <Arrow dwell={null} />
+
+            {/* 이벤트 노드들 */}
             {nodes.map((node, i) => (
-              <FlowNode key={node.id || i} node={node} isLast={i === nodes.length - 1} />
+              <div key={node.id || i} className="flex items-end">
+                <EventNode node={node} />
+                <Arrow dwell={node.dwell_seconds} />
+              </div>
             ))}
+
+            {/* 종료 */}
+            <EndNode lastEventTime={lastEvent?.created_at} />
           </div>
         )}
       </div>
@@ -205,13 +281,12 @@ export default function VisitorDetailPage() {
   );
 
   const { identity, sessions, events } = data;
-  const totalEvents = events.length;
-  const uniquePages = [...new Set(events.filter(e => e.event_type === 'page_view').map(e => e.page_url))].length;
   const hasCta = events.some(e => e.event_type === 'cta_click');
   const hasLead = events.some(e => e.event_type === 'form_submit');
+  const uniquePages = [...new Set(events.filter(e => e.event_type === 'page_view').map(e => e.page_url))].length;
 
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-6">
+    <div className="p-6 max-w-full mx-auto space-y-6">
 
       {/* 헤더 */}
       <div className="flex items-center gap-3">
@@ -222,59 +297,61 @@ export default function VisitorDetailPage() {
           <ArrowLeft size={18} />
         </button>
         <div className="flex-1">
-          <h1 className="text-lg font-black text-zinc-900 tracking-tight">방문자 상세 여정</h1>
-          <p className="text-[11px] text-zinc-400 font-mono">{anonymousId}</p>
+          <h1 className="text-lg font-black text-zinc-900 tracking-tight">방문자 여정 상세</h1>
+          <p className="text-[11px] text-zinc-400 font-mono mt-0.5">{anonymousId}</p>
         </div>
       </div>
 
-      {/* 신원 + 요약 카드 */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        {/* 신원 */}
-        <div className={`rounded-2xl border p-4 flex items-center gap-3 col-span-1 sm:col-span-2 ${identity.is_identified ? 'bg-violet-50 border-violet-200' : 'bg-zinc-50 border-zinc-200'}`}>
+      {/* 신원 + 요약 */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className={`col-span-2 rounded-2xl border p-4 flex items-center gap-3 ${identity.is_identified ? 'bg-violet-50 border-violet-200' : 'bg-zinc-50 border-zinc-200'}`}>
           <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-sm font-black ${identity.is_identified ? 'bg-violet-100 text-violet-700' : 'bg-zinc-200 text-zinc-400'}`}>
             {identity.is_identified ? (identity.display_name[0] || '?') : <User size={16} />}
           </div>
           <div>
-            <p className={`font-black text-sm ${identity.is_identified ? 'text-violet-900' : 'text-zinc-500'}`}>{identity.display_name}</p>
-            {identity.display_phone && <p className="text-xs text-zinc-500 mt-0.5">{identity.display_phone}</p>}
-            {identity.is_identified && <span className="text-[9px] font-bold bg-violet-100 text-violet-600 px-1.5 py-0.5 rounded-full">카카오 인증</span>}
+            <p className={`font-black text-sm ${identity.is_identified ? 'text-violet-900' : 'text-zinc-600'}`}>{identity.display_name}</p>
+            {identity.display_phone && <p className="text-xs text-zinc-500">{identity.display_phone}</p>}
+            {identity.is_identified && <span className="text-[9px] font-bold bg-violet-100 text-violet-600 px-1.5 py-0.5 rounded-full mt-0.5 inline-block">카카오 인증</span>}
           </div>
         </div>
 
-        {/* 세션 수 */}
-        <div className="rounded-2xl border border-zinc-100 bg-white p-4 flex flex-col justify-between">
-          <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">총 세션</p>
-          <p className="text-2xl font-black text-zinc-900 mt-1">{sessions.length}</p>
-          <p className="text-[10px] text-zinc-300 mt-1">방문 횟수</p>
+        <div className="rounded-2xl border border-zinc-100 bg-white p-4">
+          <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">세션</p>
+          <p className="text-3xl font-black text-zinc-900 mt-1 leading-none">{sessions.length}</p>
+          <p className="text-[10px] text-zinc-300 mt-1.5">{uniquePages}개 페이지 방문</p>
         </div>
 
-        {/* 이벤트 수 */}
-        <div className="rounded-2xl border border-zinc-100 bg-white p-4 flex flex-col justify-between">
-          <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">총 이벤트</p>
-          <p className="text-2xl font-black text-zinc-900 mt-1">{totalEvents}</p>
-          <div className="flex items-center gap-2 mt-1 flex-wrap">
-            <span className="text-[9px] text-zinc-400">{uniquePages}개 페이지</span>
-            {hasCta && <span className="text-[9px] font-bold text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded-full">CTA 클릭</span>}
-            {hasLead && <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">리드 전환</span>}
+        <div className="rounded-2xl border border-zinc-100 bg-white p-4">
+          <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">전환</p>
+          <div className="flex flex-col gap-1.5 mt-2">
+            <span className={`text-[10px] font-bold px-2 py-1 rounded-lg ${hasCta ? 'bg-blue-50 text-blue-600' : 'bg-zinc-50 text-zinc-300'}`}>
+              {hasCta ? '✓' : '✗'} CTA 클릭
+            </span>
+            <span className={`text-[10px] font-bold px-2 py-1 rounded-lg ${hasLead ? 'bg-emerald-50 text-emerald-600' : 'bg-zinc-50 text-zinc-300'}`}>
+              {hasLead ? '✓' : '✗'} 리드 전환
+            </span>
           </div>
         </div>
       </div>
 
       {/* 범례 */}
-      <div className="flex items-center gap-2 flex-wrap text-[10px] text-zinc-400">
-        <span className="font-bold text-zinc-500">범례</span>
+      <div className="flex items-center gap-2 flex-wrap text-[10px]">
         {Object.entries(EVENT_META).map(([k, v]) => (
-          <span key={k} className={`flex items-center gap-1 px-2 py-0.5 rounded-lg border ${v.bg} ${v.text} ${v.border}`}>
+          <span
+            key={k}
+            className="flex items-center gap-1 px-2 py-1 rounded-lg border font-bold"
+            style={{ background: v.bg, borderColor: v.border, color: v.text }}
+          >
             <v.icon size={9} />{v.label}
           </span>
         ))}
-        <span className="flex items-center gap-1 text-zinc-400 border border-zinc-200 bg-zinc-50 px-2 py-0.5 rounded-lg">
+        <span className="flex items-center gap-1 px-2 py-1 rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-500 font-bold">
           <CornerUpLeft size={9} />뒤로가기
         </span>
-        <span className="text-zinc-300">· 화살표 위 = 체류시간</span>
+        <span className="text-zinc-300 ml-1">· 화살표 위 = 체류시간 · 종료 = 30분 무활동</span>
       </div>
 
-      {/* 세션별 흐름도 */}
+      {/* 세션 경로들 */}
       <div className="space-y-4">
         <h2 className="text-[11px] font-black text-zinc-500 uppercase tracking-widest">세션별 이동 경로</h2>
         {sessions.length === 0 ? (
