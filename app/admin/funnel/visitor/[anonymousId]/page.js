@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
   ArrowLeft, User, Globe, Smartphone, Monitor, Clock,
-  MousePointer2, Eye, FileText, CheckCircle2, Loader2,
+  MousePointer2, Eye, FileText, CheckCircle2, Loader2, CornerUpLeft,
 } from 'lucide-react';
 
 const EVENT_LABELS = {
@@ -66,9 +66,17 @@ export default function VisitorDetailPage() {
 
   const { identity, sessions, events } = data;
 
-  const filteredEvents = activeSession === 'all'
+  const rawFiltered = activeSession === 'all'
     ? events
     : events.filter(e => e.session_id === activeSession);
+
+  // 뒤로가기 감지: page_view인데 이미 방문한 URL이면 isBack = true
+  const visitedUrls = [];
+  const filteredEvents = rawFiltered.map(e => {
+    const isBack = e.event_type === 'page_view' && visitedUrls.includes(e.page_url);
+    if (e.event_type === 'page_view' && e.page_url) visitedUrls.push(e.page_url);
+    return { ...e, isBack };
+  });
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">
@@ -169,16 +177,21 @@ export default function VisitorDetailPage() {
                   return (
                     <div key={e.id || i} className="flex gap-3 relative">
                       {/* 아이콘 dot */}
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 z-10 ${meta.color}`}>
-                        <Icon size={13} />
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 z-10 ${meta.color} ${e.isBack ? 'ring-2 ring-offset-1 ring-zinc-300' : ''}`}>
+                        {e.isBack ? <CornerUpLeft size={13} /> : <Icon size={13} />}
                       </div>
 
                       {/* 내용 */}
-                      <div className="flex-1 bg-white border border-zinc-100 rounded-xl p-3 min-w-0">
+                      <div className={`flex-1 bg-white border rounded-xl p-3 min-w-0 ${e.isBack ? 'border-zinc-200 bg-zinc-50' : 'border-zinc-100'}`}>
                         <div className="flex items-center gap-2 mb-1">
                           <span className={`text-xs font-bold px-1.5 py-0.5 rounded-md ${meta.color}`}>
                             {meta.label}
                           </span>
+                          {e.isBack && (
+                            <span className="flex items-center gap-1 text-[10px] font-bold text-zinc-400 bg-zinc-100 px-1.5 py-0.5 rounded-md">
+                              <CornerUpLeft size={9} /> 뒤로가기
+                            </span>
+                          )}
                           <span className="text-xs text-zinc-400 ml-auto flex items-center gap-1">
                             <Clock size={10} />
                             {formatTime(e.created_at)}

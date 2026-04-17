@@ -1,7 +1,10 @@
+import { trackEvent } from '@/lib/tracker';
+
 export default function CTASection({ content, settings }) {
   const ctaGlobal = settings?.cta_global || {};
 
   const handleCTAClick = (btn) => {
+    trackEvent('cta_click', { cta_id: btn.label, label: btn.label, type: btn.type });
     if (btn.type === 'kakao') window.open(ctaGlobal.kakao_url || btn.url || 'https://pf.kakao.com/', '_blank');
     else if (btn.type === 'phone') window.location.href = `tel:${ctaGlobal.phone || btn.value}`;
     else if (btn.type === 'scroll') {

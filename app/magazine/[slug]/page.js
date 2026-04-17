@@ -12,6 +12,7 @@ import LeadForm from '@/components/ui/LeadForm';
 import PremiumGateModal from '@/components/ui/PremiumGateModal';
 import { useAuth } from '@/lib/useAuth';
 import { appendMagazine } from '@/lib/userTrail';
+import { trackEvent } from '@/lib/tracker';
 
 export default function MagazineDetailPage() {
   const { slug } = useParams();
@@ -65,6 +66,7 @@ export default function MagazineDetailPage() {
   useEffect(() => {
     if (post?.slug) {
       appendMagazine({ slug: post.slug, title: post.title, category: post.category });
+      trackEvent('magazine_view', { slug: post.slug, title: post.title, category: post.category });
     }
   }, [post]);
 

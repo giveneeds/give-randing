@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import MarkdownContent from '@/lib/markdownRender';
 import { appendService } from '@/lib/userTrail';
+import { trackEvent } from '@/lib/tracker';
 
 export default function ServiceDetailPage({ params }) {
   const { slug } = use(params);
@@ -35,6 +36,7 @@ export default function ServiceDetailPage({ params }) {
   useEffect(() => {
     if (service?.slug) {
       appendService({ slug: service.slug, title: service.title, category: service.category });
+      trackEvent('service_view', { slug: service.slug, title: service.title, category: service.category });
     }
   }, [service]);
 
