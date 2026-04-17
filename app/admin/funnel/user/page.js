@@ -3,25 +3,31 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import {
   Loader2, User, Smartphone, Monitor, Clock,
-  Eye, FileText, MousePointer2, CheckCircle2, CornerUpLeft,
-  ChevronRight, ArrowLeft,
+  Eye, FileText, MousePointer2, CheckCircle2,
+  ChevronDown, ArrowLeft, LogIn, LogOut,
 } from 'lucide-react';
 
-// ── 이벤트 타입 메타 ──────────────────────────────
+// ── 이벤트 메타 ───────────────────────────────────
 const EVENT_META = {
-  page_view:     { icon: Eye,           color: 'bg-zinc-100 text-zinc-500 border-zinc-200',         short: 'PV' },
-  magazine_view: { icon: FileText,      color: 'bg-violet-50 text-violet-600 border-violet-200',     short: '📖' },
-  service_view:  { icon: FileText,      color: 'bg-amber-50 text-amber-600 border-amber-200',        short: '⚙️' },
-  cta_click:     { icon: MousePointer2, color: 'bg-blue-50 text-blue-600 border-blue-200',           short: '🖱' },
-  form_submit:   { icon: CheckCircle2,  color: 'bg-emerald-50 text-emerald-700 border-emerald-200',  short: '✓' },
+  page_view:     { icon: Eye,           bg: '#f4f4f5', border: '#d4d4d8', text: '#52525b', dot: '#71717a', label: '페이지' },
+  magazine_view: { icon: FileText,      bg: '#f5f3ff', border: '#c4b5fd', text: '#7c3aed', dot: '#8b5cf6', label: '매거진' },
+  service_view:  { icon: FileText,      bg: '#fffbeb', border: '#fcd34d', text: '#b45309', dot: '#f59e0b', label: '서비스' },
+  cta_click:     { icon: MousePointer2, bg: '#eff6ff', border: '#93c5fd', text: '#1d4ed8', dot: '#3b82f6', label: 'CTA' },
+  form_submit:   { icon: CheckCircle2,  bg: '#f0fdf4', border: '#86efac', text: '#15803d', dot: '#22c55e', label: '리드' },
 };
 
-// ── 시간 포맷 ──────────────────────────────────────
+const CHANNEL_KO = {
+  direct: '직접', organic: '검색', paid_search: '광고검색',
+  paid_social: '유료SNS', email: '이메일', referral: '외부링크',
+  kakao: '카카오', organic_social: 'SNS',
+};
+
+// ── 유틸 ─────────────────────────────────────────
 function fmtDwell(secs) {
   if (!secs || secs <= 0) return null;
-  if (secs < 60) return `${secs}s`;
+  if (secs < 60) return `${secs}초`;
   const m = Math.floor(secs / 60), s = secs % 60;
-  return s > 0 ? `${m}m${s}s` : `${m}m`;
+  return s > 0 ? `${m}분${s}초` : `${m}분`;
 }
 
 function fmtAgo(iso) {
@@ -35,95 +41,210 @@ function fmtAgo(iso) {
   return new Date(iso).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
 }
 
-function shortUrl(url) {
-  if (!url) return '?';
-  // /magazine/slug → magazine/slug, /admin/funnel → admin/funnel
-  return url.replace(/^\//, '').split('?')[0] || '/';
+function fmtTime(iso) {
+  if (!iso) return '';
+  return new Date(iso).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
 }
 
-// ── 뒤로가기 감지 + 여정 노드 빌드 ───────────────
-function buildJourneyNodes(events) {
-  // page_view + magazine_view + service_view + cta_click + form_submit만 표시
+function shortUrl(url) {
+  if (!url) return '/';
+  const clean = url.replace(/^\//, '').split('?')[0];
+  if (!clean) return '/';
+  const parts = clean.split('/');
+  if (parts.length > 2) return `…/${parts[parts.length - 1]}`;
+  return `/${clean}`;
+}
+
+// ── 노드 병합 (뒤로가기/재방문 = 같은 URL 합산) ──
+function buildMergedNodes(events) {
   const relevant = events.filter(e =>
     ['page_view', 'magazine_view', 'service_view', 'cta_click', 'form_submit'].includes(e.event_type)
   );
 
-  const visitHistory = []; // 방문한 URL 순서 스택
-  const nodes = [];
-
-  for (let i = 0; i < relevant.length; i++) {
-    const e = relevant[i];
+  // dwell 계산
+  const withDwell = relevant.map((e, i) => {
     const next = relevant[i + 1];
     const dwell = next
       ? Math.round((new Date(next.created_at) - new Date(e.created_at)) / 1000)
       : null;
+    return { ...e, dwell_seconds: dwell };
+  });
 
-    // 뒤로가기 감지: page_view인데 이전에 방문한 URL이면 back
-    const isBack = e.event_type === 'page_view' && visitHistory.includes(e.page_url);
+  // URL + event_type 기준으로 합산 (순서 유지, 첫 등장 기준)
+  const seen = new Map(); // key → index in result
+  const merged = [];
 
-    if (e.event_type === 'page_view') {
-      visitHistory.push(e.page_url);
+  for (const e of withDwell) {
+    const key = `${e.event_type}::${e.page_url || ''}`;
+    if (seen.has(key)) {
+      const idx = seen.get(key);
+      merged[idx].visit_count = (merged[idx].visit_count || 1) + 1;
+      merged[idx].total_dwell = (merged[idx].total_dwell || 0) + (e.dwell_seconds || 0);
+    } else {
+      seen.set(key, merged.length);
+      merged.push({ ...e, visit_count: 1, total_dwell: e.dwell_seconds || 0 });
     }
-
-    nodes.push({ ...e, dwell_seconds: dwell, isBack });
   }
-  return nodes;
+  return merged;
 }
 
-// ── 여정 흐름 컴포넌트 ──────────────────────────
-function JourneyFlow({ nodes, compact = false }) {
-  if (!nodes.length) {
-    return <span className="text-xs text-zinc-300 italic">이벤트 없음</span>;
+// ── 체류 상위 페이지 (세션 헤더용) ───────────────
+function topDwellPages(events, limit = 3) {
+  const relevant = events.filter(e =>
+    ['page_view', 'magazine_view', 'service_view'].includes(e.event_type)
+  );
+  const withDwell = relevant.map((e, i) => {
+    const next = relevant[i + 1];
+    const dwell = next
+      ? Math.round((new Date(next.created_at) - new Date(e.created_at)) / 1000)
+      : 0;
+    return { url: e.page_url, dwell };
+  });
+
+  const map = {};
+  for (const { url, dwell } of withDwell) {
+    if (!url) continue;
+    map[url] = (map[url] || 0) + dwell;
   }
+  return Object.entries(map)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit)
+    .map(([url, secs], i) => ({ rank: i + 1, url, secs }));
+}
+
+// ── 흐름 노드 컴포넌트 ───────────────────────────
+function FlowNode({ node, isLast }) {
+  const meta = EVENT_META[node.event_type] || EVENT_META.page_view;
+  const Icon = meta.icon;
+  const dwell = node.total_dwell;
 
   return (
-    <div className="flex items-start flex-wrap gap-0">
-      {nodes.map((node, i) => {
-        const meta = EVENT_META[node.event_type] || EVENT_META.page_view;
-        const Icon = meta.icon;
+    <div className="flex items-center flex-shrink-0">
+      {/* 노드 카드 */}
+      <div
+        className="flex flex-col items-center gap-1 px-3 py-2.5 rounded-xl border-2 w-[110px] select-none"
+        style={{ background: meta.bg, borderColor: meta.border }}
+      >
+        {/* 아이콘 + 라벨 */}
+        <div className="flex items-center gap-1">
+          <div className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0" style={{ background: meta.dot }}>
+            <Icon size={10} className="text-white" />
+          </div>
+          <span className="text-[9px] font-bold" style={{ color: meta.text }}>{meta.label}</span>
+          {node.visit_count > 1 && (
+            <span className="text-[8px] font-black bg-zinc-700 text-white px-1 rounded-full leading-tight">×{node.visit_count}</span>
+          )}
+        </div>
+        {/* URL */}
+        <span
+          className="text-[10px] font-bold text-center leading-tight w-full truncate px-0.5"
+          style={{ color: meta.text }}
+          title={node.page_url || ''}
+        >
+          {shortUrl(node.page_url || node.event_type)}
+        </span>
+        {/* 체류시간 — 노드 안에 */}
+        {dwell > 0 && (
+          <div className="flex items-center gap-0.5 mt-0.5">
+            <Clock size={8} style={{ color: meta.text, opacity: 0.5 }} />
+            <span className="text-[9px] font-bold" style={{ color: meta.text, opacity: 0.7 }}>
+              {fmtDwell(dwell)}
+            </span>
+          </div>
+        )}
+      </div>
 
-        return (
-          <div key={i} className="flex items-center">
-            {/* 뒤로가기 화살표 */}
-            {node.isBack && (
-              <div className="flex items-center text-zinc-300 mx-0.5" title="뒤로가기">
-                <CornerUpLeft size={10} className="text-zinc-400" />
+      {/* 화살표 */}
+      {!isLast && (
+        <div className="flex items-center mx-1 flex-shrink-0">
+          <div className="h-0.5 w-4 bg-zinc-800" />
+          <div
+            className="border-t-[4px] border-b-[4px] border-l-[6px]"
+            style={{ borderColor: 'transparent transparent transparent #18181b' }}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── 세션 흐름 카드 ───────────────────────────────
+function SessionFlow({ session, events, index, total }) {
+  const nodes = buildMergedNodes(events);
+  const top = topDwellPages(events, 3);
+  const channel = CHANNEL_KO[session.channel_group] || '직접';
+
+  return (
+    <div className="rounded-xl border border-zinc-200 overflow-hidden">
+      {/* 헤더 */}
+      <div className="bg-zinc-900 px-4 py-2.5 flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-2">
+          <div className="w-5 h-5 rounded-md bg-white/10 flex items-center justify-center text-[10px] font-black text-white">{total - index}</div>
+          <span className="text-xs font-black text-white">세션 {total - index}</span>
+          <span className="text-[10px] text-zinc-400">{fmtTime(session.session_start)}</span>
+          <span className="text-[10px] text-zinc-500">·</span>
+          <span className="text-[10px] text-zinc-400">{channel}</span>
+          {session.device_type === 'mobile' ? <Smartphone size={10} className="text-zinc-500" /> : <Monitor size={10} className="text-zinc-500" />}
+        </div>
+
+        {/* 체류 순위 */}
+        {top.length > 0 && (
+          <div className="ml-auto flex items-center gap-1.5 flex-wrap">
+            <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">체류 순위</span>
+            {top.map(p => (
+              <div key={p.url} className="flex items-center gap-1 bg-white/8 border border-white/10 rounded-lg px-2 py-0.5">
+                <span className="text-[9px] font-black text-zinc-400">{p.rank}위</span>
+                <span className="text-[9px] font-mono text-zinc-300 truncate max-w-[80px]">{shortUrl(p.url)}</span>
+                <span className="text-[9px] text-zinc-500">{fmtDwell(p.secs)}</span>
               </div>
-            )}
+            ))}
+          </div>
+        )}
+      </div>
 
-            {/* 노드 */}
-            <div className={`relative flex flex-col items-center ${compact ? '' : 'group'}`}>
-              <div
-                className={`
-                  flex items-center gap-1 px-2 py-1 rounded-lg border text-[10px] font-bold
-                  whitespace-nowrap max-w-[120px] overflow-hidden
-                  ${meta.color}
-                  ${node.isBack ? 'opacity-60 ring-1 ring-zinc-300' : ''}
-                  ${compact ? '' : 'cursor-default'}
-                `}
-                title={`${node.event_type} · ${node.page_url || ''}`}
-              >
-                <Icon size={9} className="flex-shrink-0" />
-                <span className="truncate">{shortUrl(node.page_url || node.event_type)}</span>
-                {node.isBack && <CornerUpLeft size={8} className="ml-0.5 flex-shrink-0 opacity-60" />}
+      {/* 경로 */}
+      <div className="p-4 bg-zinc-50 overflow-x-auto">
+        {nodes.length === 0 ? (
+          <p className="text-xs text-zinc-300 italic text-center py-2">이벤트 없음</p>
+        ) : (
+          <div className="flex items-center min-w-max gap-0">
+            {/* 진입 */}
+            <div className="flex items-center flex-shrink-0">
+              <div className="flex flex-col items-center gap-1 px-3 py-2.5 rounded-xl border-2 border-emerald-400 bg-emerald-50 w-[90px]">
+                <div className="w-5 h-5 rounded-md bg-emerald-500 flex items-center justify-center">
+                  <LogIn size={10} className="text-white" />
+                </div>
+                <span className="text-[9px] font-black text-emerald-700">진입</span>
+                <span className="text-[9px] font-mono text-emerald-600 truncate w-full text-center">{shortUrl(session.landing_url || '/')}</span>
               </div>
-
-              {/* 체류시간 */}
-              {node.dwell_seconds !== null && node.dwell_seconds !== undefined && node.dwell_seconds > 0 && (
-                <span className="text-[9px] text-zinc-300 mt-0.5 flex items-center gap-0.5">
-                  <Clock size={7} />
-                  {fmtDwell(node.dwell_seconds)}
-                </span>
-              )}
+              <div className="flex items-center mx-1">
+                <div className="h-0.5 w-4 bg-zinc-800" />
+                <div className="border-t-[4px] border-b-[4px] border-l-[6px]" style={{ borderColor: 'transparent transparent transparent #18181b' }} />
+              </div>
             </div>
 
-            {/* 화살표 (마지막 제외) */}
-            {i < nodes.length - 1 && (
-              <ChevronRight size={11} className="text-zinc-200 mx-0.5 flex-shrink-0 mt-[-8px]" />
-            )}
+            {/* 이벤트 노드들 */}
+            {nodes.map((node, i) => (
+              <FlowNode key={node.id || i} node={node} isLast={i === nodes.length - 1} />
+            ))}
+
+            {/* 종료 */}
+            <div className="flex items-center flex-shrink-0">
+              <div className="flex items-center mx-1">
+                <div className="h-0.5 w-4 bg-zinc-300" />
+                <div className="border-t-[4px] border-b-[4px] border-l-[6px]" style={{ borderColor: 'transparent transparent transparent #d4d4d8' }} />
+              </div>
+              <div className="flex flex-col items-center gap-1 px-3 py-2.5 rounded-xl border-2 border-zinc-300 bg-white w-[80px]">
+                <div className="w-5 h-5 rounded-md bg-zinc-400 flex items-center justify-center">
+                  <LogOut size={10} className="text-white" />
+                </div>
+                <span className="text-[9px] font-black text-zinc-400">종료</span>
+                <span className="text-[9px] text-zinc-300 text-center leading-tight">30분<br/>무활동</span>
+              </div>
+            </div>
           </div>
-        );
-      })}
+        )}
+      </div>
     </div>
   );
 }
@@ -143,27 +264,23 @@ function VisitorCard({ visitor, expanded, onToggle }) {
       .finally(() => setLoading(false));
   }, [expanded, visitor.anonymous_id, detail]);
 
-  // 세션별 노드 그룹핑
   const sessionGroups = detail
     ? (detail.sessions || []).map(s => ({
         session: s,
-        nodes: buildJourneyNodes((detail.events || []).filter(e => e.session_id === s.id)),
+        events: (detail.events || []).filter(e => e.session_id === s.id),
       }))
     : [];
 
   return (
-    <div className={`border rounded-2xl overflow-hidden transition-all ${expanded ? 'border-zinc-300 shadow-md' : 'border-zinc-100 hover:border-zinc-200'}`}>
-      {/* 헤더 행 */}
-      <button
-        onClick={onToggle}
-        className="w-full text-left p-4 flex items-center gap-3 hover:bg-zinc-50 transition-colors"
-      >
+    <div className={`border rounded-2xl overflow-hidden transition-all ${expanded ? 'border-zinc-300 shadow-md' : 'border-zinc-100 hover:border-zinc-200 hover:shadow-sm'}`}>
+      {/* 방문자 행 */}
+      <button onClick={onToggle} className="w-full text-left px-5 py-4 flex items-center gap-4 hover:bg-zinc-50/50 transition-colors">
         {/* 아바타 */}
         <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-black ${visitor.is_identified ? 'bg-violet-100 text-violet-700' : 'bg-zinc-100 text-zinc-400'}`}>
-          {visitor.is_identified ? (visitor.display_name[0] || '?') : <User size={14} />}
+          {visitor.is_identified ? (visitor.display_name?.[0] || '?') : <User size={14} />}
         </div>
 
-        {/* 이름 + 서브정보 */}
+        {/* 이름 */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span className={`text-sm font-black truncate ${visitor.is_identified ? 'text-zinc-900' : 'text-zinc-400'}`}>
@@ -175,80 +292,51 @@ function VisitorCard({ visitor, expanded, onToggle }) {
           </div>
           <div className="flex items-center gap-2 mt-0.5 text-[10px] text-zinc-400">
             {visitor.device_type === 'mobile' ? <Smartphone size={9} /> : <Monitor size={9} />}
-            <span>{visitor.channel_group || 'direct'}</span>
-            <span>·</span>
+            <span>{CHANNEL_KO[visitor.channel_group] || '직접'}</span>
+            <span className="text-zinc-200">·</span>
             <span>{visitor.session_count}세션</span>
-            <span>·</span>
+            <span className="text-zinc-200">·</span>
             <span>{visitor.event_count || 0}이벤트</span>
           </div>
         </div>
 
-        {/* 미니 여정 미리보기 (접혀 있을 때) */}
-        {!expanded && visitor.recent_pages && (
-          <div className="hidden sm:flex items-center gap-1 flex-shrink-0 max-w-[260px] overflow-hidden">
-            {(visitor.recent_pages || []).slice(0, 4).map((p, i) => (
-              <span key={i} className="text-[9px] text-zinc-400 font-mono bg-zinc-50 px-1.5 py-0.5 rounded truncate max-w-[60px]">
-                {shortUrl(p)}
-              </span>
-            ))}
-            {(visitor.recent_pages || []).length > 4 && (
-              <span className="text-[9px] text-zinc-300">+{visitor.recent_pages.length - 4}</span>
-            )}
-          </div>
-        )}
-
+        {/* 마지막 방문 */}
         <div className="flex items-center gap-2 flex-shrink-0">
           <span className="text-[10px] text-zinc-300">{fmtAgo(visitor.last_seen)}</span>
-          <ChevronRight size={14} className={`text-zinc-300 transition-transform ${expanded ? 'rotate-90' : ''}`} />
+          <ChevronDown size={14} className={`text-zinc-300 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`} />
         </div>
       </button>
 
-      {/* 펼쳐진 여정 */}
+      {/* 펼친 세션들 */}
       {expanded && (
-        <div className="border-t border-zinc-100 bg-zinc-50/50">
+        <div className="border-t border-zinc-100 bg-zinc-50/30 p-4 space-y-3">
           {loading ? (
-            <div className="flex items-center justify-center gap-2 p-6 text-zinc-400">
+            <div className="flex items-center justify-center gap-2 py-6 text-zinc-400">
               <Loader2 size={14} className="animate-spin" />
               <span className="text-xs">여정 불러오는 중…</span>
             </div>
           ) : sessionGroups.length === 0 ? (
-            <div className="p-6 text-center text-xs text-zinc-300">이벤트 없음</div>
+            <p className="text-center text-xs text-zinc-300 py-4">이벤트 없음</p>
           ) : (
-            <div className="p-4 space-y-4">
+            <>
               {sessionGroups.map((sg, si) => (
-                <div key={sg.session.id || si}>
-                  {/* 세션 헤더 */}
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
-                      세션 {sessionGroups.length - si}
-                    </span>
-                    <span className="text-[10px] text-zinc-300">
-                      {new Date(sg.session.session_start).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                    <span className="text-[10px] text-zinc-300">·</span>
-                    <span className="text-[10px] text-zinc-300">{sg.session.channel_group || 'direct'}</span>
-                    {sg.session.device_type === 'mobile' ? <Smartphone size={9} className="text-zinc-300" /> : <Monitor size={9} className="text-zinc-300" />}
-                  </div>
-
-                  {/* 여정 흐름 */}
-                  {sg.nodes.length > 0 ? (
-                    <JourneyFlow nodes={sg.nodes} />
-                  ) : (
-                    <span className="text-[10px] text-zinc-300 italic">이벤트 없음</span>
-                  )}
-                </div>
+                <SessionFlow
+                  key={sg.session.id || si}
+                  session={sg.session}
+                  events={sg.events}
+                  index={si}
+                  total={sessionGroups.length}
+                />
               ))}
-
-              {/* 상세 페이지 링크 */}
-              <div className="pt-2 border-t border-zinc-100">
+              <div className="pt-1">
                 <Link
                   href={`/admin/funnel/visitor/${encodeURIComponent(visitor.anonymous_id)}`}
                   className="text-[10px] font-bold text-zinc-400 hover:text-zinc-700 transition-colors"
                 >
-                  전체 여정 상세 보기 →
+                  상세 여정 전체 보기 →
                 </Link>
               </div>
-            </div>
+            </>
           )}
         </div>
       )}
@@ -256,7 +344,7 @@ function VisitorCard({ visitor, expanded, onToggle }) {
   );
 }
 
-// ── 메인 페이지 ──────────────────────────────────
+// ── 메인 ─────────────────────────────────────────
 export default function FunnelUserPage() {
   const [visitors, setVisitors] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -271,9 +359,7 @@ export default function FunnelUserPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const toggle = useCallback((id) => {
-    setExpanded(prev => prev === id ? null : id);
-  }, []);
+  const toggle = useCallback((id) => setExpanded(prev => prev === id ? null : id), []);
 
   const filtered = visitors.filter(v =>
     !search ||
@@ -282,7 +368,7 @@ export default function FunnelUserPage() {
   );
 
   return (
-    <div className="p-6 max-w-4xl mx-auto space-y-6">
+    <div className="p-6 max-w-5xl mx-auto space-y-5">
       {/* 헤더 */}
       <div className="flex items-center gap-3">
         <Link href="/admin/funnel" className="p-1.5 rounded-lg hover:bg-zinc-100 text-zinc-400 hover:text-zinc-700 transition">
@@ -290,33 +376,28 @@ export default function FunnelUserPage() {
         </Link>
         <div>
           <h1 className="text-xl font-black text-zinc-900 tracking-tight">방문자 여정</h1>
-          <p className="text-xs text-zinc-400 mt-0.5">각 방문자가 어떤 페이지를 어떤 순서로 이동했는지 확인합니다. ↩ 는 뒤로가기입니다.</p>
+          <p className="text-xs text-zinc-400 mt-0.5">재방문 페이지는 합산 표시 · 화살표 색 = 검정</p>
         </div>
       </div>
 
       {/* 검색 */}
       <input
         type="text"
-        placeholder="이름 또는 ID로 검색…"
+        placeholder="이름 또는 ID 검색…"
         value={search}
         onChange={e => setSearch(e.target.value)}
-        className="w-full border border-zinc-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900/10"
+        className="w-full border border-zinc-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900/10 bg-white"
       />
 
       {/* 범례 */}
-      <div className="flex items-center gap-3 flex-wrap text-[10px] text-zinc-400">
-        <span className="font-bold">범례:</span>
+      <div className="flex items-center gap-2 flex-wrap text-[10px]">
         {Object.entries(EVENT_META).map(([k, v]) => (
-          <span key={k} className={`flex items-center gap-1 px-1.5 py-0.5 rounded border ${v.color}`}>
-            <v.icon size={9} />
-            {k === 'page_view' ? '페이지' : k === 'magazine_view' ? '매거진' : k === 'service_view' ? '서비스' : k === 'cta_click' ? 'CTA' : '리드'}
+          <span key={k} className="flex items-center gap-1 px-2 py-1 rounded-lg border font-bold"
+            style={{ background: v.bg, borderColor: v.border, color: v.text }}>
+            <v.icon size={9} />{v.label}
           </span>
         ))}
-        <span className="flex items-center gap-1 text-zinc-400">
-          <CornerUpLeft size={9} />
-          뒤로가기
-        </span>
-        <span className="text-zinc-300">· 노드 사이 숫자 = 체류시간</span>
+        <span className="text-zinc-300 ml-1">· 노드 안 숫자 = 체류시간 · ×2 = 재방문 횟수</span>
       </div>
 
       {/* 목록 */}
@@ -327,13 +408,11 @@ export default function FunnelUserPage() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-16 text-zinc-400 text-sm">
-          {search ? '검색 결과 없음' : '아직 방문자 데이터가 없습니다'}
+          {search ? '검색 결과 없음' : '방문자 데이터가 없습니다'}
         </div>
       ) : (
         <div className="space-y-2">
-          <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest">
-            {filtered.length}명
-          </p>
+          <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest">{filtered.length}명</p>
           {filtered.map(v => (
             <VisitorCard
               key={v.anonymous_id}

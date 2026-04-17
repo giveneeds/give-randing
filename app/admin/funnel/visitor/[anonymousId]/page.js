@@ -4,7 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import {
   ArrowLeft, User, Smartphone, Monitor,
   MousePointer2, Eye, FileText, CheckCircle2, Loader2,
-  CornerUpLeft, LogIn, LogOut, Clock,
+  LogIn, LogOut, Clock,
 } from 'lucide-react';
 
 // ── 이벤트 메타 ───────────────────────────────────
@@ -57,21 +57,52 @@ function fmtAgo(iso) {
   return new Date(iso).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
 }
 
-// ── 뒤로가기 감지 ────────────────────────────────
+// ── 재방문 합산 노드 빌드 ─────────────────────────
 function buildNodes(events) {
   const relevant = events.filter(e =>
     ['page_view', 'magazine_view', 'service_view', 'cta_click', 'form_submit'].includes(e.event_type)
   );
-  const visited = [];
-  return relevant.map((e, i) => {
+  const withDwell = relevant.map((e, i) => {
     const next = relevant[i + 1];
     const dwell = next
       ? Math.round((new Date(next.created_at) - new Date(e.created_at)) / 1000)
-      : null;
-    const isBack = e.event_type === 'page_view' && visited.includes(e.page_url);
-    if (e.event_type === 'page_view' && e.page_url) visited.push(e.page_url);
-    return { ...e, dwell_seconds: dwell, isBack };
+      : 0;
+    return { ...e, dwell_seconds: dwell };
   });
+
+  // 같은 URL+type은 합산 (첫 등장 순서 유지)
+  const seen = new Map();
+  const merged = [];
+  for (const e of withDwell) {
+    const key = `${e.event_type}::${e.page_url || ''}`;
+    if (seen.has(key)) {
+      const idx = seen.get(key);
+      merged[idx].visit_count = (merged[idx].visit_count || 1) + 1;
+      merged[idx].total_dwell = (merged[idx].total_dwell || 0) + e.dwell_seconds;
+    } else {
+      seen.set(key, merged.length);
+      merged.push({ ...e, visit_count: 1, total_dwell: e.dwell_seconds });
+    }
+  }
+  return merged;
+}
+
+// ── 체류 상위 페이지 ──────────────────────────────
+function topDwellPages(events, limit = 3) {
+  const relevant = events.filter(e =>
+    ['page_view', 'magazine_view', 'service_view'].includes(e.event_type)
+  );
+  const withDwell = relevant.map((e, i) => {
+    const next = relevant[i + 1];
+    return { url: e.page_url, dwell: next ? Math.round((new Date(next.created_at) - new Date(e.created_at)) / 1000) : 0 };
+  });
+  const map = {};
+  for (const { url, dwell } of withDwell) {
+    if (!url) continue;
+    map[url] = (map[url] || 0) + dwell;
+  }
+  return Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, limit)
+    .map(([url, secs], i) => ({ rank: i + 1, url, secs }));
 }
 
 // ── 진입 노드 ─────────────────────────────────────
@@ -105,51 +136,46 @@ function StartNode({ session }) {
 // ── 이벤트 노드 ───────────────────────────────────
 function EventNode({ node }) {
   const meta = EVENT_META[node.event_type] || EVENT_META.page_view;
-  const Icon = node.isBack ? CornerUpLeft : meta.icon;
+  const Icon = meta.icon;
+  const dwell = node.total_dwell;
 
   return (
     <div className="flex flex-col items-center flex-shrink-0">
-      <div className="relative">
-        {/* 뒤로가기 배지 */}
-        {node.isBack && (
-          <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 z-10 flex items-center gap-0.5 bg-zinc-700 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full whitespace-nowrap shadow">
-            <CornerUpLeft size={7} /> 뒤로
-          </div>
-        )}
-
-        <div
-          className="flex flex-col items-center gap-1.5 px-3 py-3 rounded-2xl border-2 w-[120px] transition-shadow hover:shadow-md"
-          style={{
-            background: meta.bg,
-            borderColor: node.isBack ? '#d4d4d8' : meta.border,
-            opacity: node.isBack ? 0.75 : 1,
-          }}
-        >
-          <div
-            className="w-7 h-7 rounded-lg flex items-center justify-center shadow-sm"
-            style={{ background: meta.dot }}
-          >
+      <div
+        className="flex flex-col items-center gap-1.5 px-3 py-3 rounded-2xl border-2 w-[120px] transition-shadow hover:shadow-md"
+        style={{ background: meta.bg, borderColor: meta.border }}
+      >
+        {/* 아이콘 + 방문횟수 */}
+        <div className="flex items-center gap-1.5">
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center shadow-sm" style={{ background: meta.dot }}>
             <Icon size={13} className="text-white" />
           </div>
-          <span
-            className="text-[10px] font-bold text-center leading-tight truncate max-w-full px-1"
-            style={{ color: meta.text }}
-            title={node.page_url || ''}
-          >
-            {shortUrl(node.page_url || node.event_type)}
-          </span>
-          <span
-            className="text-[8px] font-bold px-1.5 py-0.5 rounded-full"
-            style={{ background: meta.border + '60', color: meta.text }}
-          >
-            {meta.label}
-          </span>
-          {node.event_type === 'cta_click' && node.event_data?.label && (
-            <span className="text-[8px] text-blue-500 truncate max-w-full px-1 text-center">
-              &ldquo;{node.event_data.label}&rdquo;
-            </span>
+          {node.visit_count > 1 && (
+            <span className="text-[8px] font-black bg-zinc-700 text-white px-1.5 py-0.5 rounded-full">×{node.visit_count}</span>
           )}
         </div>
+        {/* URL */}
+        <span className="text-[10px] font-bold text-center leading-tight truncate max-w-full px-1"
+          style={{ color: meta.text }} title={node.page_url || ''}>
+          {shortUrl(node.page_url || node.event_type)}
+        </span>
+        {/* 타입 라벨 */}
+        <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full"
+          style={{ background: meta.border + '60', color: meta.text }}>
+          {meta.label}
+        </span>
+        {/* 체류시간 — 노드 안에 */}
+        {dwell > 0 && (
+          <div className="flex items-center gap-0.5" style={{ color: meta.text }}>
+            <Clock size={8} style={{ opacity: 0.5 }} />
+            <span className="text-[9px] font-bold opacity-70">{fmtDwell(dwell)}</span>
+          </div>
+        )}
+        {node.event_type === 'cta_click' && node.event_data?.label && (
+          <span className="text-[8px] text-blue-500 truncate max-w-full px-1 text-center">
+            &ldquo;{node.event_data.label}&rdquo;
+          </span>
+        )}
       </div>
       <span className="text-[9px] text-zinc-300 mt-1.5">{fmtTime(node.created_at)}</span>
     </div>
@@ -178,21 +204,14 @@ function EndNode({ lastEventTime }) {
 }
 
 // ── 화살표 연결 ───────────────────────────────────
-function Arrow({ dwell }) {
+function Arrow() {
   return (
-    <div className="flex flex-col items-center justify-center flex-shrink-0 mx-1 mt-[-18px]">
-      {dwell && dwell > 0 && (
-        <div className="flex items-center gap-0.5 bg-zinc-800 text-white text-[9px] font-black px-2 py-0.5 rounded-full mb-1 shadow">
-          <Clock size={8} />{fmtDwell(dwell)}
-        </div>
-      )}
-      <div className="flex items-center gap-0">
-        <div className="h-0.5 w-6 bg-zinc-300" />
-        <div
-          className="border-t-[5px] border-b-[5px] border-l-[8px]"
-          style={{ borderColor: 'transparent transparent transparent #a1a1aa' }}
-        />
-      </div>
+    <div className="flex items-center flex-shrink-0 mx-1 self-center mt-[-10px]">
+      <div className="h-0.5 w-5 bg-zinc-800" />
+      <div
+        className="border-t-[4px] border-b-[4px] border-l-[6px]"
+        style={{ borderColor: 'transparent transparent transparent #18181b' }}
+      />
     </div>
   );
 }
@@ -200,26 +219,37 @@ function Arrow({ dwell }) {
 // ── 세션 행 ───────────────────────────────────────
 function SessionRow({ session, events, index, total }) {
   const nodes = buildNodes(events);
+  const top = topDwellPages(events, 3);
   const lastEvent = events[events.length - 1];
 
   return (
     <div className="rounded-2xl overflow-hidden border border-zinc-200 shadow-sm">
       {/* 세션 헤더 바 */}
-      <div className="flex items-center gap-3 px-5 py-3 bg-zinc-900">
-        <div className="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center text-xs font-black text-white">
+      <div className="flex items-center gap-3 px-5 py-3 bg-zinc-900 flex-wrap">
+        <div className="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center text-xs font-black text-white flex-shrink-0">
           {total - index}
         </div>
         <span className="text-sm font-black text-white tracking-tight">세션 {total - index}</span>
         <span className="text-[10px] text-zinc-400">{fmtAgo(session.session_start)}</span>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="flex items-center gap-2">
           {session.device_type === 'mobile'
-            ? <Smartphone size={12} className="text-zinc-400" />
-            : <Monitor size={12} className="text-zinc-400" />}
-          <span className="text-[10px] text-zinc-400">
-            {CHANNEL_KO[session.channel_group] || '직접 방문'}
-          </span>
-          <span className="text-[10px] text-zinc-500">{nodes.length}개 이벤트</span>
+            ? <Smartphone size={11} className="text-zinc-500" />
+            : <Monitor size={11} className="text-zinc-500" />}
+          <span className="text-[10px] text-zinc-500">{CHANNEL_KO[session.channel_group] || '직접'}</span>
         </div>
+        {/* 체류 순위 */}
+        {top.length > 0 && (
+          <div className="ml-auto flex items-center gap-1.5 flex-wrap">
+            <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">체류 순위</span>
+            {top.map(p => (
+              <div key={p.url} className="flex items-center gap-1 border border-white/10 rounded-lg px-2 py-0.5 bg-white/5">
+                <span className="text-[9px] font-black text-zinc-400">{p.rank}위</span>
+                <span className="text-[9px] font-mono text-zinc-300 truncate max-w-[90px]">{shortUrl(p.url)}</span>
+                <span className="text-[9px] text-zinc-500">{fmtDwell(p.secs)}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* 게임판 경로 */}
@@ -230,13 +260,13 @@ function SessionRow({ session, events, index, total }) {
           <div className="flex items-end min-w-max gap-0">
             {/* 진입 */}
             <StartNode session={session} />
-            <Arrow dwell={null} />
+            <Arrow />
 
             {/* 이벤트 노드들 */}
             {nodes.map((node, i) => (
               <div key={node.id || i} className="flex items-end">
                 <EventNode node={node} />
-                <Arrow dwell={node.dwell_seconds} />
+                <Arrow />
               </div>
             ))}
 
