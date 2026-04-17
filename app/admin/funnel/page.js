@@ -1,9 +1,11 @@
 'use client';
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import {
   BarChart2, Users, BookOpen, MousePointer2, CheckCircle2,
   Loader2, AlertCircle, HelpCircle, Globe, Smartphone, Monitor,
-  ChevronDown, ChevronUp, User, Phone, Tag, Calendar, Link as LinkIcon
+  ChevronDown, ChevronUp, User, Phone, Tag, Calendar, Link as LinkIcon,
+  ExternalLink,
 } from 'lucide-react';
 
 const STEP_KEYS = ['sessions', 'content', 'cta', 'leads'];
@@ -103,14 +105,15 @@ function SessionsTable({ rows }) {
           {rows.map(r => (
             <tr key={r.id} className="hover:bg-zinc-50 transition-colors">
               <td className="px-4 py-3">
-                <div className="flex items-center gap-2">
+                <Link href={`/admin/funnel/visitor/${encodeURIComponent(r.anonymous_id)}`} className="flex items-center gap-2 group">
                   <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-black ${r.is_identified ? 'bg-violet-100 text-violet-700' : 'bg-zinc-100 text-zinc-400'}`}>
                     {r.is_identified ? (r.display_name || '?')[0] : '?'}
                   </div>
-                  <span className={`text-xs font-bold ${r.is_identified ? 'text-zinc-900' : 'text-zinc-400'}`}>
+                  <span className={`text-xs font-bold group-hover:underline ${r.is_identified ? 'text-zinc-900' : 'text-zinc-400'}`}>
                     {r.display_name}
                   </span>
-                </div>
+                  <ExternalLink size={10} className="text-zinc-300 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </Link>
               </td>
               <td className="px-4 py-3 text-xs text-zinc-500">{r.display_phone || '-'}</td>
               <td className="px-4 py-3">

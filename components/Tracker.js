@@ -1,6 +1,6 @@
 'use client';
-import { useEffect, useRef } from 'react';
-import { usePathname } from 'next/navigation';
+import { useEffect, useRef, Suspense } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
 import {
   getAnonymousId,
   isNewSession,
@@ -8,6 +8,7 @@ import {
   trackEvent,
   captureUtm,
   touchSession,
+  getSessionId,
 } from '@/lib/tracker';
 import { supabase } from '@/lib/supabase';
 
@@ -29,8 +30,23 @@ async function getKakaoMeta() {
   }
 }
 
-export default function Tracker() {
+// 현재 세션에 카카오 신원 정보를 소급 업데이트
+async function patchSessionIdentity(sessionId, kakaoMeta) {
+  if (!sessionId || !kakaoMeta.kakao_name) return;
+  try {
+    await fetch(`/api/events/session/${sessionId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(kakaoMeta),
+    });
+  } catch {
+    // silent
+  }
+}
+
+function TrackerInner() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const initialized = useRef(false);
   const prevPath = useRef(null);
 
@@ -42,10 +58,17 @@ export default function Tracker() {
       getAnonymousId();
       captureUtm();
       if (isNewSession()) {
+        // 중복 세션 방지: async 호출 전에 먼저 touchSession()
+        touchSession();
         const kakaoMeta = await getKakaoMeta();
         await startSession(kakaoMeta);
       } else {
         touchSession();
+        // 이미 로그인된 상태라면 기존 세션에 신원 소급 패치
+        const sessionId = getSessionId();
+        if (sessionId) {
+          getKakaoMeta().then(meta => patchSessionIdentity(sessionId, meta));
+        }
       }
       trackEvent('page_view', {
         url: window.location.pathname,
@@ -61,7 +84,11 @@ export default function Tracker() {
     if (pathname === prevPath.current) return;
     prevPath.current = pathname;
 
-    if (isNewSession()) {
+    // welcome=1 파라미터 = 카카오 로그인 직후 리다이렉트 → 신규 세션 강제
+    const isWelcome = searchParams?.get('welcome') === '1';
+
+    if (isNewSession() || isWelcome) {
+      touchSession(); // 중복 세션 방지
       getKakaoMeta().then(kakaoMeta =>
         startSession(kakaoMeta).then(() => {
           trackEvent('page_view', { url: pathname, title: document.title });
@@ -71,7 +98,15 @@ export default function Tracker() {
       touchSession();
       trackEvent('page_view', { url: pathname, title: document.title });
     }
-  }, [pathname]);
+  }, [pathname, searchParams]);
 
   return null;
+}
+
+export default function Tracker() {
+  return (
+    <Suspense fallback={null}>
+      <TrackerInner />
+    </Suspense>
+  );
 }
