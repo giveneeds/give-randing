@@ -154,11 +154,23 @@ function EventNode({ node }) {
             <span className="text-[8px] font-black bg-zinc-700 text-white px-1.5 py-0.5 rounded-full">×{node.visit_count}</span>
           )}
         </div>
-        {/* URL */}
-        <span className="text-[10px] font-bold text-center leading-tight truncate max-w-full px-1"
-          style={{ color: meta.text }} title={node.page_url || ''}>
-          {shortUrl(node.page_url || node.event_type)}
-        </span>
+        {/* URL — 클릭 시 실제 페이지 열기 */}
+        {node.page_url ? (
+          <a
+            href={node.page_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[10px] font-bold text-center leading-tight truncate max-w-full px-1 hover:underline"
+            style={{ color: meta.text }}
+            title={node.page_url}
+          >
+            {shortUrl(node.page_url)}
+          </a>
+        ) : (
+          <span className="text-[10px] font-bold text-center leading-tight truncate max-w-full px-1" style={{ color: meta.text }}>
+            {node.event_type}
+          </span>
+        )}
         {/* 타입 라벨 */}
         <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full"
           style={{ background: meta.border + '60', color: meta.text }}>

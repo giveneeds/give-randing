@@ -4,7 +4,7 @@ import Link from 'next/link';
 import {
   Loader2, User, Smartphone, Monitor, Clock,
   Eye, FileText, MousePointer2, CheckCircle2,
-  ChevronDown, ArrowLeft, LogIn, LogOut,
+  ChevronDown, ArrowLeft, LogIn, LogOut, Maximize2,
 } from 'lucide-react';
 
 // ── 이벤트 메타 ───────────────────────────────────
@@ -135,14 +135,24 @@ function FlowNode({ node, isLast }) {
             <span className="text-[8px] font-black bg-zinc-700 text-white px-1 rounded-full leading-tight">×{node.visit_count}</span>
           )}
         </div>
-        {/* URL */}
-        <span
-          className="text-[10px] font-bold text-center leading-tight w-full truncate px-0.5"
-          style={{ color: meta.text }}
-          title={node.page_url || ''}
-        >
-          {shortUrl(node.page_url || node.event_type)}
-        </span>
+        {/* URL — 클릭 시 실제 페이지 열기 */}
+        {node.page_url ? (
+          <a
+            href={node.page_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={e => e.stopPropagation()}
+            className="text-[10px] font-bold text-center leading-tight w-full truncate px-0.5 hover:underline"
+            style={{ color: meta.text }}
+            title={node.page_url}
+          >
+            {shortUrl(node.page_url)}
+          </a>
+        ) : (
+          <span className="text-[10px] font-bold text-center leading-tight w-full truncate px-0.5" style={{ color: meta.text }}>
+            {node.event_type}
+          </span>
+        )}
         {/* 체류시간 — 노드 안에 */}
         {dwell > 0 && (
           <div className="flex items-center gap-0.5 mt-0.5">
@@ -274,38 +284,48 @@ function VisitorCard({ visitor, expanded, onToggle }) {
   return (
     <div className={`border rounded-2xl overflow-hidden transition-all ${expanded ? 'border-zinc-300 shadow-md' : 'border-zinc-100 hover:border-zinc-200 hover:shadow-sm'}`}>
       {/* 방문자 행 */}
-      <button onClick={onToggle} className="w-full text-left px-5 py-4 flex items-center gap-4 hover:bg-zinc-50/50 transition-colors">
-        {/* 아바타 */}
-        <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-black ${visitor.is_identified ? 'bg-violet-100 text-violet-700' : 'bg-zinc-100 text-zinc-400'}`}>
-          {visitor.is_identified ? (visitor.display_name?.[0] || '?') : <User size={14} />}
-        </div>
-
-        {/* 이름 */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className={`text-sm font-black truncate ${visitor.is_identified ? 'text-zinc-900' : 'text-zinc-400'}`}>
-              {visitor.display_name}
-            </span>
-            {visitor.is_identified && (
-              <span className="text-[9px] font-bold bg-violet-100 text-violet-600 px-1.5 py-0.5 rounded-full flex-shrink-0">식별됨</span>
-            )}
+      <div className="px-5 py-4 flex items-center gap-4">
+        {/* 토글 영역 (아바타 + 이름) */}
+        <button onClick={onToggle} className="flex items-center gap-4 flex-1 min-w-0 text-left hover:opacity-80 transition-opacity">
+          <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-black ${visitor.is_identified ? 'bg-violet-100 text-violet-700' : 'bg-zinc-100 text-zinc-400'}`}>
+            {visitor.is_identified ? (visitor.display_name?.[0] || '?') : <User size={14} />}
           </div>
-          <div className="flex items-center gap-2 mt-0.5 text-[10px] text-zinc-400">
-            {visitor.device_type === 'mobile' ? <Smartphone size={9} /> : <Monitor size={9} />}
-            <span>{CHANNEL_KO[visitor.channel_group] || '직접'}</span>
-            <span className="text-zinc-200">·</span>
-            <span>{visitor.session_count}세션</span>
-            <span className="text-zinc-200">·</span>
-            <span>{visitor.event_count || 0}이벤트</span>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className={`text-sm font-black truncate ${visitor.is_identified ? 'text-zinc-900' : 'text-zinc-400'}`}>
+                {visitor.display_name}
+              </span>
+              {visitor.is_identified && (
+                <span className="text-[9px] font-bold bg-violet-100 text-violet-600 px-1.5 py-0.5 rounded-full flex-shrink-0">식별됨</span>
+              )}
+            </div>
+            <div className="flex items-center gap-2 mt-0.5 text-[10px] text-zinc-400">
+              {visitor.device_type === 'mobile' ? <Smartphone size={9} /> : <Monitor size={9} />}
+              <span>{CHANNEL_KO[visitor.channel_group] || '직접'}</span>
+              <span className="text-zinc-200">·</span>
+              <span>{visitor.session_count}세션</span>
+              <span className="text-zinc-200">·</span>
+              <span>{visitor.event_count || 0}이벤트</span>
+            </div>
           </div>
-        </div>
+        </button>
 
-        {/* 마지막 방문 */}
+        {/* 우측: 마지막 방문 + 넓게 보기 + 접기 */}
         <div className="flex items-center gap-2 flex-shrink-0">
           <span className="text-[10px] text-zinc-300">{fmtAgo(visitor.last_seen)}</span>
-          <ChevronDown size={14} className={`text-zinc-300 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`} />
+          <Link
+            href={`/admin/funnel/visitor/${encodeURIComponent(visitor.anonymous_id)}`}
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-zinc-900 text-white text-[10px] font-bold hover:bg-zinc-700 transition-colors"
+            title="넓게 보기"
+          >
+            <Maximize2 size={11} />
+            넓게
+          </Link>
+          <button onClick={onToggle}>
+            <ChevronDown size={14} className={`text-zinc-300 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`} />
+          </button>
         </div>
-      </button>
+      </div>
 
       {/* 펼친 세션들 */}
       {expanded && (
@@ -328,14 +348,6 @@ function VisitorCard({ visitor, expanded, onToggle }) {
                   total={sessionGroups.length}
                 />
               ))}
-              <div className="pt-1">
-                <Link
-                  href={`/admin/funnel/visitor/${encodeURIComponent(visitor.anonymous_id)}`}
-                  className="text-[10px] font-bold text-zinc-400 hover:text-zinc-700 transition-colors"
-                >
-                  상세 여정 전체 보기 →
-                </Link>
-              </div>
             </>
           )}
         </div>
