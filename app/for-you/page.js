@@ -5,10 +5,8 @@ import LandingNavbar from '@/components/landing/LandingNavbar';
 import LandingFooter from '@/components/landing/LandingFooter';
 import CaseDeck from '@/components/landing/CaseDeck';
 
-const CATEGORY_SECTIONS = [
-  { category: '검색노출', title: '검색 노출', subtitle: 'Search Visibility' },
-  { category: '바이럴', title: '바이럴', subtitle: 'Viral' },
-];
+const UNCATEGORIZED_KEY = '__uncategorized__';
+const UNCATEGORIZED_TITLE = '기타';
 
 export default function ForYouPage() {
   const [cases, setCases] = useState([]);
@@ -48,12 +46,23 @@ export default function ForYouPage() {
     loadData();
   }, []);
 
-  const grouped = useMemo(() => {
+  const sections = useMemo(() => {
     const map = new Map();
-    for (const { category } of CATEGORY_SECTIONS) {
-      map.set(category, cases.filter((c) => c.category === category));
+    for (const c of cases) {
+      const raw = (c.category || '').trim();
+      const key = raw || UNCATEGORIZED_KEY;
+      if (!map.has(key)) {
+        map.set(key, { key, title: raw || UNCATEGORIZED_TITLE, items: [] });
+      }
+      map.get(key).items.push(c);
     }
-    return map;
+    const list = Array.from(map.values());
+    list.sort((a, b) => {
+      if (a.key === UNCATEGORIZED_KEY) return 1;
+      if (b.key === UNCATEGORIZED_KEY) return -1;
+      return 0;
+    });
+    return list;
   }, [cases]);
 
   if (loading)
@@ -79,18 +88,9 @@ export default function ForYouPage() {
         </section>
 
         {/* ─── Category Decks ─── */}
-        {CATEGORY_SECTIONS.map(({ category, title, subtitle }) => {
-          const items = grouped.get(category) || [];
-          if (items.length === 0) return null;
-          return (
-            <CaseDeck
-              key={category}
-              title={title}
-              subtitle={subtitle}
-              items={items}
-            />
-          );
-        })}
+        {sections.map(({ key, title, items }) => (
+          <CaseDeck key={key} title={title} items={items} />
+        ))}
 
         {cases.length === 0 && (
           <div className="py-32 text-center">
