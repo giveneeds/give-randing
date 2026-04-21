@@ -9,7 +9,12 @@ import { ArrowLeft, Share2 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function CaseDetailPage() {
-  const { slug } = useParams();
+  const params = useParams();
+  const slug = (() => {
+    const raw = params?.slug;
+    if (!raw) return '';
+    try { return decodeURIComponent(raw); } catch { return raw; }
+  })();
   const [item, setItem] = useState(null);
   const [related, setRelated] = useState([]);
   const [settings, setSettings] = useState(DUMMY_SETTINGS);
