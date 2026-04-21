@@ -1,6 +1,7 @@
 'use client';
 import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { Mail, Lock, Loader2 } from 'lucide-react';
 
@@ -126,6 +127,13 @@ function AdminLoginInner() {
               로그인
             </button>
           </form>
+
+          <p className="text-center text-xs text-zinc-400 mt-6">
+            아직 계정이 없으신가요?{' '}
+            <Link href="/admin/signup" className="text-zinc-900 font-bold hover:underline">
+              암호키로 가입
+            </Link>
+          </p>
         </div>
       </div>
     </div>

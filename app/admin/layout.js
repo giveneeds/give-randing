@@ -14,13 +14,13 @@ export function useAdmin() {
 export default function AdminLayout({ children }) {
   const router = useRouter();
   const pathname = usePathname();
-  const isLoginPage = pathname === '/admin/login';
+  const isPublicPage = pathname === '/admin/login' || pathname === '/admin/signup';
 
   const [checking, setChecking] = useState(true);
   const [profile, setProfile] = useState(null);
 
   useEffect(() => {
-    if (isLoginPage) {
+    if (isPublicPage) {
       setChecking(false);
       return;
     }
@@ -49,14 +49,14 @@ export default function AdminLayout({ children }) {
       }
     })();
     return () => { active = false; };
-  }, [isLoginPage, router]);
+  }, [isPublicPage, router]);
 
   async function handleLogout() {
     await supabase.auth.signOut();
     router.replace('/admin/login');
   }
 
-  if (isLoginPage) {
+  if (isPublicPage) {
     return <>{children}</>;
   }
 
