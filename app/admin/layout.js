@@ -5,6 +5,7 @@ import Sidebar from '@/components/admin/Sidebar';
 import AdminHeader from '@/components/admin/AdminHeader';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { canAccessPath } from '@/lib/adminPermissions';
 
 const AdminContext = createContext();
 export function useAdmin() {
@@ -43,13 +44,18 @@ export default function AdminLayout({ children }) {
           router.replace('/admin/login?error=forbidden');
           return;
         }
+        // 경로별 권한 체크 — admin이 superadmin 전용 경로 접근 시 대시보드로 리다이렉트
+        if (!canAccessPath(pathname, prof.role)) {
+          router.replace('/admin?error=permission');
+          return;
+        }
         setProfile(prof);
       } finally {
         if (active) setChecking(false);
       }
     })();
     return () => { active = false; };
-  }, [isPublicPage, router]);
+  }, [isPublicPage, router, pathname]);
 
   async function handleLogout() {
     await supabase.auth.signOut();
