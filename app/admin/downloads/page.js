@@ -111,7 +111,7 @@ export default function AdminDownloadsPage() {
 
   function parentInfo(r) {
     if (r.magazine) return { type: '매거진', title: r.magazine.title, href: `/magazine/${r.magazine.slug}` };
-    if (r.campaign) return { type: 'LP', title: r.campaign.title, href: `/lp/${r.campaign.slug}` };
+    if (r.campaign) return { type: 'LP', title: r.campaign.title, href: `/landing/${r.campaign.slug}` };
     return { type: '-', title: '-', href: null };
   }
 

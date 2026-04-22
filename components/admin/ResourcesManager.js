@@ -15,7 +15,12 @@ function formatSize(bytes) {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
-export default function ResourcesManager({ magazineId }) {
+export default function ResourcesManager({ parentType = 'magazine', parentId, magazineId }) {
+  // 하위 호환: magazineId 만 넘어온 경우에도 동작
+  const effectiveParentId = parentId ?? magazineId;
+  const effectiveParentType = parentId ? parentType : (magazineId ? 'magazine' : parentType);
+  const basePath = `/api/${effectiveParentType}s/${effectiveParentId}/resources`;
+
   const [resources, setResources] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState(null);
@@ -30,11 +35,11 @@ export default function ResourcesManager({ magazineId }) {
   }, []);
 
   const load = useCallback(async () => {
-    if (!magazineId) return;
+    if (!effectiveParentId) return;
     setLoading(true);
     try {
       const res = await fetch(
-        `/api/magazines/${magazineId}/resources?admin=true`,
+        `${basePath}?admin=true`,
         { headers: await authHeaders() },
       );
       const data = await res.json();
@@ -46,13 +51,13 @@ export default function ResourcesManager({ magazineId }) {
     } finally {
       setLoading(false);
     }
-  }, [magazineId, authHeaders]);
+  }, [effectiveParentId, basePath, authHeaders]);
 
   useEffect(() => { load(); }, [load]);
 
   async function handleUploaded(uploadRes) {
     try {
-      const res = await fetch(`/api/magazines/${magazineId}/resources`, {
+      const res = await fetch(basePath, {
         method: 'POST',
         headers: await authHeaders(),
         body: JSON.stringify({
@@ -75,7 +80,7 @@ export default function ResourcesManager({ magazineId }) {
     const prev = resources;
     setResources((r) => r.map((x) => (x.id === id ? { ...x, ...patch } : x)));
     try {
-      const res = await fetch(`/api/magazines/${magazineId}/resources/${id}`, {
+      const res = await fetch(`${basePath}/${id}`, {
         method: 'PATCH',
         headers: await authHeaders(),
         body: JSON.stringify(patch),
@@ -107,12 +112,12 @@ export default function ResourcesManager({ magazineId }) {
     // sort_order 스왑 PATCH
     try {
       await Promise.all([
-        fetch(`/api/magazines/${magazineId}/resources/${a.id}`, {
+        fetch(`${basePath}/${a.id}`, {
           method: 'PATCH',
           headers: await authHeaders(),
           body: JSON.stringify({ sort_order: b.sort_order }),
         }),
-        fetch(`/api/magazines/${magazineId}/resources/${b.id}`, {
+        fetch(`${basePath}/${b.id}`, {
           method: 'PATCH',
           headers: await authHeaders(),
           body: JSON.stringify({ sort_order: a.sort_order }),
@@ -139,7 +144,7 @@ export default function ResourcesManager({ magazineId }) {
   async function deleteResource(id) {
     if (!confirm('이 자료를 삭제하시겠어요? (파일도 함께 삭제됩니다)')) return;
     try {
-      const res = await fetch(`/api/magazines/${magazineId}/resources/${id}`, {
+      const res = await fetch(`${basePath}/${id}`, {
         method: 'DELETE',
         headers: await authHeaders(),
       });
@@ -168,11 +173,12 @@ export default function ResourcesManager({ magazineId }) {
     cancelEdit();
   }
 
-  if (!magazineId) {
+  if (!effectiveParentId) {
+    const label = effectiveParentType === 'campaign' ? '캠페인(랜딩페이지)' : '매거진';
     return (
       <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 p-5 text-center">
         <p className="text-[11px] text-zinc-500 leading-relaxed">
-          자료를 첨부하려면 먼저 매거진을 <strong>임시 저장</strong>해 주세요.
+          자료를 첨부하려면 먼저 {label}을 <strong>임시 저장</strong>해 주세요.
         </p>
       </div>
     );
@@ -182,7 +188,7 @@ export default function ResourcesManager({ magazineId }) {
     <div className="space-y-3">
       <FileUploader
         endpoint="/api/upload/content-resource"
-        extraBody={{ parent_type: 'magazine', parent_id: magazineId }}
+        extraBody={{ parent_type: effectiveParentType, parent_id: effectiveParentId }}
         getHeaders={authHeaders}
         onUploaded={handleUploaded}
         label="자료 파일 업로드 (PDF · DOCX · ZIP 등)"

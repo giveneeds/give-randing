@@ -12,13 +12,26 @@ function formatSize(bytes) {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
-export default function ResourceDownloads({ magazineId, slug, resources }) {
+export default function ResourceDownloads({
+  parentType = 'magazine',
+  parentId,
+  magazineId,         // 하위 호환
+  slug,
+  redirectPath,       // 로그인 후 돌아갈 경로 (미지정 시 parent 유형에 따라 기본값)
+  resources,
+}) {
   const { user, loading: authLoading } = useAuth();
   const [downloading, setDownloading] = useState(null);
 
+  const effectiveParentId = parentId ?? magazineId;
+  const effectiveParentType = parentId ? parentType : (magazineId ? 'magazine' : parentType);
+
   if (!resources || resources.length === 0) return null;
 
-  const loginHref = `/login?redirect=${encodeURIComponent(`/magazine/${slug}`)}`;
+  const defaultRedirect = effectiveParentType === 'campaign'
+    ? `/landing/${slug}`
+    : `/magazine/${slug}`;
+  const loginHref = `/login?redirect=${encodeURIComponent(redirectPath || defaultRedirect)}`;
 
   async function handleDownload(resource) {
     if (!user) return;
@@ -27,7 +40,7 @@ export default function ResourceDownloads({ magazineId, slug, resources }) {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
       const res = await fetch(
-        `/api/magazines/${magazineId}/resources/${resource.id}/download`,
+        `/api/${effectiveParentType}s/${effectiveParentId}/resources/${resource.id}/download`,
         {
           method: 'POST',
           headers: token ? { Authorization: `Bearer ${token}` } : {},

@@ -10,7 +10,7 @@ import Link from 'next/link';
 import AiSolutionBlock from '@/components/ui/AiSolutionBlock';
 import LeadForm from '@/components/ui/LeadForm';
 import PremiumGateModal from '@/components/ui/PremiumGateModal';
-import ResourceDownloads from '@/components/magazine/ResourceDownloads';
+import ResourceDownloads from '@/components/content/ResourceDownloads';
 import { useAuth } from '@/lib/useAuth';
 import { appendMagazine } from '@/lib/userTrail';
 import { trackEvent } from '@/lib/tracker';
