@@ -9,6 +9,7 @@ import { clsx } from 'clsx';
 import AiSolutionBlock from '@/components/ui/AiSolutionBlock';
 import MagazineRichEditor from '@/components/admin/MagazineRichEditor';
 import ThumbnailUploader from '@/components/admin/ThumbnailUploader';
+import ResourcesManager from '@/components/admin/ResourcesManager';
 import { CATEGORY_OPTIONS as MAGAZINE_CATEGORY_OPTIONS, MAGAZINE_CATEGORIES } from '@/lib/magazineCategories';
 
 export default function MagazineEditor() {
@@ -154,6 +155,15 @@ export default function MagazineEditor() {
                   ))}
                 </div>
               )}
+           </div>
+
+           {/* 첨부 자료 (다운로드 리소스) */}
+           <div className="space-y-3 pt-6 border-t border-zinc-200">
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] font-bold text-zinc-900 uppercase ml-1">첨부 자료 (다운로드)</label>
+                <span className="text-[9px] text-zinc-400">로그인 유저에게 바로 다운로드</span>
+              </div>
+              <ResourcesManager magazineId={id} />
            </div>
 
            {/* 토글 옵션 */}
