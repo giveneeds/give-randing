@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import AiCoachingPanel from './AiCoachingPanel';
+import ResourcesManager from './ResourcesManager';
 import SectionRenderer from '@/components/landing/SectionRenderer';
 import { ParticleTextEffect } from '@/components/ui/particle-text-effect';
 import LeadForm from '@/components/ui/LeadForm';
@@ -608,6 +609,12 @@ export default function CampaignEditorUnified({ campaign, sections, onSave, onCl
                   );
                 })}
               </div>
+            </ConfigCard>
+
+            <ConfigCard title="첨부 자료 (다운로드)" icon={<FileText size={14} />}
+              rightSlot={<span className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">로그인 유저에게 바로 다운로드</span>}
+            >
+              <ResourcesManager parentType="campaign" parentId={current.id} />
             </ConfigCard>
 
             <ConfigCard title="Analytics" icon={<BarChart3 size={14} />}>

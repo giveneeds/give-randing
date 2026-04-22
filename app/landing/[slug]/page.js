@@ -4,6 +4,7 @@ import { useParams } from 'next/navigation';
 import SectionRenderer from '@/components/landing/SectionRenderer';
 import MagazineList from '@/components/landing/MagazineList';
 import LandingFooter from '@/components/landing/LandingFooter';
+import ResourceDownloads from '@/components/content/ResourceDownloads';
 import { supabase, isDummyMode } from '@/lib/supabase';
 import { ParticleTextEffect } from '@/components/ui/particle-text-effect';
 import LeadForm from '@/components/ui/LeadForm';
@@ -14,6 +15,7 @@ export default function CampaignLandingPage() {
   const [campaign, setCampaign] = useState(null);
   const [sections, setSections] = useState([]);
   const [settings, setSettings] = useState({});
+  const [resources, setResources] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -54,9 +56,18 @@ export default function CampaignLandingPage() {
           .filter(Boolean);
         setSections(selected);
 
-        
+
         if (stRes.settings) {
           setSettings(stRes.settings);
+        }
+
+        // 첨부 자료 로드 (공개 GET — is_enabled 만)
+        try {
+          const rRes = await fetch(`/api/campaigns/${campaignData.id}/resources`);
+          const rData = await rRes.json();
+          if (rRes.ok) setResources(rData.resources || []);
+        } catch (rErr) {
+          console.error('resources fetch failed', rErr);
         }
 
       } catch (err) {
@@ -143,6 +154,18 @@ export default function CampaignLandingPage() {
             />
           ))}
         </div>
+
+        {/* 2-1. 캠페인 첨부 자료 */}
+        {resources.length > 0 && (
+          <section className="px-4 md:px-12 max-w-screen-md mx-auto mt-16 md:mt-24">
+            <ResourceDownloads
+              parentType="campaign"
+              parentId={campaign.id}
+              slug={campaign.slug}
+              resources={resources}
+            />
+          </section>
+        )}
 
         {/* 3. 🛡️ 롤백 요청 사항: 아티클(매거진) 강제 노출 */}
         <section className={`${campaign.show_ai_block ? 'pt-16 md:pt-32' : 'py-16 md:py-32'} border-t border-zinc-100 mt-16 md:mt-32 px-4 md:px-12 max-w-7xl mx-auto`}>

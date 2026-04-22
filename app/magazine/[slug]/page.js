@@ -10,6 +10,7 @@ import Link from 'next/link';
 import AiSolutionBlock from '@/components/ui/AiSolutionBlock';
 import LeadForm from '@/components/ui/LeadForm';
 import PremiumGateModal from '@/components/ui/PremiumGateModal';
+import ResourceDownloads from '@/components/content/ResourceDownloads';
 import { useAuth } from '@/lib/useAuth';
 import { appendMagazine } from '@/lib/userTrail';
 import { trackEvent } from '@/lib/tracker';
@@ -18,6 +19,7 @@ export default function MagazineDetailPage() {
   const { slug } = useParams();
   const [post, setPost] = useState(null);
   const [related, setRelated] = useState([]);
+  const [resources, setResources] = useState([]);
   const [loading, setLoading] = useState(true);
   const { user, loading: authLoading } = useAuth();
   const isLocked = !!post?.is_premium && !user && !authLoading;
@@ -40,17 +42,27 @@ export default function MagazineDetailPage() {
             .single();
           if (error) throw error;
           setPost(data);
-          // 관련 글 로드
+          // 관련 글 + 첨부 자료 병렬 로드
           if (data) {
-            const { data: relData } = await supabase
-              .from('magazines')
-              .select('*')
-              .eq('category', data.category)
-              .eq('is_published', true)
-              .neq('id', data.id)
-              .order('sort_order', { ascending: true })
-              .limit(3);
-            setRelated(relData || []);
+            const [relRes, resRes] = await Promise.all([
+              supabase
+                .from('magazines')
+                .select('*')
+                .eq('category', data.category)
+                .eq('is_published', true)
+                .neq('id', data.id)
+                .order('sort_order', { ascending: true })
+                .limit(3),
+              supabase
+                .from('content_resources')
+                .select('id,title,description,file_name,file_size,file_type,sort_order')
+                .eq('magazine_id', data.id)
+                .eq('is_enabled', true)
+                .order('sort_order', { ascending: true, nullsFirst: false })
+                .order('created_at', { ascending: true }),
+            ]);
+            setRelated(relRes.data || []);
+            setResources(resRes.data || []);
           }
         }
       } catch (e) {
@@ -173,9 +185,16 @@ export default function MagazineDetailPage() {
                dangerouslySetInnerHTML={{ __html: post.content_html }}
             />
           </div>
-          
+
+          {/* ─── 첨부 자료 다운로드 ─── */}
+          <ResourceDownloads
+            magazineId={post.id}
+            slug={post.slug}
+            resources={resources}
+          />
+
           <div className="mt-20 border-t border-zinc-100 dark:border-zinc-800 pt-20">
-            <LeadForm 
+            <LeadForm
               title="프리미엄 전략 리포트 신청"
               subtitle="매거진 독자분들을 위해 기브니즈가 엄선한 월간 마케팅 트렌드 리포트를 보내드립니다."
               ctaLabel="리포트 무료로 받기"
