@@ -416,7 +416,7 @@ export default function MagazineRichEditor({ value, onChange, magazineId, editor
     : 'p';
 
   return (
-    <div className="magazine-editor flex flex-col h-full bg-white">
+    <div className="magazine-editor flex flex-col h-full min-h-[700px] bg-white">
       {/* ─── AI 이미지 생성 모달 ─── */}
       {showAiModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">

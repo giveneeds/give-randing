@@ -125,8 +125,8 @@ export default function MagazineEditor() {
          </div>
       </header>
 
-      <div className="flex-1 flex overflow-hidden">
-        <aside className="w-full max-w-[450px] border-r border-zinc-100 bg-zinc-50/50 flex flex-col overflow-y-auto p-8 space-y-8 shrink-0 custom-scrollbar">
+      <div className="flex-1 flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden">
+        <aside className="w-full lg:max-w-[450px] border-b lg:border-b-0 lg:border-r border-zinc-100 bg-zinc-50/50 flex flex-col lg:overflow-y-auto p-8 space-y-8 lg:shrink-0 custom-scrollbar">
            {/* 기본 정보 */}
            <div className="space-y-4">
               <label className="text-[10px] font-bold text-zinc-900 uppercase ml-1">Archive Data</label>
@@ -203,7 +203,7 @@ export default function MagazineEditor() {
            </div>
         </aside>
 
-        <main className="flex-1 bg-white overflow-hidden flex flex-col">
+        <main className="flex-1 min-h-[700px] lg:min-h-0 bg-white lg:overflow-hidden flex flex-col">
            <MagazineRichEditor
              value={magazine.content_html}
              onChange={(html) => setMagazine((m) => ({ ...m, content_html: html }))}
