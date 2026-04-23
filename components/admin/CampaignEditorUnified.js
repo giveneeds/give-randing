@@ -614,7 +614,13 @@ export default function CampaignEditorUnified({ campaign, sections, onSave, onCl
             <ConfigCard title="첨부 자료 (다운로드)" icon={<FileText size={14} />}
               rightSlot={<span className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">로그인 유저에게 바로 다운로드</span>}
             >
-              <ResourcesManager parentType="campaign" parentId={current.id} />
+              <ResourcesManager
+                parentType="campaign"
+                parentId={current.id}
+                onResourceAdded={(r) => {
+                  alert(`자료 "${r.title}"이(가) 추가되었습니다. 랜딩페이지 하단 "첨부 자료" 섹션에 자동 노출됩니다.`);
+                }}
+              />
             </ConfigCard>
 
             <ConfigCard title="Analytics" icon={<BarChart3 size={14} />}>

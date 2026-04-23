@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowLeft, Save, Eye, Trash2, Monitor, Smartphone, CheckCircle2, ChevronRight,
-  Archive, Send, X, Info
+  Archive, Send, X, Info, Sparkles, Loader2
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import AiSolutionBlock from '@/components/ui/AiSolutionBlock';
@@ -29,6 +29,32 @@ export default function MagazineEditor() {
   const [loading, setLoading] = useState(!!id);
   const [tagInput, setTagInput] = useState('');
   const [previewOpen, setPreviewOpen] = useState(false);
+  const editorRef = useRef({ insertResource: () => {} });
+  const [titleSuggestions, setTitleSuggestions] = useState([]);
+  const [titleLoading, setTitleLoading] = useState(false);
+
+  async function suggestTitles() {
+    if (!magazine.content_html?.trim() || magazine.content_html.replace(/<[^>]+>/g, '').trim().length < 50) {
+      alert('본문을 먼저 충분히 작성해주세요 (최소 50자).');
+      return;
+    }
+    setTitleLoading(true);
+    setTitleSuggestions([]);
+    try {
+      const res = await fetch('/api/ai-title', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: magazine.content_html }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '제목 추천 실패');
+      setTitleSuggestions(data.titles || []);
+    } catch (e) {
+      alert('제목 추천 실패: ' + e.message);
+    } finally {
+      setTitleLoading(false);
+    }
+  }
 
   useEffect(() => { if (id) loadMagazine(); }, [id]);
 
@@ -126,8 +152,41 @@ export default function MagazineEditor() {
         <aside className="w-full max-w-[450px] border-r border-zinc-100 bg-zinc-50/50 flex flex-col overflow-y-auto p-8 space-y-8 shrink-0 custom-scrollbar">
            {/* 기본 정보 */}
            <div className="space-y-4">
-              <label className="text-[10px] font-bold text-zinc-900 uppercase ml-1">Archive Data</label>
+              <div className="flex items-center justify-between ml-1">
+                <label className="text-[10px] font-bold text-zinc-900 uppercase">Archive Data</label>
+                <button
+                  type="button"
+                  onClick={suggestTitles}
+                  disabled={titleLoading}
+                  title="본문을 분석해 AI가 제목을 5개 제안합니다"
+                  className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-violet-600 hover:text-violet-800 disabled:opacity-40"
+                >
+                  {titleLoading ? <Loader2 size={11} className="animate-spin" /> : <Sparkles size={11} />}
+                  AI 제목 추천
+                </button>
+              </div>
               <input className="w-full p-4 bg-white border border-zinc-200 rounded-md font-bold text-base outline-none shadow-sm focus:ring-2 focus:ring-zinc-900/10" placeholder="기사 제목을 입력하세요" value={magazine.title} onChange={e => handleTitleChange(e.target.value)} />
+
+              {titleSuggestions.length > 0 && (
+                <div className="bg-violet-50 border border-violet-200 rounded-md p-3 space-y-1.5">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[9px] font-black uppercase tracking-widest text-violet-700">AI 제안</span>
+                    <button type="button" onClick={() => setTitleSuggestions([])} className="text-violet-400 hover:text-violet-700">
+                      <X size={12} />
+                    </button>
+                  </div>
+                  {titleSuggestions.map((t, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => { handleTitleChange(t); setTitleSuggestions([]); }}
+                      className="w-full text-left text-xs font-bold text-zinc-800 px-3 py-2 rounded bg-white hover:bg-violet-100 border border-transparent hover:border-violet-300 transition"
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              )}
               
               <div className="grid grid-cols-2 gap-3">
                  <select className="w-full p-3 bg-white border border-zinc-200 rounded-md font-bold text-xs outline-none shadow-sm" value={magazine.category} onChange={e => setMagazine({ ...magazine, category: e.target.value })}>
@@ -163,7 +222,10 @@ export default function MagazineEditor() {
                 <label className="text-[10px] font-bold text-zinc-900 uppercase ml-1">첨부 자료 (다운로드)</label>
                 <span className="text-[9px] text-zinc-400">로그인 유저에게 바로 다운로드</span>
               </div>
-              <ResourcesManager magazineId={id} />
+              <ResourcesManager
+                magazineId={id}
+                onResourceAdded={(r) => editorRef.current?.insertResource?.(r)}
+              />
            </div>
 
            {/* 토글 옵션 */}
@@ -180,6 +242,8 @@ export default function MagazineEditor() {
            <MagazineRichEditor
              value={magazine.content_html}
              onChange={(html) => setMagazine((m) => ({ ...m, content_html: html }))}
+             magazineId={id}
+             editorRef={editorRef}
            />
         </main>
       </div>

@@ -107,7 +107,7 @@ import { useRef, useState, useCallback, useEffect } from 'react';
 import { clsx } from 'clsx';
 import {
   Bold, Italic, List, ListOrdered, Quote, Minus, Link2, Image as ImageIcon,
-  Highlighter, Undo2, Redo2, LayoutTemplate, Loader2,
+  Highlighter, Undo2, Redo2, LayoutTemplate, Loader2, Sparkles, X, Paperclip,
 } from 'lucide-react';
 
 const HEADING_OPTIONS = [
@@ -138,11 +138,39 @@ const TEMPLATES = [
   },
 ];
 
-export default function MagazineRichEditor({ value, onChange }) {
+function buildResourceBlockHTML(r) {
+  const title = (r.title || '').replace(/"/g, '&quot;');
+  const fname = (r.file_name || '').replace(/"/g, '&quot;');
+  const size = r.file_size ? (r.file_size < 1024 * 1024 ? `${(r.file_size / 1024).toFixed(1)} KB` : `${(r.file_size / 1024 / 1024).toFixed(1)} MB`) : '';
+  const ext = (r.file_name || '').split('.').pop()?.toUpperCase().slice(0, 5) || 'FILE';
+  const resourceId = r.id || '';
+  return `<div data-resource-block data-resource-id="${resourceId}" style="border:1px solid #e4e4e7;border-radius:0.875rem;padding:1.125rem 1.25rem;margin:2rem 0;display:flex;align-items:center;gap:1rem;background:#ffffff;box-shadow:0 1px 2px rgba(0,0,0,0.04);cursor:pointer;">
+  <div style="flex-shrink:0;width:2.75rem;height:2.75rem;border-radius:0.625rem;background:#18181b;display:flex;align-items:center;justify-content:center;color:#ffffff;font-size:0.65rem;font-weight:900;letter-spacing:0.05em;">${ext}</div>
+  <div style="flex:1;min-width:0;">
+    <div style="font-size:0.625rem;font-weight:900;color:#a1a1aa;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:0.25rem;">Resource</div>
+    <div style="font-size:0.9375rem;font-weight:800;color:#18181b;line-height:1.4;letter-spacing:-0.01em;">${title}</div>
+    <div style="font-size:0.75rem;color:#71717a;margin-top:0.25rem;">${fname}${size ? ' · ' + size : ''}</div>
+  </div>
+  <div style="flex-shrink:0;display:inline-flex;align-items:center;gap:0.375rem;background:#18181b;color:#ffffff;font-size:0.7rem;font-weight:900;letter-spacing:0.1em;text-transform:uppercase;padding:0.625rem 1rem;border-radius:0.5rem;">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    다운로드
+  </div>
+</div><p></p>`;
+}
+
+export default function MagazineRichEditor({ value, onChange, magazineId, editorRef }) {
   const fileInputRef = useRef(null);
   const [uploading, setUploading] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
   const [showHighlight, setShowHighlight] = useState(false);
+  const [showAiModal, setShowAiModal] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [aiStyle, setAiStyle] = useState('realistic');
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiError, setAiError] = useState('');
+  const [showResourcePicker, setShowResourcePicker] = useState(false);
+  const [resources, setResources] = useState([]);
+  const [resourcesLoading, setResourcesLoading] = useState(false);
 
   const editor = useEditor({
     extensions: [
@@ -154,7 +182,17 @@ export default function MagazineRichEditor({ value, onChange }) {
       Placeholder.configure({
         placeholder: '본문을 작성하세요. 헤딩 드롭다운으로 제목 크기를, 형광펜 버튼으로 강조를, 이미지 버튼으로 사진을 업로드할 수 있습니다.',
       }),
-      Link.configure({ openOnClick: false, autolink: true }),
+      Link.configure({
+        openOnClick: false,
+        autolink: true,
+        linkOnPaste: true,
+        protocols: ['http', 'https', 'mailto', 'tel'],
+        HTMLAttributes: {
+          class: 'text-blue-600 underline',
+          rel: 'noopener noreferrer',
+          target: '_blank',
+        },
+      }),
       Figure,
       PullQuote,
     ],
@@ -262,6 +300,60 @@ export default function MagazineRichEditor({ value, onChange }) {
     [editor],
   );
 
+  const handleOpenResourcePicker = useCallback(async () => {
+    setShowResourcePicker(true);
+    if (!magazineId || resources.length > 0) return;
+    setResourcesLoading(true);
+    try {
+      const res = await fetch(`/api/magazines/${magazineId}/resources?admin=true`);
+      const data = await res.json();
+      setResources(data.resources || []);
+    } catch {
+      setResources([]);
+    } finally {
+      setResourcesLoading(false);
+    }
+  }, [magazineId, resources.length]);
+
+  const handleInsertResource = useCallback((r) => {
+    if (!editor) return;
+    editor.chain().focus().insertContent(buildResourceBlockHTML(r)).run();
+    setShowResourcePicker(false);
+  }, [editor]);
+
+  // 외부에서 ref.current.insertResource(r) 호출 시 자동 삽입
+  useEffect(() => {
+    if (!editorRef) return;
+    editorRef.current = {
+      insertResource: (r) => {
+        if (!editor || !r) return;
+        editor.chain().focus('end').insertContent(buildResourceBlockHTML(r)).run();
+      },
+    };
+  }, [editor, editorRef]);
+
+  const handleAiGenerate = useCallback(async () => {
+    if (!aiPrompt.trim() || !editor) return;
+    setAiGenerating(true);
+    setAiError('');
+    try {
+      const res = await fetch('/api/ai-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: aiPrompt, style: aiStyle }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '생성 실패');
+      editor.chain().focus().setImage({ src: data.url, alt: aiPrompt }).run();
+      setShowAiModal(false);
+      setAiPrompt('');
+    } catch (err) {
+      setAiError(err.message);
+    } finally {
+      setAiGenerating(false);
+    }
+  }, [aiPrompt, aiStyle, editor]);
+
   const insertLink = useCallback(() => {
     if (!editor) return;
     const prev = editor.getAttributes('link').href;
@@ -292,6 +384,94 @@ export default function MagazineRichEditor({ value, onChange }) {
 
   return (
     <div className="magazine-editor flex flex-col h-full bg-white">
+      {/* ─── AI 이미지 생성 모달 ─── */}
+      {showAiModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-2">
+                <Sparkles size={18} className="text-violet-600" />
+                <h3 className="text-sm font-black tracking-tight">AI 이미지 생성</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => { setShowAiModal(false); setAiError(''); }}
+                className="p-1.5 rounded-lg hover:bg-zinc-100 text-zinc-400"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-1.5 block">
+                  이미지 설명
+                </label>
+                <textarea
+                  value={aiPrompt}
+                  onChange={(e) => setAiPrompt(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleAiGenerate(); }}
+                  placeholder="예: 현대적인 오피스에서 일하는 전문가, 노트북과 커피잔이 있는 깔끔한 책상"
+                  rows={3}
+                  className="w-full text-sm border border-zinc-200 rounded-xl px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent placeholder:text-zinc-300"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-1.5 block">
+                  스타일
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { value: 'realistic', label: '실사', desc: '자연스러운 사진' },
+                    { value: 'minimal', label: '미니멀', desc: '깔끔한 배경' },
+                    { value: 'editorial', label: '에디토리얼', desc: '매거진 스타일' },
+                  ].map((s) => (
+                    <button
+                      key={s.value}
+                      type="button"
+                      onClick={() => setAiStyle(s.value)}
+                      className={clsx(
+                        'p-3 rounded-xl border text-left transition-all',
+                        aiStyle === s.value
+                          ? 'border-violet-500 bg-violet-50 text-violet-700'
+                          : 'border-zinc-200 hover:border-zinc-300 text-zinc-600',
+                      )}
+                    >
+                      <div className="text-xs font-black">{s.label}</div>
+                      <div className="text-[10px] mt-0.5 opacity-70">{s.desc}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {aiError && (
+                <p className="text-xs text-red-500 bg-red-50 rounded-lg px-3 py-2">{aiError}</p>
+              )}
+
+              <button
+                type="button"
+                onClick={handleAiGenerate}
+                disabled={!aiPrompt.trim() || aiGenerating}
+                className="w-full py-3 rounded-xl bg-zinc-900 text-white text-sm font-black tracking-tight hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center justify-center gap-2"
+              >
+                {aiGenerating ? (
+                  <>
+                    <Loader2 size={15} className="animate-spin" />
+                    생성 중... (10~20초 소요)
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={15} />
+                    이미지 생성하기
+                  </>
+                )}
+              </button>
+              <p className="text-[10px] text-center text-zinc-400">⌘+Enter로도 생성 가능 · Google Gemini 기반</p>
+            </div>
+          </div>
+        </div>
+      )}
       {/* ─── Toolbar ─── */}
       <div className="sticky top-0 z-10 flex flex-wrap items-center gap-1.5 px-6 py-3 border-b border-zinc-100 bg-white/95 backdrop-blur">
         <select
@@ -367,15 +547,59 @@ export default function MagazineRichEditor({ value, onChange }) {
         <ToolBtn onClick={() => editor.chain().focus().setHorizontalRule().run()} title="구분선">
           <Minus size={15} />
         </ToolBtn>
-        <ToolBtn active={editor.isActive('link')} onClick={insertLink} title="링크">
+        <ToolBtn active={editor.isActive('link')} onClick={insertLink} title="링크 추가 (또는 본문에 URL을 바로 붙여넣기 해도 됩니다)">
           <Link2 size={15} />
         </ToolBtn>
 
         <div className="w-px h-6 bg-zinc-200 mx-1" />
 
-        <ToolBtn onClick={handleImagePick} title="이미지 업로드">
+        <ToolBtn onClick={handleImagePick} title="이미지 업로드 (파일 선택 또는 드래그&드롭)">
           {uploading ? <Loader2 size={15} className="animate-spin" /> : <ImageIcon size={15} />}
         </ToolBtn>
+        <ToolBtn onClick={() => setShowAiModal(true)} title="AI로 이미지 생성하기 (Google Gemini)">
+          <Sparkles size={15} />
+        </ToolBtn>
+
+        {/* 자료 삽입 */}
+        {magazineId && (
+          <div className="relative">
+            <ToolBtn onClick={handleOpenResourcePicker} title="업로드한 자료를 본문 중간에 삽입">
+              <Paperclip size={15} />
+            </ToolBtn>
+            {showResourcePicker && (
+              <div className="absolute top-full left-0 mt-1 bg-white border border-zinc-200 rounded-md shadow-lg z-20 min-w-[240px]">
+                <div className="px-3 py-2 border-b border-zinc-100 flex items-center justify-between">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">자료 선택</span>
+                  <button type="button" onClick={() => setShowResourcePicker(false)} className="text-zinc-400 hover:text-zinc-700">
+                    <X size={12} />
+                  </button>
+                </div>
+                {resourcesLoading ? (
+                  <div className="flex items-center justify-center py-4 text-zinc-400">
+                    <Loader2 size={14} className="animate-spin" />
+                  </div>
+                ) : resources.length === 0 ? (
+                  <p className="text-[11px] text-zinc-400 text-center py-4 px-3">
+                    먼저 사이드바에서 자료를 업로드하세요
+                  </p>
+                ) : (
+                  resources.map((r) => (
+                    <button
+                      key={r.id}
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => handleInsertResource(r)}
+                      className="w-full text-left px-3 py-2.5 text-xs hover:bg-zinc-50 border-b border-zinc-100 last:border-0"
+                    >
+                      <div className="font-bold text-zinc-800 truncate">{r.title}</div>
+                      <div className="text-zinc-400 text-[10px] truncate">{r.file_name}</div>
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* 매거진 템플릿 */}
         <div className="relative">
@@ -415,6 +639,17 @@ export default function MagazineRichEditor({ value, onChange }) {
           className="hidden"
           onChange={handleImageUpload}
         />
+      </div>
+
+      {/* ─── 도움말 배너 ─── */}
+      <div className="px-6 py-2 bg-gradient-to-r from-violet-50 to-blue-50 border-b border-zinc-100 text-[11px] text-zinc-600 flex items-center gap-4 flex-wrap">
+        <span className="flex items-center gap-1"><Sparkles size={11} className="text-violet-500" /> AI로 이미지 생성</span>
+        <span className="text-zinc-300">·</span>
+        <span className="flex items-center gap-1"><Paperclip size={11} className="text-zinc-500" /> 자료 삽입</span>
+        <span className="text-zinc-300">·</span>
+        <span className="flex items-center gap-1"><Link2 size={11} className="text-blue-500" /> URL 붙여넣기로 링크 자동 생성</span>
+        <span className="text-zinc-300">·</span>
+        <span>이미지는 드래그&드롭으로도 업로드 가능</span>
       </div>
 
       {/* ─── Editor ─── */}
