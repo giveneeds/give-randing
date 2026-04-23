@@ -508,6 +508,11 @@ export default function MagazineRichEditor({ value, onChange, magazineId, editor
             )}
 
             <div className="space-y-4">
+              <div className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                <p className="text-[11px] text-amber-800 leading-relaxed">
+                  <span className="font-black">자동 제약:</span> 이미지 안 텍스트·말풍선·카드뉴스 스타일 ❌ / 인물·얼굴·손 ❌ / 사물·풍경·공간·텍스처 위주로 생성됩니다.
+                </p>
+              </div>
               <div>
                 <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-1.5 block">
                   이미지 설명 {aiMode === 'paragraph' && <span className="text-violet-500 normal-case">(문단에서 자동 채움 · 수정 가능)</span>}

@@ -5,13 +5,14 @@ export const runtime = 'nodejs';
 export const maxDuration = 60;
 
 const STYLE_HINTS = {
-  realistic: 'documentary-style photograph, natural lighting, candid moment, shot on Fujifilm, shallow depth of field, authentic and unstaged',
-  minimal: 'minimalist composition, lots of negative space, soft diffused light, muted neutral palette, clean editorial aesthetic',
-  editorial: 'sophisticated editorial photography, high-end magazine spread, considered composition, cinematic mood',
+  realistic: 'documentary-style photograph of objects and environments, natural lighting, shot on Fujifilm, shallow depth of field, authentic and unstaged',
+  minimal: 'minimalist still life of objects or spaces, lots of negative space, soft diffused light, muted neutral palette, clean editorial aesthetic',
+  editorial: 'sophisticated editorial object photography, high-end magazine spread, considered composition of items and scenery, cinematic mood',
 };
 
-// AI 티 안 나게 하는 공통 negative/positive 키워드
-const ANTI_AI_SUFFIX = 'photorealistic, subtle imperfections, natural grain, not CGI, not digital art, not illustration, avoid plastic skin';
+// AI 티 안 나게 + 텍스트/인물 배제 공통 suffix
+const ANTI_AI_SUFFIX = 'photorealistic, subtle imperfections, natural grain, not CGI, not digital art, not illustration';
+const SUBJECT_CONSTRAINTS = 'focus on objects, product still life, interior scenes, landscapes, textures, or abstract compositions. ABSOLUTELY NO text, NO typography, NO words, NO captions, NO speech bubbles, NO UI overlays, NO card-news style graphics, NO watermarks. NO people, NO faces, NO hands, NO body parts. Small incidental real-world brand logos on products or signage are OK if naturally part of the scene.';
 
 async function generateOne(apiKey, fullPrompt) {
   const model = 'gemini-2.5-flash-image';
@@ -99,6 +100,7 @@ export async function POST(request) {
       paragraph_context ? `Context: ${paragraph_context.slice(0, 200)}` : '',
       `Style: ${styleHint}`,
       preferenceBoost ? `Preferred elements: ${preferenceBoost}` : '',
+      SUBJECT_CONSTRAINTS,
       ANTI_AI_SUFFIX,
     ].filter(Boolean);
     const fullPrompt = parts.join(' | ');
