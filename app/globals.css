@@ -824,16 +824,46 @@ a {
   transform: translateY(-1px) !important;
 }
 
-/* 본문 링크 스타일 */
+/* 본문 링크 스타일 — 인라인 링크 */
 .prose.magazine-prose a {
   color: #2563eb !important;
   text-decoration: underline !important;
   text-underline-offset: 3px !important;
   font-weight: 600 !important;
   transition: color 0.15s !important;
+  word-break: break-all;
 }
 .prose.magazine-prose a:hover {
   color: #1d4ed8 !important;
+}
+
+/* 단독 줄에 있는 URL 링크는 카드 형태로 렌더링 */
+.prose.magazine-prose p > a:only-child[href^="http"] {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  background: #f4f4f5 !important;
+  border: 1px solid #e4e4e7 !important;
+  border-radius: 0.625rem !important;
+  color: #18181b !important;
+  font-size: 0.8125rem !important;
+  font-weight: 600 !important;
+  text-decoration: none !important;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: all 0.15s !important;
+}
+.prose.magazine-prose p > a:only-child[href^="http"]:hover {
+  background: #e4e4e7 !important;
+  border-color: #a1a1aa !important;
+}
+.prose.magazine-prose p > a:only-child[href^="http"]::before {
+  content: "🔗";
+  font-size: 0.875rem;
+  flex-shrink: 0;
 }
 
 /* 혹시 남아있는 코드블록을 일반 텍스트처럼 렌더링 */

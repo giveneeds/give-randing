@@ -106,8 +106,8 @@ const PullQuote = Node.create({
 import { useRef, useState, useCallback, useEffect } from 'react';
 import { clsx } from 'clsx';
 import {
-  Bold, Italic, List, ListOrdered, Quote, Minus, Link2, Image as ImageIcon,
-  Highlighter, Undo2, Redo2, LayoutTemplate, Loader2, Sparkles, X, Paperclip,
+  Bold, Italic, List, ListOrdered, Quote, Minus, Image as ImageIcon,
+  Highlighter, Undo2, Redo2, LayoutTemplate, Loader2, Sparkles, X, Paperclip, Link2,
 } from 'lucide-react';
 
 const HEADING_OPTIONS = [
@@ -158,7 +158,7 @@ function buildResourceBlockHTML(r) {
 </div><p></p>`;
 }
 
-export default function MagazineRichEditor({ value, onChange, magazineId, editorRef, onTitleSuggest }) {
+export default function MagazineRichEditor({ value, onChange, magazineId, editorRef, onTitleSuggest, magazineCategory }) {
   const fileInputRef = useRef(null);
   const [uploading, setUploading] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
@@ -168,6 +168,9 @@ export default function MagazineRichEditor({ value, onChange, magazineId, editor
   const [aiStyle, setAiStyle] = useState('realistic');
   const [aiGenerating, setAiGenerating] = useState(false);
   const [aiError, setAiError] = useState('');
+  const [aiImages, setAiImages] = useState([]); // 생성된 3장 그리드
+  const [aiMode, setAiMode] = useState('whole'); // 'whole' | 'paragraph'
+  const [aiParagraphContext, setAiParagraphContext] = useState('');
   const [showResourcePicker, setShowResourcePicker] = useState(false);
   const [resources, setResources] = useState([]);
   const [resourcesLoading, setResourcesLoading] = useState(false);
@@ -324,6 +327,7 @@ export default function MagazineRichEditor({ value, onChange, magazineId, editor
 
   // editor 인스턴스를 ref로 유지해 외부 콜백에서 항상 최신 editor 접근 가능
   const editorInstanceRef = useRef(null);
+  const titleSuggestRef = useRef(null);
   useEffect(() => { editorInstanceRef.current = editor; }, [editor]);
 
   // 외부에서 ref.current.insertResource(r) 호출 시 자동 삽입
@@ -334,6 +338,10 @@ export default function MagazineRichEditor({ value, onChange, magazineId, editor
         const ed = editorInstanceRef.current;
         if (!ed || !r) return;
         ed.chain().focus('end').insertContent(buildResourceBlockHTML(r)).run();
+      },
+      suggestTitles: () => {
+        // 외부에서 다시 만들기 요청 시 호출
+        titleSuggestRef.current?.();
       },
     };
   // editorRef는 stable ref이므로 의존성 불필요
@@ -365,38 +373,92 @@ export default function MagazineRichEditor({ value, onChange, magazineId, editor
     }
   }, [editor, onTitleSuggest]);
 
+  useEffect(() => { titleSuggestRef.current = handleTitleSuggest; }, [handleTitleSuggest]);
+
   const handleAiGenerate = useCallback(async () => {
     if (!aiPrompt.trim() || !editor) return;
     setAiGenerating(true);
     setAiError('');
+    setAiImages([]);
     try {
       const res = await fetch('/api/ai-image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: aiPrompt, style: aiStyle }),
+        body: JSON.stringify({
+          prompt: aiPrompt,
+          style: aiStyle,
+          count: 3,
+          category: magazineCategory || null,
+          paragraph_context: aiMode === 'paragraph' ? aiParagraphContext : null,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || '생성 실패');
-      editor.chain().focus().setImage({ src: data.url, alt: aiPrompt }).run();
-      setShowAiModal(false);
-      setAiPrompt('');
+      // 신규 응답은 images 배열, 하위 호환으로 url 단일도 지원
+      const imgs = Array.isArray(data.images) && data.images.length > 0
+        ? data.images
+        : data.url ? [{ url: data.url, path: data.path }] : [];
+      if (imgs.length === 0) throw new Error('이미지를 생성하지 못했습니다');
+      setAiImages(imgs);
     } catch (err) {
       setAiError(err.message);
     } finally {
       setAiGenerating(false);
     }
-  }, [aiPrompt, aiStyle, editor]);
+  }, [aiPrompt, aiStyle, editor, magazineCategory, aiMode, aiParagraphContext]);
 
-  const insertLink = useCallback(() => {
+  const handleSelectAiImage = useCallback(async (img) => {
+    if (!editor || !img?.url) return;
+    // 문단 모드면 해당 문단 뒤에 삽입, 아니면 현재 커서 위치
+    editor.chain().focus().setImage({ src: img.url, alt: aiPrompt }).run();
+    // 선호도 저장 (비동기, 실패해도 UX엔 영향 없음)
+    fetch('/api/ai-image-preferences', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        category: magazineCategory || null,
+        prompt: aiPrompt,
+        style: aiStyle,
+        selected_image_url: img.url,
+        paragraph_context: aiMode === 'paragraph' ? aiParagraphContext : null,
+      }),
+    }).catch(() => {});
+    setShowAiModal(false);
+    setAiPrompt('');
+    setAiImages([]);
+    setAiParagraphContext('');
+  }, [editor, aiPrompt, aiStyle, magazineCategory, aiMode, aiParagraphContext]);
+
+  // 문단 기반 이미지 생성 열기 — 현재 커서가 위치한 문단의 텍스트를 가져옴
+  const handleOpenParagraphImage = useCallback(() => {
     if (!editor) return;
-    const prev = editor.getAttributes('link').href;
-    const url = window.prompt('링크 URL을 입력하세요', prev || 'https://');
-    if (url === null) return;
-    if (url === '') {
-      editor.chain().focus().unsetLink().run();
+    const { state } = editor;
+    const { $from } = state.selection;
+    let paragraphText = '';
+    // 현재 선택된 텍스트가 있으면 그것을 우선
+    if (!state.selection.empty) {
+      paragraphText = state.doc.textBetween(state.selection.from, state.selection.to, ' ').trim();
+    }
+    // 없으면 커서가 위치한 블록(문단)의 텍스트
+    if (!paragraphText) {
+      for (let d = $from.depth; d >= 0; d--) {
+        const node = $from.node(d);
+        if (node && node.type.name === 'paragraph') {
+          paragraphText = node.textContent.trim();
+          break;
+        }
+      }
+    }
+    if (!paragraphText || paragraphText.length < 10) {
+      alert('문단에 커서를 두거나 문단을 드래그 선택한 뒤 다시 시도해주세요.');
       return;
     }
-    editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+    setAiMode('paragraph');
+    setAiParagraphContext(paragraphText);
+    setAiPrompt(paragraphText.slice(0, 150));
+    setAiImages([]);
+    setAiError('');
+    setShowAiModal(true);
   }, [editor]);
 
   if (!editor) {
@@ -419,26 +481,36 @@ export default function MagazineRichEditor({ value, onChange, magazineId, editor
     <div className="magazine-editor flex flex-col h-full min-h-[700px] bg-white">
       {/* ─── AI 이미지 생성 모달 ─── */}
       {showAiModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-white text-zinc-900 rounded-2xl shadow-2xl w-full max-w-2xl my-8 p-6" style={{ colorScheme: 'light' }}>
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-2">
                 <Sparkles size={18} className="text-violet-600" />
-                <h3 className="text-sm font-black tracking-tight">AI 이미지 생성</h3>
+                <h3 className="text-sm font-black tracking-tight">
+                  AI 이미지 생성 {aiMode === 'paragraph' ? '· 문단 기반' : '· 글 전체'}
+                </h3>
               </div>
               <button
                 type="button"
-                onClick={() => { setShowAiModal(false); setAiError(''); }}
+                onClick={() => { setShowAiModal(false); setAiError(''); setAiImages([]); }}
                 className="p-1.5 rounded-lg hover:bg-zinc-100 text-zinc-400"
               >
                 <X size={16} />
               </button>
             </div>
 
+            {/* 문단 컨텍스트 미리보기 */}
+            {aiMode === 'paragraph' && aiParagraphContext && (
+              <div className="mb-4 p-3 bg-violet-50 border border-violet-200 rounded-xl">
+                <div className="text-[10px] font-black uppercase tracking-widest text-violet-700 mb-1">선택된 문단</div>
+                <p className="text-xs text-zinc-700 leading-relaxed line-clamp-3">{aiParagraphContext}</p>
+              </div>
+            )}
+
             <div className="space-y-4">
               <div>
                 <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-1.5 block">
-                  이미지 설명
+                  이미지 설명 {aiMode === 'paragraph' && <span className="text-violet-500 normal-case">(문단에서 자동 채움 · 수정 가능)</span>}
                 </label>
                 <textarea
                   value={aiPrompt}
@@ -446,7 +518,7 @@ export default function MagazineRichEditor({ value, onChange, magazineId, editor
                   onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleAiGenerate(); }}
                   placeholder="예: 현대적인 오피스에서 일하는 전문가, 노트북과 커피잔이 있는 깔끔한 책상"
                   rows={3}
-                  className="w-full text-sm border border-zinc-200 rounded-xl px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent placeholder:text-zinc-300"
+                  className="w-full text-sm bg-white text-zinc-900 border border-zinc-200 rounded-xl px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent placeholder:text-zinc-400"
                 />
               </div>
 
@@ -482,25 +554,59 @@ export default function MagazineRichEditor({ value, onChange, magazineId, editor
                 <p className="text-xs text-red-500 bg-red-50 rounded-lg px-3 py-2">{aiError}</p>
               )}
 
-              <button
-                type="button"
-                onClick={handleAiGenerate}
-                disabled={!aiPrompt.trim() || aiGenerating}
-                className="w-full py-3 rounded-xl bg-zinc-900 text-white text-sm font-black tracking-tight hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center justify-center gap-2"
-              >
-                {aiGenerating ? (
-                  <>
-                    <Loader2 size={15} className="animate-spin" />
-                    생성 중... (10~20초 소요)
-                  </>
-                ) : (
-                  <>
-                    <Sparkles size={15} />
-                    이미지 생성하기
-                  </>
-                )}
-              </button>
-              <p className="text-[10px] text-center text-zinc-400">⌘+Enter로도 생성 가능 · Google Gemini 기반</p>
+              {/* 생성된 3장 그리드 */}
+              {aiImages.length > 0 && (
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">마음에 드는 이미지 선택</label>
+                    <span className="text-[10px] text-zinc-400">클릭하면 본문에 삽입됩니다</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {aiImages.map((img, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => handleSelectAiImage(img)}
+                        className="group relative aspect-square rounded-xl overflow-hidden border-2 border-zinc-200 hover:border-violet-500 transition-all"
+                      >
+                        <img src={img.url} alt={`ai-${i}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                        <div className="absolute inset-0 bg-violet-600/0 group-hover:bg-violet-600/10 transition-colors flex items-end justify-center pb-2 opacity-0 group-hover:opacity-100">
+                          <span className="text-[10px] font-black text-white bg-zinc-900 px-2 py-1 rounded">선택</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleAiGenerate}
+                  disabled={!aiPrompt.trim() || aiGenerating}
+                  className="flex-1 py-3 rounded-xl bg-zinc-900 text-white text-sm font-black tracking-tight hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center justify-center gap-2"
+                >
+                  {aiGenerating ? (
+                    <>
+                      <Loader2 size={15} className="animate-spin" />
+                      생성 중... (20~40초 소요)
+                    </>
+                  ) : aiImages.length > 0 ? (
+                    <>
+                      <Sparkles size={15} />
+                      다시 3장 생성
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles size={15} />
+                      이미지 3장 생성
+                    </>
+                  )}
+                </button>
+              </div>
+              <p className="text-[10px] text-center text-zinc-400">
+                ⌘+Enter로도 생성 · Gemini 기반 · 선택 시 스타일이 학습되어 다음 생성에 반영됩니다
+              </p>
             </div>
           </div>
         </div>
@@ -580,17 +686,18 @@ export default function MagazineRichEditor({ value, onChange, magazineId, editor
         <ToolBtn onClick={() => editor.chain().focus().setHorizontalRule().run()} title="구분선">
           <Minus size={15} />
         </ToolBtn>
-        <ToolBtn active={editor.isActive('link')} onClick={insertLink} title="링크 추가 (또는 본문에 URL을 바로 붙여넣기 해도 됩니다)">
-          <Link2 size={15} />
-        </ToolBtn>
-
         <div className="w-px h-6 bg-zinc-200 mx-1" />
 
         <ToolBtn onClick={handleImagePick} title="이미지 업로드 (파일 선택 또는 드래그&드롭)">
           {uploading ? <Loader2 size={15} className="animate-spin" /> : <ImageIcon size={15} />}
         </ToolBtn>
-        <ToolBtn onClick={() => setShowAiModal(true)} title="AI로 이미지 생성하기 (Google Gemini)">
+        <ToolBtn onClick={() => { setAiMode('whole'); setAiParagraphContext(''); setAiPrompt(''); setAiImages([]); setAiError(''); setShowAiModal(true); }} title="글 전체 주제로 AI 이미지 3장 생성">
           <Sparkles size={15} />
+        </ToolBtn>
+        <ToolBtn onClick={handleOpenParagraphImage} title="현재 문단(또는 선택 텍스트)에 어울리는 AI 이미지 3장 생성">
+          <span className="flex items-center gap-0.5 text-[10px] font-black">
+            <Sparkles size={12} />P
+          </span>
         </ToolBtn>
 
         {/* 자료 삽입 */}

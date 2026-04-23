@@ -150,6 +150,13 @@ export default function MagazineEditor() {
                       {t}
                     </button>
                   ))}
+                  <button
+                    type="button"
+                    onClick={() => editorRef.current?.suggestTitles?.()}
+                    className="w-full mt-1.5 flex items-center justify-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-violet-700 bg-violet-100 hover:bg-violet-200 py-2 rounded transition"
+                  >
+                    🔄 다시 만들기
+                  </button>
                 </div>
               )}
               
@@ -210,6 +217,7 @@ export default function MagazineEditor() {
              magazineId={id}
              editorRef={editorRef}
              onTitleSuggest={(titles) => setTitleSuggestions(titles)}
+             magazineCategory={magazine.category}
            />
         </main>
       </div>
