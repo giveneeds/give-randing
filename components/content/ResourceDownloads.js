@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
-import { FileText, Download, Lock, Loader2 } from 'lucide-react';
+import { Download, Lock, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/useAuth';
 
@@ -68,24 +68,28 @@ export default function ResourceDownloads({
       <ul className="space-y-3">
         {resources.map((r) => {
           const isBusy = downloading === r.id;
+          const ext = (r.file_name || '').split('.').pop()?.toUpperCase().slice(0, 5) || 'FILE';
           return (
             <li
               key={r.id}
-              className="flex items-center gap-4 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950"
+              className="flex items-center gap-4 p-4 md:p-5 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-sm hover:shadow-md hover:border-zinc-900 dark:hover:border-white transition-all hover:-translate-y-0.5"
             >
-              <div className="shrink-0 w-11 h-11 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 dark:text-zinc-400">
-                <FileText size={18} />
+              <div className="shrink-0 w-11 h-11 md:w-12 md:h-12 rounded-xl bg-zinc-900 dark:bg-white flex items-center justify-center text-white dark:text-zinc-900 text-[10px] font-black tracking-widest">
+                {ext}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-black text-zinc-900 dark:text-white truncate">
+                <div className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.2em] mb-1">
+                  Resource
+                </div>
+                <p className="text-sm md:text-base font-black text-zinc-900 dark:text-white truncate leading-tight tracking-tight">
                   {r.title}
                 </p>
                 {r.description && (
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 line-clamp-2">
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 line-clamp-2">
                     {r.description}
                   </p>
                 )}
-                <p className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-1 font-medium">
+                <p className="text-[11px] text-zinc-400 dark:text-zinc-500 mt-1 font-medium truncate">
                   {r.file_name}
                   {r.file_size ? ` · ${formatSize(r.file_size)}` : ''}
                 </p>

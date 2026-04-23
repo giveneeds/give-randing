@@ -15,7 +15,7 @@ function formatSize(bytes) {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
-export default function ResourcesManager({ parentType = 'magazine', parentId, magazineId }) {
+export default function ResourcesManager({ parentType = 'magazine', parentId, magazineId, onResourceAdded }) {
   // 하위 호환: magazineId 만 넘어온 경우에도 동작
   const effectiveParentId = parentId ?? magazineId;
   const effectiveParentType = parentId ? parentType : (magazineId ? 'magazine' : parentType);
@@ -71,6 +71,7 @@ export default function ResourcesManager({ parentType = 'magazine', parentId, ma
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || '메타데이터 저장 실패');
       setResources((prev) => [...prev, data.resource]);
+      onResourceAdded?.(data.resource);
     } catch (e) {
       alert('저장 실패: ' + e.message);
     }

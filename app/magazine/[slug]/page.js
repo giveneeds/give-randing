@@ -15,6 +15,11 @@ import { useAuth } from '@/lib/useAuth';
 import { appendMagazine } from '@/lib/userTrail';
 import { trackEvent } from '@/lib/tracker';
 
+function injectLinkTargets(html) {
+  if (!html) return html;
+  return html.replace(/<a\s/gi, '<a target="_blank" rel="noopener noreferrer" ');
+}
+
 export default function MagazineDetailPage() {
   const { slug } = useParams();
   const [post, setPost] = useState(null);
@@ -23,6 +28,39 @@ export default function MagazineDetailPage() {
   const [loading, setLoading] = useState(true);
   const { user, loading: authLoading } = useAuth();
   const isLocked = !!post?.is_premium && !user && !authLoading;
+
+  // 본문 내 data-resource-block 클릭 시 자료 다운로드 트리거
+  useEffect(() => {
+    function handleClick(e) {
+      const block = e.target.closest('[data-resource-block]');
+      if (!block) return;
+      const resourceId = block.getAttribute('data-resource-id');
+      const resource = resources.find((r) => r.id === resourceId);
+      if (!resource || !post?.id) return;
+      if (!user) {
+        window.location.href = `/login?redirect=${encodeURIComponent(`/magazine/${slug}`)}`;
+        return;
+      }
+      (async () => {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          const token = session?.access_token;
+          const res = await fetch(`/api/magazines/${post.id}/resources/${resourceId}/download`, {
+            method: 'POST',
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          });
+          const data = await res.json();
+          if (data.url) window.location.href = data.url;
+        } catch (err) {
+          alert('다운로드 실패: ' + err.message);
+        }
+      })();
+    }
+    const el = document.querySelector('.magazine-prose');
+    if (!el) return;
+    el.addEventListener('click', handleClick);
+    return () => el.removeEventListener('click', handleClick);
+  }, [resources, post?.id, user, slug]);
 
   useEffect(() => {
     async function loadPost() {
@@ -182,7 +220,7 @@ export default function MagazineDetailPage() {
                  WebkitMaskImage: 'linear-gradient(to bottom, black 50%, transparent 100%)',
                  maskImage: 'linear-gradient(to bottom, black 50%, transparent 100%)',
                } : undefined}
-               dangerouslySetInnerHTML={{ __html: post.content_html }}
+               dangerouslySetInnerHTML={{ __html: injectLinkTargets(post.content_html) }}
             />
           </div>
 

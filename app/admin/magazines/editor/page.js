@@ -29,6 +29,9 @@ export default function MagazineEditor() {
   const [loading, setLoading] = useState(!!id);
   const [tagInput, setTagInput] = useState('');
   const [previewOpen, setPreviewOpen] = useState(false);
+  const editorRef = useRef({ insertResource: () => {} });
+  const [titleSuggestions, setTitleSuggestions] = useState([]);
+
 
   useEffect(() => { if (id) loadMagazine(); }, [id]);
 
@@ -122,12 +125,33 @@ export default function MagazineEditor() {
          </div>
       </header>
 
-      <div className="flex-1 flex overflow-hidden">
-        <aside className="w-full max-w-[450px] border-r border-zinc-100 bg-zinc-50/50 flex flex-col overflow-y-auto p-8 space-y-8 shrink-0 custom-scrollbar">
+      <div className="flex-1 flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden">
+        <aside className="w-full lg:max-w-[450px] border-b lg:border-b-0 lg:border-r border-zinc-100 bg-zinc-50/50 flex flex-col lg:overflow-y-auto p-8 space-y-8 lg:shrink-0 custom-scrollbar">
            {/* 기본 정보 */}
            <div className="space-y-4">
               <label className="text-[10px] font-bold text-zinc-900 uppercase ml-1">Archive Data</label>
               <input className="w-full p-4 bg-white border border-zinc-200 rounded-md font-bold text-base outline-none shadow-sm focus:ring-2 focus:ring-zinc-900/10" placeholder="기사 제목을 입력하세요" value={magazine.title} onChange={e => handleTitleChange(e.target.value)} />
+
+              {titleSuggestions.length > 0 && (
+                <div className="bg-violet-50 border border-violet-200 rounded-md p-3 space-y-1.5">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[9px] font-black uppercase tracking-widest text-violet-700">AI 제안</span>
+                    <button type="button" onClick={() => setTitleSuggestions([])} className="text-violet-400 hover:text-violet-700">
+                      <X size={12} />
+                    </button>
+                  </div>
+                  {titleSuggestions.map((t, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => { handleTitleChange(t); setTitleSuggestions([]); }}
+                      className="w-full text-left text-xs font-bold text-zinc-800 px-3 py-2 rounded bg-white hover:bg-violet-100 border border-transparent hover:border-violet-300 transition"
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              )}
               
               <div className="grid grid-cols-2 gap-3">
                  <select className="w-full p-3 bg-white border border-zinc-200 rounded-md font-bold text-xs outline-none shadow-sm" value={magazine.category} onChange={e => setMagazine({ ...magazine, category: e.target.value })}>
@@ -163,7 +187,10 @@ export default function MagazineEditor() {
                 <label className="text-[10px] font-bold text-zinc-900 uppercase ml-1">첨부 자료 (다운로드)</label>
                 <span className="text-[9px] text-zinc-400">로그인 유저에게 바로 다운로드</span>
               </div>
-              <ResourcesManager magazineId={id} />
+              <ResourcesManager
+                magazineId={id}
+                onResourceAdded={(r) => editorRef.current?.insertResource?.(r)}
+              />
            </div>
 
            {/* 토글 옵션 */}
@@ -176,10 +203,13 @@ export default function MagazineEditor() {
            </div>
         </aside>
 
-        <main className="flex-1 bg-white overflow-hidden flex flex-col">
+        <main className="flex-1 min-h-[700px] lg:min-h-0 bg-white lg:overflow-hidden flex flex-col">
            <MagazineRichEditor
              value={magazine.content_html}
              onChange={(html) => setMagazine((m) => ({ ...m, content_html: html }))}
+             magazineId={id}
+             editorRef={editorRef}
+             onTitleSuggest={(titles) => setTitleSuggestions(titles)}
            />
         </main>
       </div>

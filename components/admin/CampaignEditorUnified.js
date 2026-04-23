@@ -614,7 +614,13 @@ export default function CampaignEditorUnified({ campaign, sections, onSave, onCl
             <ConfigCard title="첨부 자료 (다운로드)" icon={<FileText size={14} />}
               rightSlot={<span className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">로그인 유저에게 바로 다운로드</span>}
             >
-              <ResourcesManager parentType="campaign" parentId={current.id} />
+              <ResourcesManager
+                parentType="campaign"
+                parentId={current.id}
+                onResourceAdded={(r) => {
+                  alert(`자료 "${r.title}"이(가) 추가되었습니다. 랜딩페이지 하단 "첨부 자료" 섹션에 자동 노출됩니다.`);
+                }}
+              />
             </ConfigCard>
 
             <ConfigCard title="Analytics" icon={<BarChart3 size={14} />}>
@@ -670,7 +676,7 @@ export default function CampaignEditorUnified({ campaign, sections, onSave, onCl
                 {previewMode === 'mobile' && (
                   <div className="relative" style={{ width: '390px', minHeight: '840px', background: 'white', borderRadius: '40px', overflow: 'hidden', border: '8px solid #18181b', boxShadow: '0 12px 40px rgba(0,0,0,0.25)', flexShrink: 0 }}>
                     <div style={{ position: 'absolute', top: 10, left: '50%', transform: 'translateX(-50%)', width: 80, height: 20, background: '#18181b', borderRadius: 20, zIndex: 10 }} />
-                    <div style={{ paddingTop: 40, overflow: 'auto', height: '100%' }}>
+                    <div style={{ paddingTop: 40, overflowX: 'hidden', overflowY: 'auto', height: '100%', width: '100%', maxWidth: '374px' }}>
                       <PreviewContent current={current} liveSections={liveSections} particleWords={particleWords} isMobile />
                     </div>
                   </div>
@@ -702,11 +708,34 @@ function PreviewContent({ current, liveSections, particleWords, isMobile }) {
       );
     }
     if (blockId === 'lead_form' && current.show_lead_form) {
+      // 모바일 프리뷰: 반응형 클래스 없이 고정 레이아웃
+      if (isMobile) {
+        return (
+          <section key="lead_form" style={{ borderTop: '1px solid #f4f4f5', background: '#fff', padding: '2rem 1.25rem', boxSizing: 'border-box', width: '100%' }}>
+            <div style={{ marginBottom: '1.25rem' }}>
+              <div style={{ fontSize: '0.65rem', fontWeight: 900, color: '#7c3aed', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Lead Magnet</div>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 900, letterSpacing: '-0.02em', lineHeight: 1.3, marginBottom: '0.5rem', wordBreak: 'break-all' }}>
+                {current.hero_content?.file_name || current.hero_content?.headline || '리드 마그넷 제목'}
+              </h2>
+              <p style={{ fontSize: '0.8125rem', color: '#71717a', lineHeight: 1.6 }}>
+                {current.hero_content?.description || '전략 리포트를 받기 위해 정보를 입력하세요.'}
+              </p>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+              <input readOnly placeholder="이름" style={{ width: '100%', padding: '0.75rem 1rem', border: '1px solid #e4e4e7', borderRadius: '0.625rem', fontSize: '0.875rem', background: '#fafafa', boxSizing: 'border-box' }} />
+              <input readOnly placeholder="연락처" style={{ width: '100%', padding: '0.75rem 1rem', border: '1px solid #e4e4e7', borderRadius: '0.625rem', fontSize: '0.875rem', background: '#fafafa', boxSizing: 'border-box' }} />
+              <button style={{ width: '100%', padding: '0.875rem', background: '#FEE500', border: 'none', borderRadius: '0.625rem', fontWeight: 900, fontSize: '0.875rem', cursor: 'default', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                💬 {current.hero_content?.cta_label || '카카오로 3초 만에 시작하기'}
+              </button>
+            </div>
+          </section>
+        );
+      }
       return (
-        <section key="lead_form" className="border-t border-zinc-100 bg-white">
-          <div className={`flex ${isMobile ? 'flex-col' : 'flex-col lg:flex-row'} items-center gap-10 px-8 py-16 max-w-5xl mx-auto`}>
+        <section key="lead_form" className="border-t border-zinc-100 bg-white overflow-hidden">
+          <div className="flex flex-col lg:flex-row items-center gap-6 px-8 py-16 max-w-5xl mx-auto w-full">
             <div className="flex-1">
-              <h1 className="text-3xl font-black tracking-tighter leading-tight mb-4 whitespace-pre-line">{current.hero_content?.headline || '헤드라인'}</h1>
+              <h1 className="text-3xl font-black tracking-tighter leading-tight mb-3 whitespace-pre-line">{current.hero_content?.headline || '헤드라인'}</h1>
               <p className="text-base text-zinc-500">{current.hero_content?.description || ''}</p>
             </div>
             <div className="flex-1 w-full max-w-sm">
