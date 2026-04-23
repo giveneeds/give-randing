@@ -430,7 +430,7 @@ export default function MagazineRichEditor({ value, onChange, magazineId, editor
   }, [editor, aiPrompt, aiStyle, magazineCategory, aiMode, aiParagraphContext]);
 
   // 문단 기반 이미지 생성 열기 — 현재 커서가 위치한 문단의 텍스트를 가져옴
-  const handleOpenParagraphImage = useCallback(() => {
+  const handleOpenParagraphImage = useCallback(async () => {
     if (!editor) return;
     const { state } = editor;
     const { $from } = state.selection;
@@ -455,11 +455,28 @@ export default function MagazineRichEditor({ value, onChange, magazineId, editor
     }
     setAiMode('paragraph');
     setAiParagraphContext(paragraphText);
-    setAiPrompt(paragraphText.slice(0, 150));
     setAiImages([]);
     setAiError('');
     setShowAiModal(true);
-  }, [editor]);
+    // 문단을 시각적 프롬프트로 변환 (비동기) — 실패 시 원문 그대로 둠
+    setAiPrompt('프롬프트 생성 중...');
+    try {
+      const res = await fetch('/api/ai-image-prompt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paragraph: paragraphText, category: magazineCategory || null }),
+      });
+      const data = await res.json();
+      if (res.ok && data.prompt) {
+        setAiPrompt(data.prompt);
+      } else {
+        // 실패 시 원문 첫 100자 정도만 힌트로
+        setAiPrompt(paragraphText.slice(0, 100));
+      }
+    } catch {
+      setAiPrompt(paragraphText.slice(0, 100));
+    }
+  }, [editor, magazineCategory]);
 
   if (!editor) {
     return (
@@ -515,7 +532,7 @@ export default function MagazineRichEditor({ value, onChange, magazineId, editor
               </div>
               <div>
                 <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-1.5 block">
-                  이미지 설명 {aiMode === 'paragraph' && <span className="text-violet-500 normal-case">(문단에서 자동 채움 · 수정 가능)</span>}
+                  이미지 설명 {aiMode === 'paragraph' && <span className="text-violet-500 normal-case">(문단을 시각적 장면으로 변환 · 수정 가능)</span>}
                 </label>
                 <textarea
                   value={aiPrompt}
