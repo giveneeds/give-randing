@@ -321,16 +321,23 @@ export default function MagazineRichEditor({ value, onChange, magazineId, editor
     setShowResourcePicker(false);
   }, [editor]);
 
+  // editor 인스턴스를 ref로 유지해 외부 콜백에서 항상 최신 editor 접근 가능
+  const editorInstanceRef = useRef(null);
+  useEffect(() => { editorInstanceRef.current = editor; }, [editor]);
+
   // 외부에서 ref.current.insertResource(r) 호출 시 자동 삽입
   useEffect(() => {
     if (!editorRef) return;
     editorRef.current = {
       insertResource: (r) => {
-        if (!editor || !r) return;
-        editor.chain().focus('end').insertContent(buildResourceBlockHTML(r)).run();
+        const ed = editorInstanceRef.current;
+        if (!ed || !r) return;
+        ed.chain().focus('end').insertContent(buildResourceBlockHTML(r)).run();
       },
     };
-  }, [editor, editorRef]);
+  // editorRef는 stable ref이므로 의존성 불필요
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleAiGenerate = useCallback(async () => {
     if (!aiPrompt.trim() || !editor) return;
