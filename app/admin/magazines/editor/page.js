@@ -129,7 +129,17 @@ export default function MagazineEditor() {
         <aside className="w-full lg:max-w-[450px] border-b lg:border-b-0 lg:border-r border-zinc-100 bg-zinc-50/50 flex flex-col lg:overflow-y-auto p-8 space-y-8 lg:shrink-0 custom-scrollbar">
            {/* 기본 정보 */}
            <div className="space-y-4">
-              <label className="text-[10px] font-bold text-zinc-900 uppercase ml-1">Archive Data</label>
+              <div className="flex items-center justify-between ml-1">
+                <label className="text-[10px] font-bold text-zinc-900 uppercase">Archive Data</label>
+                <button
+                  type="button"
+                  onClick={() => editorRef.current?.suggestTitles?.()}
+                  title="본문을 분석해 AI가 제목 5개를 추천합니다"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest text-violet-600 hover:bg-violet-50 border border-violet-200 hover:border-violet-400 transition-colors"
+                >
+                  ✨ AI 제목
+                </button>
+              </div>
               <input className="w-full p-4 bg-white border border-zinc-200 rounded-md font-bold text-base outline-none shadow-sm focus:ring-2 focus:ring-zinc-900/10" placeholder="기사 제목을 입력하세요" value={magazine.title} onChange={e => handleTitleChange(e.target.value)} />
 
               {titleSuggestions.length > 0 && (
