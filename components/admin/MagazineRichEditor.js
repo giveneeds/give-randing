@@ -158,7 +158,7 @@ function buildResourceBlockHTML(r) {
 </div><p></p>`;
 }
 
-export default function MagazineRichEditor({ value, onChange, magazineId, editorRef }) {
+export default function MagazineRichEditor({ value, onChange, magazineId, editorRef, onTitleSuggest }) {
   const fileInputRef = useRef(null);
   const [uploading, setUploading] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
@@ -171,6 +171,7 @@ export default function MagazineRichEditor({ value, onChange, magazineId, editor
   const [showResourcePicker, setShowResourcePicker] = useState(false);
   const [resources, setResources] = useState([]);
   const [resourcesLoading, setResourcesLoading] = useState(false);
+  const [titleLoading, setTitleLoading] = useState(false);
 
   const editor = useEditor({
     extensions: [
@@ -338,6 +339,31 @@ export default function MagazineRichEditor({ value, onChange, magazineId, editor
   // editorRef는 stable ref이므로 의존성 불필요
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const handleTitleSuggest = useCallback(async () => {
+    if (!editor) return;
+    const content = editor.getHTML();
+    const plain = content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    if (plain.length < 50) {
+      alert('본문을 먼저 충분히 작성해주세요 (최소 50자).');
+      return;
+    }
+    setTitleLoading(true);
+    try {
+      const res = await fetch('/api/ai-title', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '제목 추천 실패');
+      onTitleSuggest?.(data.titles || []);
+    } catch (e) {
+      alert('제목 추천 실패: ' + e.message);
+    } finally {
+      setTitleLoading(false);
+    }
+  }, [editor, onTitleSuggest]);
 
   const handleAiGenerate = useCallback(async () => {
     if (!aiPrompt.trim() || !editor) return;
@@ -638,6 +664,23 @@ export default function MagazineRichEditor({ value, onChange, magazineId, editor
         <ToolBtn onClick={() => editor.chain().focus().redo().run()} title="다시 실행">
           <Redo2 size={15} />
         </ToolBtn>
+
+        {onTitleSuggest && (
+          <>
+            <div className="w-px h-6 bg-zinc-200 mx-1" />
+            <button
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={handleTitleSuggest}
+              disabled={titleLoading}
+              title="본문을 분석해 AI가 제목을 5개 추천합니다"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest text-violet-600 hover:bg-violet-50 disabled:opacity-40 transition-colors border border-violet-200 hover:border-violet-400"
+            >
+              {titleLoading ? <Loader2 size={11} className="animate-spin" /> : <Sparkles size={11} />}
+              AI 제목
+            </button>
+          </>
+        )}
 
         <input
           ref={fileInputRef}

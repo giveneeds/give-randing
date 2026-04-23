@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowLeft, Save, Eye, Trash2, Monitor, Smartphone, CheckCircle2, ChevronRight,
-  Archive, Send, X, Info, Sparkles, Loader2
+  Archive, Send, X, Info
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import AiSolutionBlock from '@/components/ui/AiSolutionBlock';
@@ -31,30 +31,7 @@ export default function MagazineEditor() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const editorRef = useRef({ insertResource: () => {} });
   const [titleSuggestions, setTitleSuggestions] = useState([]);
-  const [titleLoading, setTitleLoading] = useState(false);
 
-  async function suggestTitles() {
-    if (!magazine.content_html?.trim() || magazine.content_html.replace(/<[^>]+>/g, '').trim().length < 50) {
-      alert('본문을 먼저 충분히 작성해주세요 (최소 50자).');
-      return;
-    }
-    setTitleLoading(true);
-    setTitleSuggestions([]);
-    try {
-      const res = await fetch('/api/ai-title', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: magazine.content_html }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || '제목 추천 실패');
-      setTitleSuggestions(data.titles || []);
-    } catch (e) {
-      alert('제목 추천 실패: ' + e.message);
-    } finally {
-      setTitleLoading(false);
-    }
-  }
 
   useEffect(() => { if (id) loadMagazine(); }, [id]);
 
@@ -152,19 +129,7 @@ export default function MagazineEditor() {
         <aside className="w-full max-w-[450px] border-r border-zinc-100 bg-zinc-50/50 flex flex-col overflow-y-auto p-8 space-y-8 shrink-0 custom-scrollbar">
            {/* 기본 정보 */}
            <div className="space-y-4">
-              <div className="flex items-center justify-between ml-1">
-                <label className="text-[10px] font-bold text-zinc-900 uppercase">Archive Data</label>
-                <button
-                  type="button"
-                  onClick={suggestTitles}
-                  disabled={titleLoading}
-                  title="본문을 분석해 AI가 제목을 5개 제안합니다"
-                  className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-violet-600 hover:text-violet-800 disabled:opacity-40"
-                >
-                  {titleLoading ? <Loader2 size={11} className="animate-spin" /> : <Sparkles size={11} />}
-                  AI 제목 추천
-                </button>
-              </div>
+              <label className="text-[10px] font-bold text-zinc-900 uppercase ml-1">Archive Data</label>
               <input className="w-full p-4 bg-white border border-zinc-200 rounded-md font-bold text-base outline-none shadow-sm focus:ring-2 focus:ring-zinc-900/10" placeholder="기사 제목을 입력하세요" value={magazine.title} onChange={e => handleTitleChange(e.target.value)} />
 
               {titleSuggestions.length > 0 && (
@@ -244,6 +209,7 @@ export default function MagazineEditor() {
              onChange={(html) => setMagazine((m) => ({ ...m, content_html: html }))}
              magazineId={id}
              editorRef={editorRef}
+             onTitleSuggest={(titles) => setTitleSuggestions(titles)}
            />
         </main>
       </div>
