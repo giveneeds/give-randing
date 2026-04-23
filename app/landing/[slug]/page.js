@@ -111,7 +111,7 @@ export default function CampaignLandingPage() {
 
                 {/* 리드 마그넷 폼 블록 */}
                 {showLeadForm && (
-                  <div className="flex flex-col lg:flex-row items-center justify-center min-h-[80vh] lg:min-h-screen text-center lg:text-left px-4 md:px-8 max-w-7xl mx-auto gap-8 md:gap-12 py-12 md:py-20">
+                  <div className="flex flex-col lg:flex-row items-center justify-center min-h-[80vh] lg:min-h-screen text-center lg:text-left px-4 md:px-8 max-w-7xl mx-auto gap-8 md:gap-12 py-12 md:py-20 overflow-hidden">
                     <div className="flex-1">
                       <div className="flex items-center justify-center lg:justify-start gap-2 md:gap-3 mb-4 md:mb-6 flex-wrap">
                         <span className="text-[10px] font-bold tracking-[0.3em] text-zinc-400 uppercase">
