@@ -71,7 +71,7 @@ export default function LeadForm({ title, subtitle, ctaLabel, campaignId, magazi
   };
 
   return (
-    <div className="relative w-full max-w-[320px] sm:max-w-lg md:max-w-3xl mx-auto group">
+    <div className="relative w-full max-w-[320px] sm:max-w-lg md:max-w-3xl mx-auto group overflow-hidden">
       {/* 🔮 Background Blur Orbs */}
       <div className="absolute -top-20 -left-20 w-64 h-64 bg-primary/20 rounded-full blur-[100px] animate-pulse pointer-events-none" />
       <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-blue-500/10 rounded-full blur-[100px] animate-pulse pointer-events-none" />
