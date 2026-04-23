@@ -660,7 +660,7 @@ export default function MagazineRichEditor({ value, onChange, magazineId, editor
       </div>
 
       {/* ─── Editor ─── */}
-      <div className="flex-1 overflow-y-auto bg-white">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden bg-white">
         <EditorContent editor={editor} />
       </div>
     </div>
