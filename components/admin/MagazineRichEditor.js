@@ -180,6 +180,7 @@ export default function MagazineRichEditor({ value, onChange, magazineId, editor
     extensions: [
       StarterKit.configure({
         heading: { levels: [1, 2, 3] },
+        hardBreak: { keepMarks: true },
       }),
       Image.configure({ inline: false, allowBase64: false }),
       Highlight.configure({ multicolor: true }),
