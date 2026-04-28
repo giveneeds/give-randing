@@ -38,10 +38,10 @@ export default function Place428Page() {
       >
         <div className="max-w-5xl mx-auto px-5 sm:px-8 h-14 flex items-center justify-between">
           <a href="/" className="flex items-center gap-2 group">
-            <span className="text-[11px] font-black tracking-[0.18em] text-zinc-900 dark:text-white">
+            <span className="text-[13px] font-black tracking-[0.18em] text-zinc-900 dark:text-white">
               GIVENEEDS
             </span>
-            <span className="hidden sm:inline-block text-[12px] tracking-widest text-zinc-400 dark:text-zinc-500 uppercase">
+            <span className="hidden sm:inline-block text-[14px] tracking-widest text-zinc-400 dark:text-zinc-500 uppercase">
               · 428 Place Guide
             </span>
           </a>
@@ -59,7 +59,7 @@ export default function Place428Page() {
               href={KAKAO_OPENCHAT}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 px-3.5 py-2 rounded-full text-[11px] font-bold tracking-wider uppercase hover:scale-[1.02] active:scale-[0.98] transition-transform"
+              className="inline-flex items-center gap-1.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 px-3.5 py-2 rounded-full text-[13px] font-bold tracking-wider uppercase hover:scale-[1.02] active:scale-[0.98] transition-transform"
             >
               <MessageCircle size={13} />
               오픈채팅
@@ -86,12 +86,12 @@ export default function Place428Page() {
         />
 
         <div className="relative max-w-3xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-zinc-200 dark:border-white/10 bg-white/60 dark:bg-white/5 backdrop-blur text-[12px] tracking-widest font-bold uppercase text-zinc-600 dark:text-zinc-300 mb-8">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-zinc-200 dark:border-white/10 bg-white/60 dark:bg-white/5 backdrop-blur text-[14px] tracking-widest font-bold uppercase text-zinc-600 dark:text-zinc-300 mb-8">
             <span className="w-1.5 h-1.5 rounded-full bg-violet-500 dark:bg-violet-400 shadow-[0_0_10px] shadow-violet-500/60" />
             2026 4월 네이버 플레이스 로직 변경 가이드
           </div>
 
-          <h1 className="text-[2.25rem] sm:text-6xl font-black tracking-[-0.04em] leading-[1.05] mb-7 text-balance">
+          <h1 className="text-[38px] sm:text-[62px] font-black tracking-[-0.04em] leading-[1.05] mb-7 text-balance">
             네이버 플레이스 로직 변경,
             <br />
             <span className="bg-gradient-to-r from-violet-600 via-fuchsia-500 to-violet-500 dark:from-violet-300 dark:via-fuchsia-300 dark:to-violet-400 bg-clip-text text-transparent">
@@ -99,7 +99,7 @@ export default function Place428Page() {
             </span>
           </h1>
 
-          <p className="text-lg sm:text-xl text-zinc-600 dark:text-zinc-400 leading-relaxed max-w-2xl mx-auto mb-10">
+          <p className="text-[20px] sm:text-[22px] text-zinc-600 dark:text-zinc-400 leading-relaxed max-w-2xl mx-auto mb-10">
             스레드 보고 DM 주신 분들께 보내드리는 자료예요.<br />
             일반론 말고, <strong className="text-zinc-900 dark:text-white">본인 가게 상황에 맞춰서</strong> 읽으실 수 있게 만들었어요.
             5–10분, 끝까지. 마지막에 본인이 어디로 가야 할지 분기 안내가 있습니다.
@@ -110,7 +110,7 @@ export default function Place428Page() {
               href={RANK_CHECK}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 px-7 py-4 rounded-xl text-base font-bold tracking-wide hover:scale-[1.02] active:scale-[0.98] transition-transform"
+              className="inline-flex items-center justify-center gap-2 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 px-7 py-4 rounded-xl text-[18px] font-bold tracking-wide hover:scale-[1.02] active:scale-[0.98] transition-transform"
             >
               <Search size={18} />
               내 가게 순위 30초 진단
@@ -120,14 +120,14 @@ export default function Place428Page() {
               href={KAKAO_OPENCHAT}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 text-zinc-900 dark:text-white px-7 py-4 rounded-xl text-base font-bold tracking-wide hover:border-zinc-900 dark:hover:border-white transition"
+              className="inline-flex items-center justify-center gap-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 text-zinc-900 dark:text-white px-7 py-4 rounded-xl text-[18px] font-bold tracking-wide hover:border-zinc-900 dark:hover:border-white transition"
             >
               <MessageCircle size={18} />
               비공개 오픈채팅 (4/29)
             </a>
           </div>
 
-          <div className="mt-12 flex items-center justify-center gap-5 text-[12px] tracking-widest font-bold uppercase text-zinc-400 dark:text-zinc-500">
+          <div className="mt-12 flex items-center justify-center gap-5 text-[14px] tracking-widest font-bold uppercase text-zinc-400 dark:text-zinc-500">
             <span>읽는데 5–10분</span>
             <span className="w-1 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700" />
             <span>업종 무관</span>
@@ -146,20 +146,20 @@ export default function Place428Page() {
                 <AlertTriangle size={18} className="text-amber-600 dark:text-amber-400" />
               </div>
               <div>
-                <p className="text-[12px] tracking-widest font-bold uppercase text-amber-700 dark:text-amber-400 mb-1.5">
+                <p className="text-[14px] tracking-widest font-bold uppercase text-amber-700 dark:text-amber-400 mb-1.5">
                   먼저 알려드릴 것
                 </p>
-                <h3 className="text-lg sm:text-xl font-black tracking-tight mb-2 text-zinc-900 dark:text-white">
+                <h3 className="text-[20px] sm:text-[22px] font-black tracking-tight mb-2 text-zinc-900 dark:text-white">
                   4월 29일, 비공개 오픈채팅방을 엽니다
                 </h3>
-                <p className="text-base sm:text-[17px] text-zinc-700 dark:text-zinc-300 leading-relaxed mb-4">
+                <p className="text-[18px] sm:text-[19px] text-zinc-700 dark:text-zinc-300 leading-relaxed mb-4">
                   로직 업데이트 즉시 공유, 다른 사장님들 케이스 공유, 받는 DM 중 공유 가능한 것 정리해서 올리는 곳이에요.
                 </p>
                 <a
                   href={KAKAO_OPENCHAT}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-amber-700 dark:text-amber-300 text-base font-bold hover:gap-2.5 transition-all"
+                  className="inline-flex items-center gap-1.5 text-amber-700 dark:text-amber-300 text-[18px] font-bold hover:gap-2.5 transition-all"
                 >
                   오픈채팅 들어가기
                   <ArrowUpRight size={14} />
@@ -186,13 +186,13 @@ export default function Place428Page() {
         >
           <div className="flex items-center justify-between gap-4">
             <div>
-              <div className="text-[12px] tracking-widest font-bold uppercase opacity-60 mb-2">
+              <div className="text-[14px] tracking-widest font-bold uppercase opacity-60 mb-2">
                 Free Tool
               </div>
-              <div className="text-lg sm:text-xl font-black tracking-tight">
+              <div className="text-[20px] sm:text-[22px] font-black tracking-tight">
                 내 가게 순위 체크하기
               </div>
-              <div className="text-sm sm:text-base opacity-70 mt-1.5">
+              <div className="text-[16px] sm:text-[18px] opacity-70 mt-1.5">
                 업체명·키워드 → 30초 안에 현재 순위. 키워드 3–5개 다양하게.
               </div>
             </div>
@@ -200,7 +200,7 @@ export default function Place428Page() {
           </div>
         </a>
 
-        <p className="text-base sm:text-[17px] text-zinc-600 dark:text-zinc-400 mt-8 mb-5">
+        <p className="text-[18px] sm:text-[19px] text-zinc-600 dark:text-zinc-400 mt-8 mb-5">
           확인 후, 본인 체감으로 골라주세요. (도구로 과거 비교는 안 됩니다.)
         </p>
 
@@ -210,13 +210,13 @@ export default function Place428Page() {
               key={t.id}
               className="rounded-xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-zinc-900 p-5"
             >
-              <div className={`inline-flex items-center gap-2 text-[12px] tracking-widest font-black uppercase mb-2 ${t.tag}`}>
-                <span className={`w-7 h-7 rounded-full ${t.dot} text-white flex items-center justify-center text-[11px] font-black`}>
+              <div className={`inline-flex items-center gap-2 text-[14px] tracking-widest font-black uppercase mb-2 ${t.tag}`}>
+                <span className={`w-7 h-7 rounded-full ${t.dot} text-white flex items-center justify-center text-[13px] font-black`}>
                   {t.id}
                 </span>
                 타입 {t.id}
               </div>
-              <p className="text-base text-zinc-700 dark:text-zinc-300 leading-relaxed">
+              <p className="text-[18px] text-zinc-700 dark:text-zinc-300 leading-relaxed">
                 {t.symptom}
               </p>
             </div>
@@ -233,10 +233,10 @@ export default function Place428Page() {
         <H2>지금 무슨 일이 일어나고 있는 건가</H2>
 
         <div className="my-10 p-7 sm:p-10 rounded-2xl border border-zinc-900 dark:border-white bg-zinc-50 dark:bg-zinc-900">
-          <div className="text-[12px] tracking-widest font-black uppercase text-zinc-500 dark:text-zinc-400 mb-4">
+          <div className="text-[14px] tracking-widest font-black uppercase text-zinc-500 dark:text-zinc-400 mb-4">
             한 줄로 정리하면
           </div>
-          <p className="text-2xl sm:text-3xl font-black tracking-[-0.03em] leading-snug">
+          <p className="text-[26px] sm:text-[32px] font-black tracking-[-0.03em] leading-snug">
             <span className="line-through opacity-40">&ldquo;보여지기만 하면 점수&rdquo;</span>
             였던 시절 끝.<br />
             <span className="bg-gradient-to-r from-violet-600 to-fuchsia-500 dark:from-violet-300 dark:to-fuchsia-300 bg-clip-text text-transparent">
@@ -275,18 +275,18 @@ export default function Place428Page() {
         <div className="grid lg:grid-cols-2 gap-5 mt-8">
           {/* 요식업 */}
           <div className="relative rounded-2xl overflow-hidden border border-zinc-200 dark:border-white/10 bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/20 dark:to-amber-950/10 p-7">
-            <div className="text-3xl mb-3">🍚</div>
-            <div className="text-[12px] tracking-widest font-bold uppercase text-orange-600 dark:text-orange-400 mb-2">
+            <div className="text-[32px] mb-3">🍚</div>
+            <div className="text-[14px] tracking-widest font-bold uppercase text-orange-600 dark:text-orange-400 mb-2">
               Food & Bev
             </div>
-            <h3 className="text-xl font-black tracking-tight mb-4 text-zinc-900 dark:text-white">
+            <h3 className="text-[22px] font-black tracking-tight mb-4 text-zinc-900 dark:text-white">
               요식업
             </h3>
-            <p className="text-base text-zinc-700 dark:text-zinc-300 leading-relaxed mb-5">
+            <p className="text-[18px] text-zinc-700 dark:text-zinc-300 leading-relaxed mb-5">
               여전히 <strong>고객 방문, 영수증 리뷰가 핵심.</strong> 거기에 더해
               <strong> 길찾기 클릭</strong>과 <strong>같은 손님 재방문 주기</strong>가 큰 점수입니다.
             </p>
-            <ul className="space-y-2.5 text-base text-zinc-700 dark:text-zinc-300">
+            <ul className="space-y-2.5 text-[18px] text-zinc-700 dark:text-zinc-300">
               <li className="flex gap-2">
                 <CheckCircle2 size={14} className="shrink-0 mt-1 text-orange-500" />
                 <span>리뷰 200개 있어도 <strong>최근 한 달 신규</strong>가 없으면 죽은 가게로 인식</span>
@@ -300,24 +300,24 @@ export default function Place428Page() {
                 <span>한 달에 두세 번 오는 단골 = 좋은 가게 신호</span>
               </li>
             </ul>
-            <div className="mt-5 pt-5 border-t border-orange-200/60 dark:border-orange-500/10 text-[15px] text-zinc-700 dark:text-zinc-300">
+            <div className="mt-5 pt-5 border-t border-orange-200/60 dark:border-orange-500/10 text-[17px] text-zinc-700 dark:text-zinc-300">
               👉 <strong>리뷰 + 길찾기 + 단골 + 다양한 유입</strong> 골고루
             </div>
           </div>
 
           {/* 비요식업 */}
           <div className="relative rounded-2xl overflow-hidden border border-zinc-200 dark:border-white/10 bg-gradient-to-br from-violet-50 to-indigo-50 dark:from-violet-950/20 dark:to-indigo-950/10 p-7">
-            <div className="text-3xl mb-3">💇 💪 💅 🏥</div>
-            <div className="text-[12px] tracking-widest font-bold uppercase text-violet-600 dark:text-violet-400 mb-2">
+            <div className="text-[32px] mb-3">💇 💪 💅 🏥</div>
+            <div className="text-[14px] tracking-widest font-bold uppercase text-violet-600 dark:text-violet-400 mb-2">
               Service / Beauty / Health
             </div>
-            <h3 className="text-xl font-black tracking-tight mb-4 text-zinc-900 dark:text-white">
+            <h3 className="text-[22px] font-black tracking-tight mb-4 text-zinc-900 dark:text-white">
               비요식업
             </h3>
-            <p className="text-base text-zinc-700 dark:text-zinc-300 leading-relaxed mb-5">
+            <p className="text-[18px] text-zinc-700 dark:text-zinc-300 leading-relaxed mb-5">
               <strong>블로그 리뷰 비중이 확 줄었어요.</strong> 대신 이런 게 점수가 됩니다.
             </p>
-            <ul className="space-y-2.5 text-base text-zinc-700 dark:text-zinc-300">
+            <ul className="space-y-2.5 text-[18px] text-zinc-700 dark:text-zinc-300">
               <li className="flex gap-2">
                 <CheckCircle2 size={14} className="shrink-0 mt-1 text-violet-500" />
                 <span><strong>플레이스 페이지 체류 시간</strong> (사진·소개글 풍부할수록 ↑)</span>
@@ -331,7 +331,7 @@ export default function Place428Page() {
                 <span><strong>같은 사람의 재방문</strong> (관심 가게로 분류)</span>
               </li>
             </ul>
-            <div className="mt-5 pt-5 border-t border-violet-200/60 dark:border-violet-500/10 text-[15px] text-zinc-700 dark:text-zinc-300">
+            <div className="mt-5 pt-5 border-t border-violet-200/60 dark:border-violet-500/10 text-[17px] text-zinc-700 dark:text-zinc-300">
               👉 비요식업은 <strong>페이지 풍부 + 손님 행동</strong> 유도가 핵심
             </div>
           </div>
@@ -346,18 +346,18 @@ export default function Place428Page() {
             className="absolute -top-32 -right-32 w-96 h-96 rounded-full bg-violet-500/20 blur-3xl"
           />
           <div className="relative">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/20 bg-white/5 backdrop-blur text-[12px] tracking-widest font-bold uppercase mb-6">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/20 bg-white/5 backdrop-blur text-[14px] tracking-widest font-bold uppercase mb-6">
               <Sparkles size={12} className="text-violet-300" />
               유입을 어떻게 만들 거냐
             </div>
-            <h3 className="text-2xl sm:text-4xl font-black tracking-[-0.03em] leading-tight mb-5">
+            <h3 className="text-[26px] sm:text-[38px] font-black tracking-[-0.03em] leading-tight mb-5">
               모든 점수는 결국,<br />
               <span className="bg-gradient-to-r from-violet-300 to-fuchsia-300 bg-clip-text text-transparent">
                 우리 페이지에 사람이 와야
               </span>
               {' '}쌓입니다
             </h3>
-            <p className="text-zinc-300 leading-relaxed mb-8 sm:text-lg">
+            <p className="text-zinc-300 leading-relaxed mb-8 sm:text-[20px]">
               그래서 진짜 본질은 <strong className="text-white">&ldquo;어떻게 자연스럽게 사람을 우리 페이지로 데려올 거냐&rdquo;</strong>인데,
               보통 다른 대행사들은 이걸 한 가지 방식으로만 풉니다 — <strong className="text-white">&ldquo;플레이스 리워드 트래픽&rdquo;</strong>.
               쉽게 말해 돈 주고 사람을 우리 페이지에 보내는 방식이에요.
@@ -365,19 +365,19 @@ export default function Place428Page() {
 
             <div className="grid sm:grid-cols-2 gap-4 mb-10">
               <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-5">
-                <div className="text-[12px] tracking-widest font-bold uppercase text-rose-300 mb-2">
+                <div className="text-[14px] tracking-widest font-bold uppercase text-rose-300 mb-2">
                   ❌ 한 가지만 쓰면
                 </div>
-                <p className="text-base text-zinc-200 leading-relaxed">
+                <p className="text-[18px] text-zinc-200 leading-relaxed">
                   처음엔 점수 올라가는 듯. 같은 패턴 반복되면 네이버가 알아챔.
                   <strong className="text-white"> &ldquo;자연스럽지 않다&rdquo;</strong>로 분류되면 점수가 오히려 깎입니다.
                 </p>
               </div>
               <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-5">
-                <div className="text-[12px] tracking-widest font-bold uppercase text-emerald-300 mb-2">
+                <div className="text-[14px] tracking-widest font-bold uppercase text-emerald-300 mb-2">
                   ✅ 여러 통로를 번갈아
                 </div>
-                <p className="text-base text-zinc-200 leading-relaxed">
+                <p className="text-[18px] text-zinc-200 leading-relaxed">
                   통로를 여러 개 깔아두고 주기적으로 번갈아 굴리면, 네이버가
                   <strong className="text-white"> &ldquo;자연스럽게 인기 있는 곳&rdquo;</strong>으로 분류합니다.
                 </p>
@@ -386,7 +386,7 @@ export default function Place428Page() {
 
             {/* Channel table */}
             <div className="rounded-2xl border border-white/10 overflow-hidden bg-zinc-950/40">
-              <div className="grid grid-cols-12 px-5 py-3 text-[12px] tracking-widest font-bold uppercase text-zinc-400 border-b border-white/10 bg-white/[0.02]">
+              <div className="grid grid-cols-12 px-5 py-3 text-[14px] tracking-widest font-bold uppercase text-zinc-400 border-b border-white/10 bg-white/[0.02]">
                 <div className="col-span-4">유입 통로</div>
                 <div className="col-span-6 hidden sm:block">어떻게 만드나</div>
                 <div className="col-span-4 sm:col-span-2 text-right">주기</div>
@@ -394,16 +394,16 @@ export default function Place428Page() {
               {CHANNELS.map((c) => (
                 <div
                   key={c.name}
-                  className="grid grid-cols-12 px-5 py-4 text-base border-b border-white/5 last:border-0 items-center"
+                  className="grid grid-cols-12 px-5 py-4 text-[18px] border-b border-white/5 last:border-0 items-center"
                 >
                   <div className="col-span-8 sm:col-span-4 font-bold text-white flex items-center gap-2">
                     <c.icon size={14} className="text-violet-300 shrink-0" />
                     {c.name}
                   </div>
-                  <div className="col-span-12 sm:col-span-6 text-zinc-400 mt-1.5 sm:mt-0 text-[15px]">
+                  <div className="col-span-12 sm:col-span-6 text-zinc-400 mt-1.5 sm:mt-0 text-[17px]">
                     {c.how}
                   </div>
-                  <div className="col-span-4 sm:col-span-2 text-right text-[11px] font-bold text-violet-300 tracking-wider">
+                  <div className="col-span-4 sm:col-span-2 text-right text-[13px] font-bold text-violet-300 tracking-wider">
                     {c.cycle}
                   </div>
                 </div>
@@ -413,7 +413,7 @@ export default function Place428Page() {
             <div className="mt-8 p-5 sm:p-6 rounded-xl bg-white/5 border border-white/10">
               <div className="flex items-start gap-3">
                 <Quote size={18} className="shrink-0 text-violet-300 mt-0.5" />
-                <p className="text-base sm:text-[17px] text-zinc-300 leading-relaxed italic">
+                <p className="text-[18px] sm:text-[19px] text-zinc-300 leading-relaxed italic">
                   같은 식당에 매일 같은 시간, 같은 사람들만 오면 어떻게 보일까요?
                   &ldquo;단골 가게&rdquo;로 보이지 &ldquo;동네에서 핫한 가게&rdquo;로는 안 보이죠.
                   반대로 점심엔 직장인, 저녁엔 가족, 주말엔 데이트 손님이 골고루 오면
@@ -423,10 +423,10 @@ export default function Place428Page() {
             </div>
 
             <div className="mt-6 p-5 rounded-xl bg-amber-500/10 border border-amber-500/30">
-              <div className="text-[12px] tracking-widest font-bold uppercase text-amber-300 mb-2">
+              <div className="text-[14px] tracking-widest font-bold uppercase text-amber-300 mb-2">
                 단, 리워드를 무조건 쓰지 말라는 건 아닙니다
               </div>
-              <p className="text-base text-zinc-300 leading-relaxed">
+              <p className="text-[18px] text-zinc-300 leading-relaxed">
                 매출이 급격히 빠진 가게라면 리워드 트래픽을 <strong className="text-white">응급처치 보조 수단</strong>으로 쓰기도 해요.
                 다만 <strong className="text-white">메인이 되면 안 됩니다</strong> — 비용은 매달 그대로 나가고 자생력은 안 생깁니다.
               </p>
@@ -481,20 +481,20 @@ export default function Place428Page() {
 
         {/* DM Quote */}
         <div className="mt-12 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 p-7">
-          <div className="flex items-center gap-2 text-[12px] tracking-widest font-black uppercase text-zinc-500 dark:text-zinc-400 mb-4">
+          <div className="flex items-center gap-2 text-[14px] tracking-widest font-black uppercase text-zinc-500 dark:text-zinc-400 mb-4">
             <MessageCircle size={13} />
             어제 받은 DM
           </div>
-          <p className="text-lg sm:text-xl text-zinc-800 dark:text-zinc-200 leading-relaxed italic mb-5">
+          <p className="text-[20px] sm:text-[22px] text-zinc-800 dark:text-zinc-200 leading-relaxed italic mb-5">
             &ldquo;강남에서 미용실 5년째인데, 유입도 하루에 400회씩 들어오구요. 영수증 리뷰도 320개예요.
             근데 &lsquo;강남 미용실&rsquo;로 검색하면 30위 밖이에요. 옆집은 리뷰 80개인데 5위.
             도대체 뭐가 다른 거죠?&rdquo;
           </p>
           <div className="pt-5 border-t border-zinc-200 dark:border-white/10">
-            <div className="text-[12px] tracking-widest font-black uppercase text-violet-600 dark:text-violet-400 mb-2">
+            <div className="text-[14px] tracking-widest font-black uppercase text-violet-600 dark:text-violet-400 mb-2">
               → 답
             </div>
-            <p className="text-base sm:text-[17px] text-zinc-700 dark:text-zinc-300 leading-relaxed">
+            <p className="text-[18px] sm:text-[19px] text-zinc-700 dark:text-zinc-300 leading-relaxed">
               리뷰 개수만 보면 본인이 압도적인데, 옆집은 <strong>페이지 자체가 풍부</strong>합니다 —
               사진 많고 소개글 충실하고 메뉴/가격 정보도 다 있고. 본인 페이지는 손님이 들어와서
               30초만 봐도 더 볼 게 없는 구조일 가능성이 높아요.
@@ -589,25 +589,25 @@ export default function Place428Page() {
               key={i}
               className="grid grid-cols-12 gap-4 p-5 sm:p-6 border-b border-zinc-200 dark:border-white/10 last:border-0"
             >
-              <div className="col-span-1 text-[12px] tracking-widest font-black text-zinc-400 dark:text-zinc-600">
+              <div className="col-span-1 text-[14px] tracking-widest font-black text-zinc-400 dark:text-zinc-600">
                 0{i + 1}
               </div>
               <div className="col-span-11 sm:col-span-4">
                 <div className="flex items-center gap-2">
                   <r.icon size={14} className="text-violet-500 dark:text-violet-400 shrink-0" />
-                  <h4 className="font-black text-zinc-900 dark:text-white text-[17px]">
+                  <h4 className="font-black text-zinc-900 dark:text-white text-[19px]">
                     {r.title}
                   </h4>
                 </div>
               </div>
-              <div className="col-span-12 sm:col-span-7 text-base text-zinc-600 dark:text-zinc-400 leading-relaxed">
+              <div className="col-span-12 sm:col-span-7 text-[18px] text-zinc-600 dark:text-zinc-400 leading-relaxed">
                 {r.detail}
               </div>
             </div>
           ))}
         </div>
 
-        <p className="mt-6 text-base text-zinc-500 dark:text-zinc-500 italic">
+        <p className="mt-6 text-[18px] text-zinc-500 dark:text-zinc-500 italic">
           지금 1위인 가게가 1년 뒤에도 1위인 게 우연이 아니에요.
         </p>
       </Section>
@@ -621,7 +621,7 @@ export default function Place428Page() {
             이 자료는 <strong>&ldquo;누구나 할 수 있는 기본기&rdquo;</strong>까지만 담았어요.
             진짜 디테일 — 예를 들면:
           </p>
-          <ul className="space-y-2 text-base text-zinc-700 dark:text-zinc-300 mb-6">
+          <ul className="space-y-2 text-[18px] text-zinc-700 dark:text-zinc-300 mb-6">
             {[
               '업종별 체류 시간 임계값이 정확히 몇 초인지',
               '리뷰 키워드 분포의 "건강한 비율"이 어떻게 되는지',
@@ -634,7 +634,7 @@ export default function Place428Page() {
               </li>
             ))}
           </ul>
-          <p className="text-base text-zinc-600 dark:text-zinc-400 leading-relaxed">
+          <p className="text-[18px] text-zinc-600 dark:text-zinc-400 leading-relaxed">
             이런 건 자료로 풀기엔 변동성이 크고, 잘못 적용하면 역효과 나는 부분들이 있어서
             <strong className="text-zinc-900 dark:text-white"> 1:1 진단이 아니면 책임지고 답을 드리기 어렵습니다.</strong>
           </p>
@@ -645,11 +645,11 @@ export default function Place428Page() {
       <section className="px-5 sm:px-8 py-20 sm:py-28 bg-zinc-50 dark:bg-zinc-900/40 border-y border-zinc-200 dark:border-white/5">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-zinc-200 dark:border-white/10 bg-white dark:bg-zinc-950 text-[12px] tracking-widest font-bold uppercase text-zinc-600 dark:text-zinc-300 mb-5">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-zinc-200 dark:border-white/10 bg-white dark:bg-zinc-950 text-[14px] tracking-widest font-bold uppercase text-zinc-600 dark:text-zinc-300 mb-5">
               <Compass size={12} className="text-violet-500" />
               본인은 어디로 가야 할까
             </div>
-            <h2 className="text-3xl sm:text-5xl font-black tracking-[-0.03em] leading-[1.1]">
+            <h2 className="text-[32px] sm:text-[50px] font-black tracking-[-0.03em] leading-[1.1]">
               어디까지 직접 해볼 건지에<br className="hidden sm:block" /> 따라 다음 단계가 갈립니다
             </h2>
           </div>
@@ -667,17 +667,17 @@ export default function Place428Page() {
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center ${r.iconBg}`}>
                     <r.icon size={18} className={r.iconColor} />
                   </div>
-                  <span className={`text-[12px] tracking-widest font-black uppercase ${r.tagColor}`}>
+                  <span className={`text-[14px] tracking-widest font-black uppercase ${r.tagColor}`}>
                     {r.tag}
                   </span>
                 </div>
-                <h3 className="text-lg font-black tracking-tight mb-2 text-zinc-900 dark:text-white">
+                <h3 className="text-[20px] font-black tracking-tight mb-2 text-zinc-900 dark:text-white">
                   {r.title}
                 </h3>
-                <p className="text-base text-zinc-600 dark:text-zinc-400 leading-relaxed mb-5">
+                <p className="text-[18px] text-zinc-600 dark:text-zinc-400 leading-relaxed mb-5">
                   {r.desc}
                 </p>
-                <ul className="space-y-1.5 text-[15px] text-zinc-700 dark:text-zinc-300 mb-5">
+                <ul className="space-y-1.5 text-[17px] text-zinc-700 dark:text-zinc-300 mb-5">
                   {r.bullets.map((b, i) => (
                     <li key={i} className="flex gap-2">
                       <span className={r.iconColor}>·</span>
@@ -685,7 +685,7 @@ export default function Place428Page() {
                     </li>
                   ))}
                 </ul>
-                <div className={`inline-flex items-center gap-1.5 text-base font-bold ${r.iconColor} group-hover:gap-2.5 transition-all`}>
+                <div className={`inline-flex items-center gap-1.5 text-[18px] font-bold ${r.iconColor} group-hover:gap-2.5 transition-all`}>
                   {r.cta}
                   <ArrowUpRight size={14} />
                 </div>
@@ -693,7 +693,7 @@ export default function Place428Page() {
             ))}
           </div>
 
-          <div className="mt-8 p-5 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-500/20 text-base text-zinc-700 dark:text-zinc-300 leading-relaxed">
+          <div className="mt-8 p-5 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-500/20 text-[18px] text-zinc-700 dark:text-zinc-300 leading-relaxed">
             <strong className="text-amber-700 dark:text-amber-300">필수 참고</strong> — 이 자료의 액션을 다 하셨는데도 2–3주 안에
             변화가 없다면, 본인이 못 보는 데이터 문제가 있을 가능성이 높아요. 그땐 4번 분기로 오시는 게 맞습니다.
           </div>
@@ -704,18 +704,18 @@ export default function Place428Page() {
       <section className="px-5 sm:px-8 py-20 sm:py-28">
         <div className="max-w-3xl mx-auto">
           <div className="rounded-2xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-zinc-900 p-7 mb-10">
-            <div className="flex items-center gap-2 text-[12px] tracking-widest font-black uppercase text-zinc-500 dark:text-zinc-400 mb-4">
+            <div className="flex items-center gap-2 text-[14px] tracking-widest font-black uppercase text-zinc-500 dark:text-zinc-400 mb-4">
               <MessageCircle size={13} />
               자주 받는 DM
             </div>
-            <p className="text-lg text-zinc-800 dark:text-zinc-200 leading-relaxed italic mb-5">
+            <p className="text-[20px] text-zinc-800 dark:text-zinc-200 leading-relaxed italic mb-5">
               &ldquo;이 자료 보고 따라 했는데 변화 없으면 어떡하죠?&rdquo;
             </p>
             <div className="pt-5 border-t border-zinc-200 dark:border-white/10">
-              <div className="text-[12px] tracking-widest font-black uppercase text-violet-600 dark:text-violet-400 mb-2">
+              <div className="text-[14px] tracking-widest font-black uppercase text-violet-600 dark:text-violet-400 mb-2">
                 → 답
               </div>
-              <p className="text-base sm:text-[17px] text-zinc-700 dark:text-zinc-300 leading-relaxed">
+              <p className="text-[18px] sm:text-[19px] text-zinc-700 dark:text-zinc-300 leading-relaxed">
                 보통 변화 없는 분들의 80%는 <strong>2주 만에 포기한 경우</strong>예요.
                 데이터가 쌓여서 로직에 반영되는 데 최소 3–4주 걸립니다.
                 액션 한 다음 <strong>rankcheck로 매주 모니터링하면서 4주는 버텨주세요.</strong>
@@ -724,13 +724,13 @@ export default function Place428Page() {
             </div>
           </div>
 
-          <p className="text-lg sm:text-xl text-zinc-700 dark:text-zinc-300 leading-relaxed">
+          <p className="text-[20px] sm:text-[22px] text-zinc-700 dark:text-zinc-300 leading-relaxed">
             이번 분기는 <strong className="text-zinc-900 dark:text-white">로직 변경 적응 골든타임</strong>입니다.
             지금 안 움직이면 적응한 가게들 사이에서 1년 동안 따라잡기 어려워져요.
             반대로 지금 움직이면 적응 안 한 가게들 자리를 가져올 수 있는 시기이기도 합니다.
           </p>
 
-          <p className="mt-6 text-base text-zinc-500 dark:text-zinc-500">
+          <p className="mt-6 text-[18px] text-zinc-500 dark:text-zinc-500">
             오픈채팅 4/29에 봬요. 그 전에 더 궁금한 거 있으면 DM 주세요.
           </p>
         </div>
@@ -740,14 +740,14 @@ export default function Place428Page() {
       <footer className="px-5 sm:px-8 py-12 border-t border-zinc-200 dark:border-white/10">
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
           <div>
-            <a href="/" className="text-[11px] font-black tracking-[0.18em] text-zinc-900 dark:text-white">
+            <a href="/" className="text-[13px] font-black tracking-[0.18em] text-zinc-900 dark:text-white">
               GIVENEEDS
             </a>
-            <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-500">
+            <p className="mt-2 text-[16px] text-zinc-500 dark:text-zinc-500">
               © {new Date().getFullYear()} GIVENEEDS. 네이버 플레이스 로직 변경 가이드 · 2026.04
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-zinc-500 dark:text-zinc-400">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[16px] text-zinc-500 dark:text-zinc-400">
             <a href={MAGAZINE} className="hover:text-zinc-900 dark:hover:text-white transition" target="_blank" rel="noopener noreferrer">
               매거진
             </a>
@@ -776,12 +776,12 @@ function Section({ number, eyebrow, children }) {
         {(number || eyebrow) && (
           <div className="flex items-center gap-3 mb-5">
             {number && (
-              <span className="text-[12px] tracking-widest font-black text-zinc-400 dark:text-zinc-600 tabular-nums">
+              <span className="text-[14px] tracking-widest font-black text-zinc-400 dark:text-zinc-600 tabular-nums">
                 / {number}
               </span>
             )}
             {eyebrow && (
-              <span className="text-[12px] tracking-widest font-black uppercase text-violet-600 dark:text-violet-400">
+              <span className="text-[14px] tracking-widest font-black uppercase text-violet-600 dark:text-violet-400">
                 {eyebrow}
               </span>
             )}
@@ -795,7 +795,7 @@ function Section({ number, eyebrow, children }) {
 
 function H2({ children }) {
   return (
-    <h2 className="text-3xl sm:text-5xl font-black tracking-[-0.03em] leading-[1.1] text-zinc-900 dark:text-white mb-5">
+    <h2 className="text-[32px] sm:text-[50px] font-black tracking-[-0.03em] leading-[1.1] text-zinc-900 dark:text-white mb-5">
       {children}
     </h2>
   );
@@ -803,7 +803,7 @@ function H2({ children }) {
 
 function Lead({ children }) {
   return (
-    <p className="text-lg sm:text-xl text-zinc-600 dark:text-zinc-400 leading-relaxed">
+    <p className="text-[20px] sm:text-[22px] text-zinc-600 dark:text-zinc-400 leading-relaxed">
       {children}
     </p>
   );
@@ -815,7 +815,7 @@ function Note({ children, tone = 'zinc', icon }) {
     violet: 'bg-violet-50 dark:bg-violet-950/20 border-violet-200/80 dark:border-violet-500/20 text-zinc-700 dark:text-zinc-300',
   };
   return (
-    <div className={`mt-8 rounded-xl border p-5 sm:p-6 text-base leading-relaxed ${tones[tone]}`}>
+    <div className={`mt-8 rounded-xl border p-5 sm:p-6 text-[18px] leading-relaxed ${tones[tone]}`}>
       <div className="flex gap-3">
         {icon && (
           <div className="shrink-0 text-violet-600 dark:text-violet-400 mt-0.5">{icon}</div>
@@ -830,15 +830,15 @@ function ChangeCard({ num, title, body, icon }) {
   return (
     <div className="group rounded-2xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-zinc-900 p-6 hover:border-zinc-900 dark:hover:border-white transition">
       <div className="flex items-start gap-5">
-        <div className="shrink-0 w-12 h-12 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 flex items-center justify-center text-lg font-black">
+        <div className="shrink-0 w-12 h-12 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 flex items-center justify-center text-[20px] font-black">
           {num}
         </div>
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-violet-500 dark:text-violet-400">{icon}</span>
-            <h3 className="font-black text-xl text-zinc-900 dark:text-white">{title}</h3>
+            <h3 className="font-black text-[22px] text-zinc-900 dark:text-white">{title}</h3>
           </div>
-          <p className="text-base text-zinc-600 dark:text-zinc-400 leading-relaxed">{body}</p>
+          <p className="text-[18px] text-zinc-600 dark:text-zinc-400 leading-relaxed">{body}</p>
         </div>
       </div>
     </div>
@@ -848,19 +848,19 @@ function ChangeCard({ num, title, body, icon }) {
 function KeywordCard({ emoji, title, keywords, footer }) {
   return (
     <div className="rounded-2xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-zinc-900 p-7">
-      <div className="text-2xl mb-2">{emoji}</div>
-      <h3 className="font-black text-xl text-zinc-900 dark:text-white mb-5">{title}</h3>
+      <div className="text-[26px] mb-2">{emoji}</div>
+      <h3 className="font-black text-[22px] text-zinc-900 dark:text-white mb-5">{title}</h3>
       <ul className="space-y-2.5 mb-5">
         {keywords.map((k, i) => (
-          <li key={i} className="flex items-center justify-between gap-3 text-base">
+          <li key={i} className="flex items-center justify-between gap-3 text-[18px]">
             <span className="text-zinc-800 dark:text-zinc-200 font-medium">{k.kw}</span>
-            <span className="text-[12px] tracking-widest font-bold uppercase text-zinc-400 dark:text-zinc-500 shrink-0">
+            <span className="text-[14px] tracking-widest font-bold uppercase text-zinc-400 dark:text-zinc-500 shrink-0">
               {k.tag}
             </span>
           </li>
         ))}
       </ul>
-      <div className="pt-4 border-t border-zinc-200 dark:border-white/10 text-[15px] text-zinc-600 dark:text-zinc-400 leading-relaxed">
+      <div className="pt-4 border-t border-zinc-200 dark:border-white/10 text-[17px] text-zinc-600 dark:text-zinc-400 leading-relaxed">
         → {footer}
       </div>
     </div>
@@ -871,19 +871,19 @@ function CaseCard({ tag, location, problem, root, actions, result }) {
   return (
     <div className="rounded-2xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-zinc-900 overflow-hidden">
       <div className="bg-zinc-900 dark:bg-zinc-950 p-5 sm:p-6 text-white border-b border-zinc-800 dark:border-white/10">
-        <div className="text-[12px] tracking-widest font-black uppercase text-violet-300 mb-2">
+        <div className="text-[14px] tracking-widest font-black uppercase text-violet-300 mb-2">
           {tag}
         </div>
-        <h3 className="text-xl sm:text-2xl font-black tracking-tight">{location}</h3>
+        <h3 className="text-[22px] sm:text-[26px] font-black tracking-tight">{location}</h3>
       </div>
       <div className="p-5 sm:p-7 space-y-5">
         <CaseRow label="상황" body={problem} accent="rose" />
         <CaseRow label="문제 진단" body={root} accent="amber" />
         <div>
-          <div className="text-[12px] tracking-widest font-black uppercase text-violet-600 dark:text-violet-400 mb-2.5">
+          <div className="text-[14px] tracking-widest font-black uppercase text-violet-600 dark:text-violet-400 mb-2.5">
             뭘 했나
           </div>
-          <ul className="space-y-2 text-base text-zinc-700 dark:text-zinc-300">
+          <ul className="space-y-2 text-[18px] text-zinc-700 dark:text-zinc-300">
             {actions.map((a, i) => (
               <li key={i} className="flex gap-2.5">
                 <CheckCircle2 size={15} className="shrink-0 mt-0.5 text-violet-500 dark:text-violet-400" />
@@ -906,10 +906,10 @@ function CaseRow({ label, body, accent }) {
   };
   return (
     <div>
-      <div className={`text-[12px] tracking-widest font-black uppercase mb-1.5 ${colors[accent]}`}>
+      <div className={`text-[14px] tracking-widest font-black uppercase mb-1.5 ${colors[accent]}`}>
         {label}
       </div>
-      <p className="text-base text-zinc-700 dark:text-zinc-300 leading-relaxed">{body}</p>
+      <p className="text-[18px] text-zinc-700 dark:text-zinc-300 leading-relaxed">{body}</p>
     </div>
   );
 }
@@ -918,26 +918,26 @@ function ActionCard({ num, title, desc, checks, outro }) {
   return (
     <div className="rounded-2xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-zinc-900 p-6 sm:p-7">
       <div className="flex items-start gap-5 mb-5">
-        <div className="shrink-0 text-[12px] tracking-widest font-black text-violet-600 dark:text-violet-400 tabular-nums pt-1">
+        <div className="shrink-0 text-[14px] tracking-widest font-black text-violet-600 dark:text-violet-400 tabular-nums pt-1">
           / {num}
         </div>
         <div className="flex-1">
-          <h3 className="font-black text-xl text-zinc-900 dark:text-white mb-2 leading-snug">
+          <h3 className="font-black text-[22px] text-zinc-900 dark:text-white mb-2 leading-snug">
             {title}
           </h3>
-          <p className="text-base text-zinc-600 dark:text-zinc-400 leading-relaxed">{desc}</p>
+          <p className="text-[18px] text-zinc-600 dark:text-zinc-400 leading-relaxed">{desc}</p>
         </div>
       </div>
       <ul className="space-y-2.5 pl-9 mb-5">
         {checks.map((c, i) => (
-          <li key={i} className="flex items-start gap-3 text-base text-zinc-700 dark:text-zinc-300">
+          <li key={i} className="flex items-start gap-3 text-[18px] text-zinc-700 dark:text-zinc-300">
             <span className="shrink-0 mt-1 w-4 h-4 rounded border border-zinc-300 dark:border-white/20" />
             <span>{c}</span>
           </li>
         ))}
       </ul>
       <div className="pl-9">
-        <div className="rounded-lg bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-white/5 p-4 text-[15px] text-zinc-600 dark:text-zinc-400 leading-relaxed italic">
+        <div className="rounded-lg bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-white/5 p-4 text-[17px] text-zinc-600 dark:text-zinc-400 leading-relaxed italic">
           {outro}
         </div>
       </div>
@@ -959,16 +959,16 @@ function TypeCard({ id, label, cause, priority, outcome, color }) {
         <span className={`w-9 h-9 rounded-full ${c.dot} text-white flex items-center justify-center font-black`}>
           {id}
         </span>
-        <h3 className="font-black text-lg text-zinc-900 dark:text-white leading-tight">{label}</h3>
+        <h3 className="font-black text-[20px] text-zinc-900 dark:text-white leading-tight">{label}</h3>
       </div>
-      <p className="text-base text-zinc-600 dark:text-zinc-400 leading-relaxed mb-5">
+      <p className="text-[18px] text-zinc-600 dark:text-zinc-400 leading-relaxed mb-5">
         <span className="font-bold text-zinc-900 dark:text-white">원인:</span> {cause}
       </p>
       <div className="mb-5">
-        <div className={`text-[12px] tracking-widest font-black uppercase mb-2 ${c.text}`}>
+        <div className={`text-[14px] tracking-widest font-black uppercase mb-2 ${c.text}`}>
           우선순위
         </div>
-        <ol className="space-y-1.5 text-base text-zinc-700 dark:text-zinc-300">
+        <ol className="space-y-1.5 text-[18px] text-zinc-700 dark:text-zinc-300">
           {priority.map((p, i) => (
             <li key={i} className="flex gap-2.5">
               <span className="shrink-0 w-4 text-zinc-400 tabular-nums">{i + 1}.</span>
@@ -977,7 +977,7 @@ function TypeCard({ id, label, cause, priority, outcome, color }) {
           ))}
         </ol>
       </div>
-      <div className="rounded-lg bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-white/5 p-4 text-[15px] text-zinc-700 dark:text-zinc-300 leading-relaxed">
+      <div className="rounded-lg bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-white/5 p-4 text-[17px] text-zinc-700 dark:text-zinc-300 leading-relaxed">
         → {outcome}
       </div>
     </div>
