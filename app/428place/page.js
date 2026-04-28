@@ -27,7 +27,7 @@ export default function Place428Page() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 selection:bg-zinc-900 selection:text-white dark:selection:bg-white dark:selection:text-zinc-900">
+    <main className="min-h-screen bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 selection:bg-zinc-900 selection:text-white dark:selection:bg-white dark:selection:text-zinc-900 [word-break:keep-all] [overflow-wrap:break-word]">
       {/* ── Minimal Header ─────────────────────────── */}
       <header
         className={`fixed top-0 inset-x-0 z-50 transition-all ${
@@ -519,6 +519,35 @@ export default function Place428Page() {
           <strong>세 케이스 공통점</strong> — 다 자기 페이지 약점을 1–2개로 좁혀서 거기만 집중적으로 손봤어요.
           한 번에 다 바꾸려고 하면 뭐 때문에 좋아졌는지 모르고, 작업도 산으로 갑니다.
         </Note>
+
+        {/* 순위 추이 데이터 시각화 */}
+        <figure className="mt-12 rounded-2xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-zinc-900 overflow-hidden">
+          <div className="px-5 sm:px-7 pt-6 pb-4">
+            <div className="flex items-center gap-2 text-[13px] tracking-widest font-black uppercase text-violet-600 dark:text-violet-400 mb-2">
+              <BarChart3 size={14} />
+              실제 추이 데이터
+            </div>
+            <h4 className="font-black text-[20px] sm:text-[22px] text-zinc-900 dark:text-white leading-snug mb-2">
+              실제 사장님들 가게의 순위 변동 (4월 1주~2주차)
+            </h4>
+            <p className="text-[16px] sm:text-[18px] text-zinc-600 dark:text-zinc-400 leading-relaxed">
+              로직 변경 직후, 어떤 가게는 <strong className="text-emerald-600 dark:text-emerald-400">140위 → 1위</strong>까지 회복하고,
+              어떤 가게는 <strong className="text-rose-600 dark:text-rose-400">10위권 → 30~40위로 후퇴</strong>합니다.
+              차이는 위 케이스에서 다룬 &ldquo;페이지 보강 + 유입 다양화&rdquo; 여부.
+            </p>
+          </div>
+          <div className="bg-zinc-50 dark:bg-zinc-950/40 border-t border-zinc-200 dark:border-white/10 p-3 sm:p-5">
+            <img
+              src="/428place/rank-tracking.png"
+              alt="실제 사장님 가게들의 4월 1~2주차 네이버 플레이스 순위 변동 추이 데이터"
+              className="w-full h-auto rounded-lg border border-zinc-200 dark:border-white/10"
+              loading="lazy"
+            />
+          </div>
+          <figcaption className="px-5 sm:px-7 py-4 text-[14px] text-zinc-500 dark:text-zinc-500 border-t border-zinc-200 dark:border-white/10 leading-relaxed">
+            * 가게명·URL은 비식별 처리. 일부 사장님 동의 하에 공유한 실제 추적 데이터입니다.
+          </figcaption>
+        </figure>
       </Section>
 
       {/* ── 3. This Week Actions ──────────────────── */}
