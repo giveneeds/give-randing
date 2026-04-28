@@ -31,6 +31,11 @@ export default function LandingNavbar({ settings }) {
     window.location.href = '/';
   };
   const isHome = pathname === '/';
+  const authRedirect = pathname && !pathname.startsWith('/login') && !pathname.startsWith('/signup') && !pathname.startsWith('/auth')
+    ? pathname
+    : '/';
+  const loginHref = `/login?redirect=${encodeURIComponent(authRedirect)}`;
+  const signupHref = `/signup?redirect=${encodeURIComponent(authRedirect)}`;
   const handleBack = () => {
     if (typeof window === 'undefined') return;
     if (window.history.length > 1) window.history.back();
@@ -122,13 +127,13 @@ export default function LandingNavbar({ settings }) {
           ) : (
             <>
               <a
-                href="/login"
+                href={loginHref}
                 className="hidden md:inline-flex items-center text-zinc-700 dark:text-zinc-200 hover:text-zinc-900 dark:hover:text-white px-3 py-2 font-bold text-xs tracking-widest uppercase transition-colors"
               >
                 로그인
               </a>
               <a
-                href="/signup"
+                href={signupHref}
                 className="hidden md:inline-flex bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-5 py-2 rounded-md font-bold text-xs tracking-widest uppercase hover:scale-[1.02] active:scale-[0.98] transition-all"
               >
                 무료 가입
@@ -190,14 +195,14 @@ export default function LandingNavbar({ settings }) {
             ) : (
               <>
                 <a
-                  href="/signup"
+                  href={signupHref}
                   onClick={() => setMobileOpen(false)}
                   className="block text-center w-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 py-4 rounded-2xl font-black text-sm tracking-widest uppercase active:scale-[0.99] transition-transform"
                 >
                   무료 회원가입
                 </a>
                 <a
-                  href="/login"
+                  href={loginHref}
                   onClick={() => setMobileOpen(false)}
                   className="block text-center w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 text-zinc-900 dark:text-white py-4 rounded-2xl font-black text-sm tracking-widest uppercase active:scale-[0.99] transition-transform"
                 >
