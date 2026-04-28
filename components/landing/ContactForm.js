@@ -269,7 +269,7 @@ export default function ContactForm() {
                     className={`px-4 py-3 rounded-xl text-xs font-bold transition-all border
                       ${formData.budget === opt.id 
                         ? 'bg-primary text-white border-primary shadow-[0_0_20px_rgba(var(--primary-rgb),0.4)] scale-[1.02]' 
-                        : 'bg-white/5 dark:bg-zinc-900/50 border-zinc-100 dark:border-white/5 text-zinc-500 hover:border-primary/50'
+                        : 'bg-zinc-50 dark:bg-zinc-900/50 border-zinc-200 dark:border-white/5 text-zinc-600 dark:text-zinc-400 hover:border-primary/50'
                       } ${opt.special ? 'border-dashed' : ''}`}
                   >
                     {opt.label}
@@ -313,7 +313,7 @@ export default function ContactForm() {
         </section>
 
         {/* AI CTA */}
-        <div className="bg-white/5 backdrop-blur-xl p-8 rounded-3xl border border-white/10 flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative group">
+        <div className="bg-zinc-50 dark:bg-white/5 backdrop-blur-xl p-8 rounded-3xl border border-zinc-200 dark:border-white/10 flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative group">
           <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
           <div className="flex items-center gap-4 relative">
             <div className="w-12 h-12 bg-primary/10 text-primary rounded-full flex items-center justify-center shadow-[inset_0_0_20px_rgba(var(--primary-rgb),0.2)]">

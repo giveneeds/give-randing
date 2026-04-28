@@ -18,7 +18,7 @@ export default function BrandAboutSection() {
               WHO WE ARE
             </span>
           </div>
-          <h2 className="text-2xl sm:text-4xl md:text-5xl font-black leading-tight tracking-tighter text-zinc-900 mb-6 sm:mb-8">
+          <h2 className="text-2xl sm:text-4xl md:text-5xl font-black leading-tight tracking-tighter text-zinc-900 dark:text-zinc-100 mb-6 sm:mb-8">
             우리는 숫자의 이면에서<br/>
             브랜드의 <span className="text-zinc-400 italic">본질</span>을 찾습니다.
           </h2>
@@ -35,15 +35,15 @@ export default function BrandAboutSection() {
           viewport={{ once: true }}
           className="relative"
         >
-          <div className="aspect-[4/5] bg-zinc-100 overflow-hidden border border-zinc-200">
+          <div className="aspect-[4/5] bg-zinc-100 dark:bg-zinc-900 overflow-hidden border border-zinc-200 dark:border-zinc-800">
             <img 
               src="https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80" 
               alt="Brand Identity" 
               className="object-cover w-full h-full grayscale hover:grayscale-0 transition-all duration-1000"
             />
           </div>
-          <div className="absolute -bottom-8 -left-8 bg-white p-8 border border-zinc-200 hidden md:block">
-            <div className="text-3xl font-black text-zinc-900 leading-none">01</div>
+          <div className="absolute -bottom-8 -left-8 bg-white dark:bg-zinc-900 p-8 border border-zinc-200 dark:border-zinc-800 hidden md:block">
+            <div className="text-3xl font-black text-zinc-900 dark:text-zinc-100 leading-none">01</div>
             <div className="text-[9px] font-bold tracking-widest text-zinc-400 uppercase mt-2">Core Philosophy</div>
           </div>
         </motion.div>

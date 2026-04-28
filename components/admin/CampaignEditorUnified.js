@@ -452,6 +452,13 @@ export default function CampaignEditorUnified({ campaign, sections, onSave, onCl
                                   <div className="space-y-1.5"><label className="lbl">CTA 버튼 텍스트</label><input className="inp font-bold" value={current.hero_content?.cta_label || ''} onChange={e => setHero({ cta_label: e.target.value })} /></div>
                                   <div className="space-y-1.5"><label className="lbl">제공 자료명</label><input className="inp font-mono text-xs" value={current.hero_content?.file_name || ''} onChange={e => setHero({ file_name: e.target.value })} /></div>
                                 </div>
+                                <div className="space-y-2 pt-2 border-t border-blue-100">
+                                  <label className="lbl">리드 마그넷 첨부 파일 (PDF · DOCX · ZIP …)</label>
+                                  <p className="text-[10px] text-zinc-400 leading-relaxed">
+                                    카카오 로그인 후 사용자에게 즉시 다운로드되는 자료입니다. 활성화된 첫 번째 항목이 자동 사용돼요.
+                                  </p>
+                                  <ResourcesManager parentType="campaign" parentId={current.id} />
+                                </div>
                               </div>
                             )}
                           </div>
