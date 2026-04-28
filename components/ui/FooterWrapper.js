@@ -16,5 +16,10 @@ export default function FooterWrapper() {
     return null;
   }
 
+  // 단독 랜딩 페이지 (자체 푸터 사용)
+  if (pathname.startsWith('/428place')) {
+    return null;
+  }
+
   return <GlobalFooter />;
 }
