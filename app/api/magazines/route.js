@@ -49,9 +49,41 @@ export async function GET(request) {
   }
 }
 
+function slugify(input) {
+  return String(input || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9가-힣\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 80);
+}
+
+async function ensureUniqueSlug(base, excludeId = null) {
+  const safeBase = base || 'post';
+  if (isDummyMode) {
+    const taken = new Set(DUMMY_MAGAZINES.filter(m => m.id !== excludeId).map(m => m.slug));
+    let candidate = safeBase;
+    let n = 2;
+    while (taken.has(candidate)) candidate = `${safeBase}-${n++}`;
+    return candidate;
+  }
+  let q = supabase.from('magazines').select('slug').like('slug', `${safeBase}%`);
+  if (excludeId) q = q.neq('id', excludeId);
+  const { data, error } = await q;
+  if (error) return safeBase;
+  const taken = new Set((data || []).map(r => r.slug));
+  let candidate = safeBase;
+  let n = 2;
+  while (taken.has(candidate)) candidate = `${safeBase}-${n++}`;
+  return candidate;
+}
+
 export async function POST(request) {
   try {
     const body = await request.json();
+    const baseSlug = slugify(body.slug) || slugify(body.title) || `post-${Date.now()}`;
+    body.slug = await ensureUniqueSlug(baseSlug);
     if (isDummyMode) return NextResponse.json({ magazine: { ...body, id: crypto.randomUUID() } });
     const { data, error } = await supabase.from('magazines').insert([body]).select().single();
     if (error) throw error;
@@ -65,7 +97,9 @@ export async function PUT(request) {
   try {
     const body = await request.json();
     const { id, ...updateData } = body;
-    if (isDummyMode) return NextResponse.json({ magazine: body });
+    const baseSlug = slugify(updateData.slug) || slugify(updateData.title) || `post-${Date.now()}`;
+    updateData.slug = await ensureUniqueSlug(baseSlug, id);
+    if (isDummyMode) return NextResponse.json({ magazine: { ...body, slug: updateData.slug } });
     const { data, error } = await supabase.from('magazines').update(updateData).eq('id', id).select().single();
     if (error) throw error;
     return NextResponse.json({ magazine: data });
