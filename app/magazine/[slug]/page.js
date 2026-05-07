@@ -224,12 +224,14 @@ export default function MagazineDetailPage() {
             />
           </div>
 
-          {/* ─── 첨부 자료 다운로드 ─── */}
-          <ResourceDownloads
-            magazineId={post.id}
-            slug={post.slug}
-            resources={resources}
-          />
+          {/* ─── 첨부 자료 다운로드 (리드마그넷) — 에디터에서 ON일 때만 노출 ─── */}
+          {post.show_resources && (
+            <ResourceDownloads
+              magazineId={post.id}
+              slug={post.slug}
+              resources={resources}
+            />
+          )}
 
           <div className="mt-20 border-t border-zinc-100 dark:border-zinc-800 pt-20">
             <LeadForm

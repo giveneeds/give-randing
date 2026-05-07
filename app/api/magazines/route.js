@@ -49,10 +49,13 @@ export async function GET(request) {
   }
 }
 
+// ASCII-only 슬러그. 한글은 URL 인코딩 시 깨짐/404 위험이 있어 제거한다.
+// 결과가 비면 호출부에서 `post-${Date.now()}` 같은 폴백을 사용한다.
 function slugify(input) {
   return String(input || '')
     .toLowerCase()
-    .replace(/[^a-z0-9가-힣\s-]/g, '')
+    .replace(/[^\x00-\x7f]/g, '') // 비-ASCII (한글 포함) 제거
+    .replace(/[^a-z0-9\s-]/g, '')
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '')

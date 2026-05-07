@@ -21,7 +21,8 @@ export default function MagazineEditor() {
     title: '', slug: '', category: '', thumbnail_url: '', content_html: '',
     excerpt: '', author: 'GIVENEEDS', tags: [],
     is_premium: false, status: 'draft', is_featured: false, sort_order: 0,
-    show_ai_block: true
+    show_ai_block: true,
+    show_resources: false
   });
 
   const [saving, setSaving] = useState(false);
@@ -47,14 +48,8 @@ export default function MagazineEditor() {
     finally { setLoading(false); }
   }
 
-  // 제목에서 자동 slug 생성
   function handleTitleChange(title) {
-    const autoSlug = title
-      .toLowerCase()
-      .replace(/[^a-z0-9가-힣\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .slice(0, 80);
-    setMagazine({ ...magazine, title, slug: magazine.slug || autoSlug });
+    setMagazine({ ...magazine, title });
   }
 
   // 태그 파싱
@@ -170,12 +165,9 @@ export default function MagazineEditor() {
                 </div>
               )}
               
-              <div className="grid grid-cols-2 gap-3">
-                 <select className="w-full p-3 bg-white border border-zinc-200 rounded-md font-bold text-xs outline-none shadow-sm" value={magazine.category} onChange={e => setMagazine({ ...magazine, category: e.target.value })}>
-                   {MAGAZINE_CATEGORY_OPTIONS.map(c => <option key={c.value || 'none'} value={c.value}>{c.label}</option>)}
-                 </select>
-                 <input className="w-full p-3 bg-white border border-zinc-200 rounded-md font-mono text-[11px] outline-none shadow-sm" placeholder="slug (auto)" value={magazine.slug} onChange={e => setMagazine({ ...magazine, slug: e.target.value })} />
-              </div>
+              <select className="w-full p-3 bg-white border border-zinc-200 rounded-md font-bold text-xs outline-none shadow-sm" value={magazine.category} onChange={e => setMagazine({ ...magazine, category: e.target.value })}>
+                {MAGAZINE_CATEGORY_OPTIONS.map(c => <option key={c.value || 'none'} value={c.value}>{c.label}</option>)}
+              </select>
 
               {/* 카테고리 가이드 — 어떤 글을 쓸지 형식 안내 */}
               <CategoryGuideTooltip current={magazine.category} />
@@ -217,6 +209,7 @@ export default function MagazineEditor() {
               <button onClick={() => setMagazine({ ...magazine, is_featured: !magazine.is_featured })} className={clsx("w-full p-4 rounded-xl border flex items-center justify-between transition-all", magazine.is_featured ? "bg-blue-50 border-blue-200 text-blue-600" : "bg-white border-zinc-200 text-zinc-500")}><span className="text-[10px] font-black uppercase tracking-widest">Featured (대형 카드)</span>{magazine.is_featured && <CheckCircle2 size={16} />}</button>
               <button onClick={() => setMagazine({ ...magazine, is_premium: !magazine.is_premium })} className={clsx("w-full p-4 rounded-xl border flex items-center justify-between transition-all", magazine.is_premium ? "bg-zinc-900 border-zinc-900 text-white" : "bg-white border-zinc-200 text-zinc-500")}><span className="text-[10px] font-black uppercase tracking-widest">Premium Content</span>{magazine.is_premium && <CheckCircle2 size={16} />}</button>
               <button onClick={() => setMagazine({ ...magazine, show_ai_block: !magazine.show_ai_block })} className={clsx("w-full p-4 rounded-xl border flex items-center justify-between transition-all", magazine.show_ai_block ? "bg-violet-50 border-violet-200 text-violet-600" : "bg-white border-zinc-200 text-zinc-500")}><span className="text-[10px] font-black uppercase tracking-widest">⚡ AI 솔루션 블록 표시</span>{magazine.show_ai_block && <CheckCircle2 size={16} />}</button>
+              <button onClick={() => setMagazine({ ...magazine, show_resources: !magazine.show_resources })} className={clsx("w-full p-4 rounded-xl border flex items-center justify-between transition-all", magazine.show_resources ? "bg-emerald-50 border-emerald-200 text-emerald-600" : "bg-white border-zinc-200 text-zinc-500")}><span className="text-[10px] font-black uppercase tracking-widest">📎 리드마그넷(첨부 자료) 표시</span>{magazine.show_resources && <CheckCircle2 size={16} />}</button>
            </div>
         </aside>
 
@@ -283,7 +276,22 @@ function PreviewContent({ post }) {
        </div>
        {post.thumbnail_url && <div className="px-8 max-w-screen-md mx-auto mb-12"><div className="aspect-[16/9] bg-zinc-50 border border-zinc-100 rounded-xl overflow-hidden"><img src={post.thumbnail_url} className="w-full h-full object-cover" /></div></div>}
        <article className="px-8 max-w-screen-md mx-auto prose prose-zinc prose-lg max-w-none prose-p:text-zinc-600 prose-headings:font-black prose-headings:tracking-tighter" dangerouslySetInnerHTML={{ __html: post.content_html }} />
-       
+
+       {/* 리드마그넷(첨부 자료) 프리뷰 */}
+       <div className="px-8 max-w-screen-md mx-auto mt-12">
+         {post.show_resources ? (
+           <div className="text-[9px] font-black text-zinc-400 uppercase tracking-widest flex items-center gap-2 border border-emerald-200 bg-emerald-50/60 rounded-xl p-4">
+             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+             📎 리드마그넷 (첨부 자료) 활성화 — 발행 후 등록한 자료가 노출됩니다.
+           </div>
+         ) : (
+           <div className="text-[9px] font-black text-zinc-300 uppercase tracking-widest flex items-center gap-2 border border-dashed border-zinc-200 rounded-xl p-4 justify-center">
+             <span className="w-2 h-2 rounded-full bg-zinc-300" />
+             리드마그넷 꺼짐
+           </div>
+         )}
+       </div>
+
        {/* AI 솔루션 블록 프리뷰 */}
        {post.show_ai_block && (
          <div className="px-8 max-w-screen-md mx-auto mt-16 mb-8">
