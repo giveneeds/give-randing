@@ -9,12 +9,27 @@ import { motion } from 'framer-motion';
 import MarkdownContent from '@/lib/markdownRender';
 import { appendService } from '@/lib/userTrail';
 import { trackEvent } from '@/lib/tracker';
+import { supabase, isDummyMode, DUMMY_SETTINGS } from '@/lib/supabase';
+import LandingNavbar from '@/components/landing/LandingNavbar';
+import LandingFooter from '@/components/landing/LandingFooter';
 
 export default function ServiceDetailPage({ params }) {
   const { slug } = use(params);
   const [service, setService] = useState(null);
   const [loading, setLoading] = useState(true);
   const [relatedMagazine, setRelatedMagazine] = useState(null);
+  const [settings, setSettings] = useState(DUMMY_SETTINGS);
+
+  // landing_settings 로드 (Navbar/Footer 브랜드 일관성)
+  useEffect(() => {
+    if (isDummyMode) return;
+    (async () => {
+      try {
+        const { data } = await supabase.from('landing_settings').select('*').single();
+        if (data) setSettings(data);
+      } catch {}
+    })();
+  }, []);
 
   useEffect(() => {
     async function fetchService() {
@@ -118,7 +133,9 @@ export default function ServiceDetailPage({ params }) {
   const nextNum = () => String(++blockIndex).padStart(2, '0');
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 pt-28 pb-32 transition-colors">
+    <>
+      <LandingNavbar settings={settings} />
+      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 pt-28 pb-32 transition-colors">
       <div className="container mx-auto px-4 sm:px-6 max-w-6xl">
         {/* Navigation */}
         <Link
@@ -370,6 +387,8 @@ export default function ServiceDetailPage({ params }) {
         </div>
       </div>
     </div>
+      <LandingFooter settings={settings} />
+    </>
   );
 }
 

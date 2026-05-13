@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { supabase, isDummyMode, DUMMY_MAGAZINES } from '@/lib/supabase';
+import { supabase, isDummyMode, DUMMY_MAGAZINES, DUMMY_SETTINGS } from '@/lib/supabase';
 import MagazineNavbar from '@/components/landing/MagazineNavbar';
 import LandingFooter from '@/components/landing/LandingFooter';
 import MagazineCard from '@/components/landing/MagazineCard';
@@ -25,6 +25,7 @@ export default function MagazineDetailPage() {
   const [post, setPost] = useState(null);
   const [related, setRelated] = useState([]);
   const [resources, setResources] = useState([]);
+  const [settings, setSettings] = useState(DUMMY_SETTINGS);
   const [loading, setLoading] = useState(true);
   const { user, loading: authLoading } = useAuth();
   const isLocked = !!post?.is_premium && !user && !authLoading;
@@ -111,6 +112,17 @@ export default function MagazineDetailPage() {
     }
     if (slug) loadPost();
   }, [slug]);
+
+  // landing_settings 로드 (Footer/Navbar 브랜드 일관성)
+  useEffect(() => {
+    if (isDummyMode) return;
+    (async () => {
+      try {
+        const { data } = await supabase.from('landing_settings').select('*').single();
+        if (data) setSettings(data);
+      } catch {}
+    })();
+  }, []);
 
   // 행동 추적 — 내부 전용, UI에 노출 금지
   useEffect(() => {
@@ -266,7 +278,7 @@ export default function MagazineDetailPage() {
         )}
       </main>
 
-      <LandingFooter />
+      <LandingFooter settings={settings} />
       {isLocked && <PremiumGateModal slug={slug} />}
     </>
   );
