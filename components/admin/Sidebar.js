@@ -14,6 +14,7 @@ import {
   BarChart2,
   ShieldCheck,
   Download,
+  Activity,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -53,6 +54,7 @@ const NAV_GROUPS = [
     label: 'CRM · 분석',
     items: [
       { href: '/admin/leads', icon: Users, label: '고객 리드 조회' },
+      { href: '/admin/magazines/analytics', icon: Activity, label: '매거진 분석' },
       { href: '/admin/downloads', icon: Download, label: '자료 다운로드 로그' },
       { href: '/admin/funnel', icon: BarChart2, label: '퍼널 분석' },
     ],
