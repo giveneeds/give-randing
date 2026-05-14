@@ -6,8 +6,9 @@ import {
   ArrowLeft, MessageSquare, Eye, MousePointer2, CheckCircle2,
   BookOpen, Rocket, Phone, Mail, Building2, Globe, Calendar,
   Tag, StickyNote, PhoneCall, Users, Send, Clock, ChevronRight,
-  AlertCircle, Loader2
+  AlertCircle, Loader2, Monitor, Smartphone, Tablet, ExternalLink, Compass,
 } from 'lucide-react';
+import { prettyReferrer } from '@/lib/leadInflow';
 
 const PIPELINE_CONFIG = {
   new:       { label: '신규',  color: 'bg-amber-50 text-amber-700 border-amber-200' },
@@ -56,6 +57,19 @@ function timeAgo(dateStr) {
   const days = Math.floor(hrs / 24);
   if (days < 7) return `${days}일 전`;
   return new Date(dateStr).toLocaleDateString('ko-KR');
+}
+
+function fmtDateTime(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleString('ko-KR', {
+    month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit',
+  });
+}
+
+function DeviceIcon({ type, size = 13 }) {
+  if (type === 'mobile') return <Smartphone size={size} />;
+  if (type === 'tablet') return <Tablet size={size} />;
+  return <Monitor size={size} />;
 }
 
 export default function LeadDetailPage() {
@@ -206,6 +220,7 @@ export default function LeadDetailPage() {
                 const evData = ev.event_data || {};
                 const subtitle = evData.title || evData.label || evData.cta_id || null;
                 const urlShort = ev.page_url?.replace(/^https?:\/\/[^/]+/, '') || '';
+                const refInfo = prettyReferrer(evData.referrer);
 
                 return (
                   <div key={ev.id || i} className="flex items-start gap-4 px-6 py-4 hover:bg-zinc-50 transition-colors">
@@ -224,8 +239,16 @@ export default function LeadDetailPage() {
                       {urlShort && (
                         <p className="text-[11px] text-zinc-400 mt-0.5 font-mono truncate">{urlShort}</p>
                       )}
+                      {refInfo && (
+                        <p className="text-[11px] text-zinc-500 mt-0.5 truncate">
+                          ← <span className="font-medium">{refInfo.label}</span>
+                        </p>
+                      )}
                     </div>
-                    <span className="text-[10px] text-zinc-400 font-bold whitespace-nowrap flex-shrink-0">
+                    <span
+                      className="text-[10px] text-zinc-400 font-bold whitespace-nowrap flex-shrink-0"
+                      title={fmtDateTime(ev.created_at)}
+                    >
                       {timeAgo(ev.created_at)}
                     </span>
                   </div>
@@ -284,13 +307,6 @@ export default function LeadDetailPage() {
                   <span className="truncate text-blue-600">{lead.website_url}</span>
                 </div>
               )}
-              {lead?.utm_source && (
-                <div className="flex items-center gap-2">
-                  <Tag size={12} className="text-zinc-400 flex-shrink-0" />
-                  <span className="text-zinc-400">UTM:</span>
-                  <span className="font-mono text-[11px]">{lead.utm_source}{lead.utm_medium ? ` / ${lead.utm_medium}` : ''}</span>
-                </div>
-              )}
               {lead?.created_at && (
                 <div className="flex items-center gap-2">
                   <Calendar size={12} className="text-zinc-400 flex-shrink-0" />
@@ -298,6 +314,67 @@ export default function LeadDetailPage() {
                 </div>
               )}
             </div>
+          </div>
+
+          {/* 유입 정보 (J1) */}
+          <div className="bg-white rounded-xl border border-zinc-200 shadow-sm p-5 space-y-3">
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="text-[11px] font-black text-zinc-900 uppercase tracking-widest flex items-center gap-1.5">
+                <Compass size={12} /> 유입 정보
+              </h3>
+              {lead?.channel_group && (
+                <span className="text-[10px] font-bold text-zinc-500 bg-zinc-100 px-2 py-0.5 rounded-full">
+                  {CHANNEL_LABELS[lead.channel_group] || lead.channel_group}
+                </span>
+              )}
+            </div>
+
+            <InflowRow label="첫 유입">
+              {(() => {
+                const r = prettyReferrer(lead?.source_referrer);
+                if (!r) return <span className="text-zinc-400">직접 입력 / 알 수 없음</span>;
+                return (
+                  <a
+                    href={r.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 text-blue-600 hover:underline truncate"
+                    title={r.url}
+                  >
+                    <span className="truncate">{r.label}</span>
+                    <ExternalLink size={10} className="flex-shrink-0" />
+                  </a>
+                );
+              })()}
+            </InflowRow>
+
+            <InflowRow label="첫 페이지">
+              <span className="font-mono text-[11px] text-zinc-700 truncate">
+                {lead?.first_visit_url || lead?.source_page || '—'}
+              </span>
+            </InflowRow>
+
+            <InflowRow label="UTM Source">{lead?.utm_source || '—'}</InflowRow>
+            <InflowRow label="UTM Medium">{lead?.utm_medium || '—'}</InflowRow>
+            {lead?.utm_campaign && (
+              <InflowRow label="UTM Campaign">{lead.utm_campaign}</InflowRow>
+            )}
+
+            <InflowRow label="환경">
+              <span className="inline-flex items-center gap-1.5 text-zinc-700">
+                <DeviceIcon type={lead?.device_type} size={12} />
+                <span className="capitalize">{lead?.device_type || '—'}</span>
+                {lead?.browser && (
+                  <span className="text-zinc-400">· {lead.browser}</span>
+                )}
+              </span>
+            </InflowRow>
+
+            {lead?.click_element && (
+              <InflowRow label="제출 위치">
+                <span className="font-mono text-[11px] text-zinc-700">{lead.click_element}</span>
+              </InflowRow>
+            )}
           </div>
 
           {/* Pipeline Stage */}
@@ -394,6 +471,17 @@ export default function LeadDetailPage() {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function InflowRow({ label, children }) {
+  return (
+    <div className="flex items-start gap-3 text-xs">
+      <span className="text-zinc-400 font-bold uppercase tracking-wider text-[10px] w-20 flex-shrink-0 pt-0.5">
+        {label}
+      </span>
+      <div className="flex-1 min-w-0 text-zinc-700">{children}</div>
     </div>
   );
 }

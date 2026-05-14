@@ -12,32 +12,36 @@ const STEP_KEYS = ['sessions', 'content', 'cta', 'leads'];
 
 const STEP_CONFIG = {
   sessions: {
-    label: '세션 시작',
+    label: '사이트 방문',
+    sub: '사이트에 들어옴',
     icon: Users,
     color: 'bg-zinc-800 text-white',
     bar: 'bg-zinc-800',
-    tooltip: '사이트에 처음 방문한 고유 세션 수입니다. 모든 방문자가 여기서 시작합니다.',
+    tooltip: '외부 사용자가 사이트에 들어온 횟수(세션 시작). 어드민 본인이나 /admin/* 페이지 방문은 제외된 순수 외부 트래픽입니다.',
   },
   content: {
-    label: '콘텐츠 조회',
+    label: '콘텐츠 열람',
+    sub: '매거진/서비스 페이지를 읽음',
     icon: BookOpen,
     color: 'bg-violet-500 text-white',
     bar: 'bg-violet-500',
-    tooltip: '매거진 아티클이나 서비스 페이지를 실제로 조회한 횟수입니다.',
+    tooltip: '매거진 글 또는 서비스 상세 페이지를 실제로 본 횟수. 들어와서 곧바로 이탈하지 않고 본문을 본 사람을 추적합니다.',
   },
   cta: {
-    label: 'CTA 클릭',
+    label: '관심 행동',
+    sub: 'CTA·버튼 클릭',
     icon: MousePointer2,
     color: 'bg-blue-500 text-white',
     bar: 'bg-blue-500',
-    tooltip: '페이지 내 CTA(Call-to-Action) 버튼을 클릭한 횟수입니다.',
+    tooltip: '페이지 내 핵심 행동(CTA, 문의·다운로드 버튼 등)을 클릭한 횟수. 진성 관심 지표.',
   },
   leads: {
-    label: '리드 전환',
+    label: '문의 전환',
+    sub: '리드 폼 제출 완료',
     icon: CheckCircle2,
     color: 'bg-emerald-500 text-white',
     bar: 'bg-emerald-500',
-    tooltip: '최종적으로 문의 폼을 제출해 리드로 전환된 수입니다.',
+    tooltip: '문의·상담 폼을 제출해 실제 리드(고객 잠재 정보)로 전환된 수.',
   },
 };
 
@@ -311,7 +315,7 @@ export default function FunnelPage() {
           </div>
           <div>
             <h1 className="text-lg font-black text-zinc-900 tracking-tight">퍼널 분석</h1>
-            <p className="text-xs text-zinc-400">각 단계를 클릭하면 세부 내역을 확인할 수 있습니다</p>
+            <p className="text-xs text-zinc-400">외부 방문자가 문의까지 도달하는 흐름을 단계별로 봅니다 · 각 단계를 클릭하면 세부 내역</p>
           </div>
         </div>
         <Link
@@ -321,6 +325,14 @@ export default function FunnelPage() {
           <Users size={14} />
           방문자 여정
         </Link>
+      </div>
+
+      {/* 정제 정책 안내 */}
+      <div className="flex items-start gap-2 px-4 py-2.5 bg-amber-50/60 border border-amber-100 rounded-xl text-[11px] text-amber-900">
+        <HelpCircle size={13} className="flex-shrink-0 mt-0.5" />
+        <span>
+          어드민 본인의 사이트 둘러보기와 <code className="font-mono">/admin/*</code> 페이지 방문은 분석에서 자동 제외됩니다. 화면의 모든 숫자는 외부 방문자 기준입니다.
+        </span>
       </div>
 
       {/* Funnel Steps (clickable) */}
@@ -351,9 +363,15 @@ export default function FunnelPage() {
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1.5">
-                      <span className="text-xs font-black text-zinc-800">
-                        Step {i + 1}. {step.label}
+                      <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
+                        Step {i + 1}
                       </span>
+                      <span className="text-sm font-black text-zinc-900">
+                        {step.label}
+                      </span>
+                      {cfg.sub && (
+                        <span className="text-[11px] text-zinc-400 font-medium">— {cfg.sub}</span>
+                      )}
                       <Tooltip text={cfg.tooltip} />
                     </div>
                     <div className="relative h-6 bg-zinc-100 rounded-lg overflow-hidden">

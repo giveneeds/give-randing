@@ -7,6 +7,7 @@ import {
   CheckCircle2, Clock, XCircle, AlertCircle, Building2, Globe,
   MessageSquare, Coins, MapPin
 } from 'lucide-react';
+import { prettyReferrer } from '@/lib/leadInflow';
 
 const LEAD_TYPE_CONFIG = {
   consultation: { label: '문의하기', color: 'bg-violet-50 text-violet-600 border-violet-200' },
@@ -277,11 +278,22 @@ export default function AdminLeads() {
                         </select>
                       </td>
                       <td className="px-5 py-5">
-                        {lead.channel_group ? (
-                          <span className="text-[10px] font-bold text-zinc-500 bg-zinc-100 px-2 py-1 rounded-full">
-                            {CHANNEL_LABELS[lead.channel_group] || lead.channel_group}
-                          </span>
-                        ) : <span className="text-zinc-300 text-[10px]">—</span>}
+                        <div className="space-y-1">
+                          {lead.channel_group ? (
+                            <span className="inline-block text-[10px] font-bold text-zinc-500 bg-zinc-100 px-2 py-1 rounded-full">
+                              {CHANNEL_LABELS[lead.channel_group] || lead.channel_group}
+                            </span>
+                          ) : <span className="text-zinc-300 text-[10px]">—</span>}
+                          {(() => {
+                            const r = prettyReferrer(lead.source_referrer);
+                            if (!r) return null;
+                            return (
+                              <div className="text-[10px] text-zinc-400 truncate max-w-[140px]" title={r.url}>
+                                ← {r.label}
+                              </div>
+                            );
+                          })()}
+                        </div>
                       </td>
                       <td className="px-5 py-5">
                         <div className="flex items-center gap-1.5 text-xs text-zinc-400 font-medium whitespace-nowrap">
