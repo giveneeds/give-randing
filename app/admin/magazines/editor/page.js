@@ -199,6 +199,7 @@ export default function MagazineEditor() {
               <ResourcesManager
                 magazineId={id}
                 onResourceAdded={(r) => editorRef.current?.insertResource?.(r)}
+                onInsert={(r) => editorRef.current?.insertResource?.(r)}
               />
            </div>
 

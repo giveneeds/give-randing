@@ -107,7 +107,7 @@ import { useRef, useState, useCallback, useEffect } from 'react';
 import { clsx } from 'clsx';
 import {
   Bold, Italic, List, ListOrdered, Quote, Minus, Image as ImageIcon,
-  Highlighter, Undo2, Redo2, LayoutTemplate, Loader2, Sparkles, X, Paperclip, Link2,
+  Highlighter, Undo2, Redo2, LayoutTemplate, Loader2, Sparkles, X, Link2,
 } from 'lucide-react';
 
 const HEADING_OPTIONS = [
@@ -171,9 +171,6 @@ export default function MagazineRichEditor({ value, onChange, magazineId, editor
   const [aiImages, setAiImages] = useState([]); // 생성된 3장 그리드
   const [aiMode, setAiMode] = useState('whole'); // 'whole' | 'paragraph'
   const [aiParagraphContext, setAiParagraphContext] = useState('');
-  const [showResourcePicker, setShowResourcePicker] = useState(false);
-  const [resources, setResources] = useState([]);
-  const [resourcesLoading, setResourcesLoading] = useState(false);
   const [titleLoading, setTitleLoading] = useState(false);
 
   const editor = useEditor({
@@ -305,26 +302,8 @@ export default function MagazineRichEditor({ value, onChange, magazineId, editor
     [editor],
   );
 
-  const handleOpenResourcePicker = useCallback(async () => {
-    setShowResourcePicker(true);
-    if (!magazineId || resources.length > 0) return;
-    setResourcesLoading(true);
-    try {
-      const res = await fetch(`/api/magazines/${magazineId}/resources?admin=true`);
-      const data = await res.json();
-      setResources(data.resources || []);
-    } catch {
-      setResources([]);
-    } finally {
-      setResourcesLoading(false);
-    }
-  }, [magazineId, resources.length]);
-
-  const handleInsertResource = useCallback((r) => {
-    if (!editor) return;
-    editor.chain().focus().insertContent(buildResourceBlockHTML(r)).run();
-    setShowResourcePicker(false);
-  }, [editor]);
+  // 자료 본문 삽입은 외부(좌측 사이드바 ResourcesManager)에서 editorRef.current.insertResource(r)로 호출.
+  // 에디터 툴바의 자료 픽커 버튼은 제거됨(2026-05-15). 입력 경로는 사이드바 1곳으로 일원화.
 
   // editor 인스턴스를 ref로 유지해 외부 콜백에서 항상 최신 editor 접근 가능
   const editorInstanceRef = useRef(null);
@@ -723,47 +702,6 @@ export default function MagazineRichEditor({ value, onChange, magazineId, editor
           </span>
         </ToolBtn>
 
-        {/* 자료 삽입 */}
-        {magazineId && (
-          <div className="relative">
-            <ToolBtn onClick={handleOpenResourcePicker} title="업로드한 자료를 본문 중간에 삽입">
-              <Paperclip size={15} />
-            </ToolBtn>
-            {showResourcePicker && (
-              <div className="absolute top-full left-0 mt-1 bg-white border border-zinc-200 rounded-md shadow-lg z-20 min-w-[240px]">
-                <div className="px-3 py-2 border-b border-zinc-100 flex items-center justify-between">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">자료 선택</span>
-                  <button type="button" onClick={() => setShowResourcePicker(false)} className="text-zinc-400 hover:text-zinc-700">
-                    <X size={12} />
-                  </button>
-                </div>
-                {resourcesLoading ? (
-                  <div className="flex items-center justify-center py-4 text-zinc-400">
-                    <Loader2 size={14} className="animate-spin" />
-                  </div>
-                ) : resources.length === 0 ? (
-                  <p className="text-[11px] text-zinc-400 text-center py-4 px-3">
-                    먼저 사이드바에서 자료를 업로드하세요
-                  </p>
-                ) : (
-                  resources.map((r) => (
-                    <button
-                      key={r.id}
-                      type="button"
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => handleInsertResource(r)}
-                      className="w-full text-left px-3 py-2.5 text-xs hover:bg-zinc-50 border-b border-zinc-100 last:border-0"
-                    >
-                      <div className="font-bold text-zinc-800 truncate">{r.title}</div>
-                      <div className="text-zinc-400 text-[10px] truncate">{r.file_name}</div>
-                    </button>
-                  ))
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
         {/* 매거진 템플릿 */}
         <div className="relative">
           <ToolBtn onClick={() => setShowTemplates((v) => !v)} title="매거진 템플릿 삽입">
@@ -824,8 +762,6 @@ export default function MagazineRichEditor({ value, onChange, magazineId, editor
       {/* ─── 도움말 배너 ─── */}
       <div className="px-6 py-2 bg-gradient-to-r from-violet-50 to-blue-50 border-b border-zinc-100 text-[11px] text-zinc-600 flex items-center gap-4 flex-wrap">
         <span className="flex items-center gap-1"><Sparkles size={11} className="text-violet-500" /> AI로 이미지 생성</span>
-        <span className="text-zinc-300">·</span>
-        <span className="flex items-center gap-1"><Paperclip size={11} className="text-zinc-500" /> 자료 삽입</span>
         <span className="text-zinc-300">·</span>
         <span className="flex items-center gap-1"><Link2 size={11} className="text-blue-500" /> URL 붙여넣기로 링크 자동 생성</span>
         <span className="text-zinc-300">·</span>

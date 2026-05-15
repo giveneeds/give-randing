@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import {
   FileText, ChevronUp, ChevronDown, Trash2, Loader2,
-  CheckCircle2, Circle, Pencil, Check, X,
+  CheckCircle2, Circle, Pencil, Check, X, CornerDownLeft,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import FileUploader from './FileUploader';
@@ -15,7 +15,13 @@ function formatSize(bytes) {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
-export default function ResourcesManager({ parentType = 'magazine', parentId, magazineId, onResourceAdded }) {
+export default function ResourcesManager({
+  parentType = 'magazine',
+  parentId,
+  magazineId,
+  onResourceAdded,
+  onInsert,
+}) {
   // 하위 호환: magazineId 만 넘어온 경우에도 동작
   const effectiveParentId = parentId ?? magazineId;
   const effectiveParentType = parentId ? parentType : (magazineId ? 'magazine' : parentType);
@@ -275,6 +281,15 @@ export default function ResourcesManager({ parentType = 'magazine', parentId, ma
                 </button>
 
                 <div className="flex items-center gap-1">
+                  {onInsert && (
+                    <button
+                      onClick={() => onInsert(r)}
+                      className="flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-widest text-blue-600 hover:bg-blue-50 transition"
+                      title="본문 커서 위치에 자료 카드 삽입"
+                    >
+                      <CornerDownLeft size={12} /> 본문 삽입
+                    </button>
+                  )}
                   <button
                     onClick={() => swapOrder(i, -1)}
                     disabled={i === 0}
