@@ -43,3 +43,11 @@ next-env.d.ts
 # local scratch: 일회성 탐색/설정 스크립트, 백업, 개인 IDE 설정
 /scripts/legacy/
 *.code-workspace
+
+# tools/content-mvp: 자체 node_modules + 실행 산출물 격리
+/tools/content-mvp/node_modules
+/tools/content-mvp/data/raw
+/tools/content-mvp/data/processed
+
+# Claude Code 로컬 작업 상태 (스케줄 락 등) — 공유 X
+.claude/
