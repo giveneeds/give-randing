@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import {
   Loader2, Filter, ExternalLink, ChevronLeft, ChevronRight,
-  Inbox, Check, X, Send, Tag, Clock, Languages,
+  Inbox, Check, X, Send, Tag, Clock, Languages, Play, Zap,
 } from 'lucide-react';
 
 const PAGE_SIZE = 20;
@@ -32,6 +32,7 @@ export default function ContentStudioReviewPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [page, setPage] = useState(1);
   const [busy, setBusy] = useState({});
+  const [collecting, setCollecting] = useState(false);
 
   const authHeaders = useCallback(async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -86,6 +87,42 @@ export default function ContentStudioReviewPage() {
     }
   }
 
+  // 수집 트리거 — cron 흐름과 동일하게 매체별 1건씩 + 텔레그램 발송까지 한 번에.
+  // mode='test'  : src당 1건 cap + 발송 (cron 시뮬레이션 / 빠른 검증)
+  // mode='full'  : cap 없이 전 매체 + 발송 X (검수만 쌓아두기)
+  async function runCollect(mode) {
+    setCollecting(true);
+    try {
+      const res = await fetch('/api/admin/content-studio/collect', {
+        method: 'POST',
+        headers: await authHeaders(),
+        body: JSON.stringify(
+          mode === 'test'
+            ? { cronLikeCap: true, dispatch: true }
+            : { cronLikeCap: false, dispatch: false }
+        ),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert('수집 실패: ' + (data.error || ''));
+        return;
+      }
+      const collected = data.stats?.collected ?? 0;
+      const sent = data.dispatch?.sent_items ?? 0;
+      const skippedFit = data.dispatch?.skipped_low_fit ?? 0;
+      const msg =
+        mode === 'test'
+          ? `수집 ${collected}건 · 텔레그램 발송 ${sent}건 · 낮은 적합도 스킵 ${skippedFit}건`
+          : `수집 ${collected}건 (발송 X). 카드별 [텔레그램 보내기]로 개별 발송 가능.`;
+      alert(msg);
+      load();
+    } catch (e) {
+      alert('네트워크 오류: ' + e.message);
+    } finally {
+      setCollecting(false);
+    }
+  }
+
   async function notifyTelegram(id) {
     setBusy((b) => ({ ...b, [id]: 'notify' }));
     try {
@@ -114,6 +151,33 @@ export default function ContentStudioReviewPage() {
 
   return (
     <div className="space-y-5">
+      {/* 수집 트리거 — cron 시뮬레이션(매체 1건씩 + 발송) / 전량(검수만) */}
+      <div className="bg-white rounded-md border border-[var(--admin-border)] shadow-sm p-4 flex items-center gap-3 flex-wrap">
+        <div className="flex-1 min-w-0">
+          <div className="text-xs font-black text-zinc-900 uppercase tracking-widest">수집 실행</div>
+          <p className="text-[11px] text-zinc-500 mt-1">
+            [빠른 검증]은 cron과 동일하게 매체별 1건씩 수집 + 즉시 텔레그램 발송.
+            [전체 수집]은 cap 없이 검수함에만 쌓고 발송은 카드별로 수동.
+          </p>
+        </div>
+        <button
+          onClick={() => runCollect('test')}
+          disabled={collecting}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-violet-600 text-white text-xs font-bold hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+        >
+          {collecting ? <Loader2 size={14} className="animate-spin" /> : <Zap size={14} />}
+          빠른 검증 (1건씩 + 발송)
+        </button>
+        <button
+          onClick={() => runCollect('full')}
+          disabled={collecting}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-zinc-300 text-zinc-700 text-xs font-bold hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+        >
+          {collecting ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />}
+          전체 수집 (발송 없음)
+        </button>
+      </div>
+
       <div className="text-xs text-zinc-500 font-medium">{totalLabel}</div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">

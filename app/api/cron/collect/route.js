@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { runCollection } from '@/lib/agent/runCollection';
-import { sendDailyDigest } from '@/lib/agent/sendDailyDigest';
+import { sendItemCards } from '@/lib/agent/sendDailyDigest';
 
 export const runtime = 'nodejs';
 // 외부 API + LLM enrich + 다이제스트 발송 = 길어질 수 있음. Vercel hobby plan 한도 60s, Pro 300s.
@@ -39,17 +39,14 @@ export async function POST(request) {
 
   try {
     const result = await runCollection({ trigger: 'cron' });
-    const digest = await sendDailyDigest({
-      jobId: result.jobId,
-      max: 5,
-      productionUrl: process.env.NEXT_PUBLIC_SITE_URL,
-    });
+    // 건당 카드 + 승인/반려 버튼으로 발송. fit_score 낮은 건은 자동 스킵.
+    const dispatch = await sendItemCards({ jobId: result.jobId });
     return NextResponse.json({
       ok: true,
       jobId: result.jobId,
       stats: result.stats,
       errors: result.errors,
-      digest,
+      dispatch,
     });
   } catch (e) {
     return NextResponse.json({ ok: false, error: e.message }, { status: 500 });
