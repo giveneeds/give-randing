@@ -236,24 +236,28 @@ export default function MagazineDetailPage() {
             />
           </div>
 
-          {/* ─── 첨부 자료 다운로드 (리드마그넷) — 에디터에서 ON일 때만 노출 ─── */}
-          {post.show_resources && (
-            <ResourceDownloads
-              magazineId={post.id}
-              slug={post.slug}
-              resources={resources}
-            />
-          )}
+          {/* ─── 리드마그넷 블록 (자료 다운로드 + 신청 폼)
+                 운영자가 (1) 에디터에서 자료를 등록하고 (2) 노출 토글을 켰을 때만 노출.
+                 토글이 OFF거나 자료가 0개면 두 블록 모두 숨김. 새 매거진 기본값은 토글 OFF. ─── */}
+          {post.show_resources && resources.length > 0 && (
+            <>
+              <ResourceDownloads
+                magazineId={post.id}
+                slug={post.slug}
+                resources={resources}
+              />
 
-          <div className="mt-20 border-t border-zinc-100 dark:border-zinc-800 pt-20">
-            <LeadForm
-              title="프리미엄 전략 리포트 신청"
-              subtitle="매거진 독자분들을 위해 기브니즈가 엄선한 월간 마케팅 트렌드 리포트를 보내드립니다."
-              ctaLabel="리포트 무료로 받기"
-              category="magazine"
-              magazineId={post.id}
-            />
-          </div>
+              <div className="mt-20 border-t border-zinc-100 dark:border-zinc-800 pt-20">
+                <LeadForm
+                  title="프리미엄 전략 리포트 신청"
+                  subtitle="매거진 독자분들을 위해 기브니즈가 엄선한 월간 마케팅 트렌드 리포트를 보내드립니다."
+                  ctaLabel="리포트 무료로 받기"
+                  category="magazine"
+                  magazineId={post.id}
+                />
+              </div>
+            </>
+          )}
 
           <div className="mt-20">
             <AiSolutionBlock />
