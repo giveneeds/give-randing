@@ -1,0 +1,15 @@
+node_modules
+*.log
+
+# 실행 산출물 — 재현 가능한 파일은 커밋하지 않음
+data/raw
+data/processed
+
+# 단, 입력 시드는 커밋 대상
+!data/input
+
+# TypeScript 빌드 캐시
+*.tsbuildinfo
+
+# 오픈소스 후보 분석용 임시 clone — 라이선스/용량 이슈 회피
+research/_clones
