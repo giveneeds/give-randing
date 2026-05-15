@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import {
   ArrowLeft, Eye, Users, Download, TrendingUp, Calendar, Loader2, ExternalLink, FileText,
+  Smartphone, Monitor, User,
 } from 'lucide-react';
 
 const METHOD_LABEL = {
@@ -23,6 +24,7 @@ export default function MagazineAnalyticsDetailPage({ params }) {
   const [magazine, setMagazine] = useState(null);
   const [kpi, setKpi] = useState(null);
   const [daily, setDaily] = useState([]);
+  const [viewers, setViewers] = useState([]);
   const [downloads, setDownloads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [fromDate, setFromDate] = useState('');
@@ -48,6 +50,7 @@ export default function MagazineAnalyticsDetailPage({ params }) {
         setMagazine(data.magazine);
         setKpi(data.kpi);
         setDaily(data.daily || []);
+        setViewers(data.viewers || []);
         setDownloads(data.downloads || []);
       } else {
         console.error('detail load error', data);
@@ -144,10 +147,10 @@ export default function MagazineAnalyticsDetailPage({ params }) {
 
       {/* KPI */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-        <KpiCard icon={Eye} label="조회수" value={kpi?.views ?? 0} />
-        <KpiCard icon={Users} label="고유 방문자" value={kpi?.unique_visitors ?? 0} />
-        <KpiCard icon={Download} label="자료 다운로드" value={kpi?.downloads ?? 0} />
-        <KpiCard icon={TrendingUp} label="전환율" value={`${kpi?.conversion_rate ?? 0}%`} />
+        <KpiCard icon={Eye} label="총 조회수" hint="페이지뷰 합계" value={kpi?.views ?? 0} />
+        <KpiCard icon={Users} label="고유 방문자" hint="익명 ID 기준" value={kpi?.unique_visitors ?? 0} />
+        <KpiCard icon={Download} label="자료 다운로드" hint="DB 기록 기준" value={kpi?.downloads ?? 0} />
+        <KpiCard icon={TrendingUp} label="전환율" hint="다운로드 ÷ 조회수" value={`${kpi?.conversion_rate ?? 0}%`} />
       </div>
 
       {/* 일별 조회 추이 */}
@@ -172,6 +175,64 @@ export default function MagazineAnalyticsDetailPage({ params }) {
             ))}
           </div>
         )}
+      </div>
+
+      {/* 조회자 목록 — 익명 ID 기준, 카카오 가입자는 이름 매칭 */}
+      <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-zinc-100 flex items-center justify-between">
+          <div>
+            <div className="text-xs font-black text-zinc-500 uppercase tracking-widest">조회자 목록</div>
+            <div className="text-[10px] text-zinc-400 mt-0.5">익명 ID 기준 집계 · 카카오 가입자는 이름 표시 · 어드민은 자동 제외</div>
+          </div>
+          <div className="text-[10px] text-zinc-400">{viewers.length}명</div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead className="bg-zinc-50/50 border-b border-zinc-100">
+              <tr>
+                <th className="px-5 py-3 text-[11px] font-black text-zinc-500 uppercase tracking-widest">최근 조회</th>
+                <th className="px-5 py-3 text-[11px] font-black text-zinc-500 uppercase tracking-widest">신원</th>
+                <th className="px-5 py-3 text-[11px] font-black text-zinc-500 uppercase tracking-widest">익명 ID</th>
+                <th className="px-5 py-3 text-[11px] font-black text-zinc-500 uppercase tracking-widest text-right">조회</th>
+                <th className="px-5 py-3 text-[11px] font-black text-zinc-500 uppercase tracking-widest">디바이스</th>
+                <th className="px-5 py-3 text-[11px] font-black text-zinc-500 uppercase tracking-widest">첫 조회</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-50">
+              {viewers.length === 0 ? (
+                <tr><td colSpan={6} className="px-5 py-12 text-center text-sm text-zinc-400">
+                  기간 내 조회 데이터가 없습니다.
+                </td></tr>
+              ) : viewers.map((v) => {
+                const DeviceIcon = v.device_type === 'mobile' ? Smartphone : Monitor;
+                return (
+                  <tr key={v.anonymous_id} className="hover:bg-zinc-50/80 transition">
+                    <td className="px-5 py-3 text-xs text-zinc-700 whitespace-nowrap">{fmtDateTime(v.last_view)}</td>
+                    <td className="px-5 py-3 text-xs">
+                      {v.kakao_name ? (
+                        <span className="inline-flex items-center gap-1.5 font-bold text-zinc-900">
+                          <User size={12} className="text-zinc-400" />
+                          {v.kakao_name}
+                        </span>
+                      ) : (
+                        <span className="text-zinc-400">— (비회원)</span>
+                      )}
+                    </td>
+                    <td className="px-5 py-3 text-[10px] font-mono text-zinc-500">{v.anonymous_id.slice(0, 8)}…</td>
+                    <td className="px-5 py-3 text-xs text-right font-bold text-zinc-900 tabular-nums">{v.view_count}</td>
+                    <td className="px-5 py-3 text-xs text-zinc-600">
+                      <span className="inline-flex items-center gap-1.5">
+                        <DeviceIcon size={12} className="text-zinc-400" />
+                        {v.device_type || '—'}{v.browser ? ` · ${v.browser}` : ''}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3 text-[10px] text-zinc-400 whitespace-nowrap">{fmtDateTime(v.first_view)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* 다운로드자 목록 */}
@@ -228,7 +289,7 @@ export default function MagazineAnalyticsDetailPage({ params }) {
   );
 }
 
-function KpiCard({ icon: Icon, label, value }) {
+function KpiCard({ icon: Icon, label, hint, value }) {
   return (
     <div className="bg-white rounded-2xl border border-zinc-200 p-5 shadow-sm">
       <div className="flex items-center gap-2 text-zinc-400 mb-3">
@@ -238,6 +299,9 @@ function KpiCard({ icon: Icon, label, value }) {
       <div className="text-3xl font-black text-zinc-900 tabular-nums">
         {typeof value === 'number' ? value.toLocaleString() : value}
       </div>
+      {hint && (
+        <div className="text-[10px] text-zinc-400 mt-1.5">{hint}</div>
+      )}
     </div>
   );
 }

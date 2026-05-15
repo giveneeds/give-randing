@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { requireAdmin } from '@/lib/adminAuth';
+import { getAdminAnonIds } from '@/lib/analyticsFilters';
 
 export const runtime = 'nodejs';
 
@@ -68,6 +69,10 @@ export async function GET(request) {
       .lte('created_at', to);
     if (evErr) throw evErr;
 
+    // 어드민이 한 번이라도 로그인했던 anonymous_id 누적 제외.
+    // 본인이 비로그인 상태로 들렀던 이력까지 후행 제거.
+    const adminAnonIds = await getAdminAnonIds();
+
     // 3) 다운로드 — magazine_id별 집계용
     const { data: downloads, error: dlErr } = await supabaseAdmin
       .from('resource_downloads')
@@ -82,6 +87,7 @@ export async function GET(request) {
     for (const e of events || []) {
       const s = e.event_data?.slug;
       if (!s || !slugSet.has(s)) continue;
+      if (e.anonymous_id && adminAnonIds.has(e.anonymous_id)) continue; // 어드민 본인 활동 제외
       let v = viewsBySlug.get(s);
       if (!v) {
         v = { views: 0, uniqueSet: new Set(), lastAt: null };

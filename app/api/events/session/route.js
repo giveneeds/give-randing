@@ -1,10 +1,20 @@
 import { NextResponse } from 'next/server';
 import { supabase, isDummyMode } from '@/lib/supabase';
+import { isBotUserAgent, ADMIN_TAG_COOKIE } from '@/lib/botFilter';
 
 export async function POST(request) {
   try {
     if (isDummyMode) {
       return NextResponse.json({ session_id: crypto.randomUUID() });
+    }
+
+    // 봇/링크 프리뷰 + 어드민 디바이스 마커는 분석 오염 원인이라 INSERT 자체를 스킵.
+    const ua = request.headers.get('user-agent') || '';
+    if (isBotUserAgent(ua)) {
+      return NextResponse.json({ session_id: null, skipped: 'bot' });
+    }
+    if (request.cookies.get(ADMIN_TAG_COOKIE)?.value === '1') {
+      return NextResponse.json({ session_id: null, skipped: 'admin_tag' });
     }
 
     const body = await request.json();

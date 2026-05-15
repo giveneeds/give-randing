@@ -49,6 +49,14 @@ export default function AdminLayout({ children }) {
           router.replace('/admin?error=permission');
           return;
         }
+        // 어드민 디바이스 마커 쿠키 갱신 (idempotent, fire-and-forget).
+        // 기존 쿠키 만료가 가까워졌거나 처음 어드민 페이지 진입한 디바이스에 1년 마커 발급.
+        if (session?.access_token) {
+          fetch('/api/admin/auth/tag', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${session.access_token}` },
+          }).catch(() => {});
+        }
         setProfile(prof);
       } finally {
         if (active) setChecking(false);

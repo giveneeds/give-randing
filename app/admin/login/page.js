@@ -45,6 +45,15 @@ function AdminLoginInner() {
         return;
       }
 
+      // 디바이스에 어드민 마커 쿠키(1년) 발급 — 로그아웃 후에도 본인 트래픽 누적 제외.
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        await fetch('/api/admin/auth/tag', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        }).catch(() => {});
+      }
+
       router.replace('/admin');
     } catch (err) {
       setError(err.message || '로그인 중 오류가 발생했습니다.');

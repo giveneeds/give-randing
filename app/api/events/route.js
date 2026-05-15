@@ -1,9 +1,17 @@
 import { NextResponse } from 'next/server';
 import { supabase, isDummyMode } from '@/lib/supabase';
+import { isBotUserAgent, ADMIN_TAG_COOKIE } from '@/lib/botFilter';
 
 export async function POST(request) {
   try {
     if (isDummyMode) return NextResponse.json({ success: true });
+
+    // 봇 UA + 어드민 디바이스 마커는 분석에 잡히지 않도록 이벤트 INSERT 스킵.
+    const ua = request.headers.get('user-agent') || '';
+    if (isBotUserAgent(ua)) return NextResponse.json({ success: true, skipped: 'bot' });
+    if (request.cookies.get(ADMIN_TAG_COOKIE)?.value === '1') {
+      return NextResponse.json({ success: true, skipped: 'admin_tag' });
+    }
 
     const body = await request.json();
     const { anonymous_id, session_id, event_type, event_data, page_url } = body;
