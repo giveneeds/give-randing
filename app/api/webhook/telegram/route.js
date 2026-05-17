@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { convertItemToMagazineDraft } from '@/lib/agent/convertItemToDraft';
 import {
   verifyWebhookSecret, sendInlineMessage, editInlineMessage,
   answerCallbackQuery, buildItemCard, tgEscape,
 } from '@/lib/telegram';
 
 export const runtime = 'nodejs';
+export const maxDuration = 60;
 
 const SELECT_COLS = 'id, job_id, source, source_account, post_id, post_url, posted_at, collected_at, normalized, classification, summary, translation, status, send_flag, reviewed_at, note, notified_at, notification_message_id, approved_via';
 
@@ -116,7 +118,8 @@ async function handleCallback(cb) {
     return;
   }
 
-  const newStatus = action === 'approve' ? 'approved' : 'rejected';
+  const isApprove = action === 'approve';
+  const newStatus = isApprove ? 'approved' : 'rejected';
   const patch = {
     status: newStatus,
     reviewed_at: new Date().toISOString(),
@@ -138,7 +141,7 @@ async function handleCallback(cb) {
 
   // 인라인 메시지 편집 — 버튼 제거 + 상태 표시
   const newCard = buildItemCard(updated);
-  const footer = newStatus === 'approved' ? '\n\n<b>✅ 승인됨</b>' : '\n\n<b>❌ 반려됨</b>';
+  const footer = isApprove ? '\n\n<b>✅ 승인됨</b>\n📝 매거진 draft 생성 중...' : '\n\n<b>❌ 반려됨</b>';
   try {
     await editInlineMessage({
       chatId,
@@ -153,6 +156,42 @@ async function handleCallback(cb) {
 
   await answerCallbackQuery({
     callbackId,
-    text: newStatus === 'approved' ? '✅ 승인 처리됨' : '❌ 반려 처리됨',
+    text: isApprove ? '✅ 승인됨. draft 생성 중' : '❌ 반려 처리됨',
   });
+
+  if (!isApprove) return;
+
+  try {
+    const draft = await convertItemToMagazineDraft(itemId);
+    const resourceLine = draft.leadMagnetCreated ? '\n📎 리드마그넷 후보도 생성됨' : '';
+    await editInlineMessage({
+      chatId,
+      messageId,
+      text:
+        newCard +
+        '\n\n<b>✅ 승인됨</b>' +
+        `\n📝 <b>매거진 draft 생성 완료</b>: ${tgEscape(draft.magazineUrl)}` +
+        resourceLine,
+      buttons: null,
+    });
+  } catch (e) {
+    console.error('매거진 draft 생성 실패', e);
+    try {
+      await editInlineMessage({
+        chatId,
+        messageId,
+        text:
+          newCard +
+          '\n\n<b>✅ 승인됨</b>' +
+          `\n⚠️ 매거진 draft 생성 실패: ${tgEscape(e.message)}`,
+        buttons: null,
+      });
+    } catch (editError) {
+      console.error('draft 실패 메시지 편집 실패', editError.message);
+      await sendInlineMessage({
+        chatId,
+        text: `⚠️ 매거진 draft 생성 실패: ${tgEscape(e.message)}`,
+      });
+    }
+  }
 }
