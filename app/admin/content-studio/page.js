@@ -108,12 +108,14 @@ export default function ContentStudioReviewPage() {
         return;
       }
       const collected = data.stats?.collected ?? 0;
+      const skippedDup = data.stats?.skipped ?? 0;
       const sent = data.dispatch?.sent_items ?? 0;
       const skippedFit = data.dispatch?.skipped_low_fit ?? 0;
+      const dupNote = skippedDup > 0 ? ` (중복 ${skippedDup})` : '';
       const msg =
         mode === 'test'
-          ? `수집 ${collected}건 · 텔레그램 발송 ${sent}건 · 낮은 적합도 스킵 ${skippedFit}건`
-          : `수집 ${collected}건 (발송 X). 카드별 [텔레그램 보내기]로 개별 발송 가능.`;
+          ? `수집 ${collected}건${dupNote} · 텔레그램 발송 ${sent}건 · 낮은 적합도 스킵 ${skippedFit}건`
+          : `수집 ${collected}건${dupNote} (발송 X). 카드별 [텔레그램 보내기]로 개별 발송 가능.`;
       alert(msg);
       load();
     } catch (e) {
