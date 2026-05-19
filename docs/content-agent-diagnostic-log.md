@@ -97,6 +97,40 @@
 - 각 type별 사용 조건과 필수 구성요소를 prompt에 넣는다.
 - brief 결과에 `lead_magnet_type`, `lead_magnet_title`, `lead_magnet_sections`, `why_this_magnet`을 추가한다.
 
+2026-05-19 조치:
+- `enrichItem()` 브리프 스키마를 v2로 확장했다.
+- `lead_magnet` 객체에 `type`, `title`, `why_this_magnet`, `sections`, `required_inputs`, `conversion_goal`을 추가했다.
+- `lead_magnet_idea`는 하위 호환을 위해 title 문자열로 유지한다.
+- 리드마그넷이 필요 없으면 `lead_magnet=null`로 둘 수 있게 prompt에 명시했다.
+
+### 브리프가 적용 장면보다 기사 요약에 가까움
+
+증상:
+- 기존 브리프는 `content_angles`, `recommended_title`, `lead_magnet_idea` 중심이라 사람이 승인할 때 "내 고객에게 왜 중요한가"를 빠르게 판단하기 어렵다.
+
+레이어:
+- 작업 명세
+- 컨텍스트 제공
+- 검증 피드백
+
+원인:
+- 좋은 기획 브리프의 기준이 구조화되어 있지 않았다.
+- 독자 문제, 왜 지금 중요한지, 바로 적용 포인트가 별도 필드로 존재하지 않았다.
+
+사용자 기준:
+- 타깃은 요식업/병의원으로 나뉘지만 핵심은 고객 유입과 신뢰 형성이다.
+- 병의원은 전문성/신뢰/상담 전환, 요식업은 친근함/가벼운 실행/재방문 설계가 상대적으로 중요하다.
+- 독자가 읽고 지금 혹은 나중에 내 업체에 적용해볼 수 있어야 한다.
+- 실제 케이스스터디, 구체적 방법, 툴, 가이드북이 좋다.
+- 일반론도 가능하지만 타깃과 적용 장면이 명확해야 한다.
+
+조치:
+- 브리프 v2에 `reader_problem`, `why_now`, `signal_type`, `content_angle`, `practical_takeaway`, `execution_steps`, `tone_direction`, `approval_reason`, `risk_flags`를 추가했다.
+- 텔레그램 카드에서 기획 판단과 바로 적용 포인트가 보이도록 수정했다.
+
+검증 예정:
+- 다음 cron/manual 수집 후 텔레그램 카드에서 위 필드가 실제로 사람이 승인 판단에 도움이 되는지 확인한다.
+
 검증 예정:
 - 최근 수집 item 10개 기준 lead magnet type 분포를 확인한다.
 - 동일 타입이 60%를 넘으면 prompt를 재조정한다.

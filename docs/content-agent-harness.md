@@ -8,6 +8,20 @@
 
 기브니즈를 알릴 수 있는 마케팅 콘텐츠를 매일 반자동으로 발굴하고, 요식업/병의원 사장님에게 실용적인 매거진 초안과 리드마그넷 후보로 전환한다.
 
+핵심 독자 문제:
+- 지금 마케팅을 하고 있지만 효과가 안 나와 방법을 바꿔야 하나 고민한다.
+- 마케팅을 어떻게 시작해야 할지 몰라 손을 못 대고 있다.
+- 고객 유입이 부족하고, 자기 업체의 강점이 콘텐츠로 잘 드러나지 않는다.
+- 광고/콘텐츠/플레이스 운영은 하고 있지만 효율이 나오지 않는다.
+
+콘텐츠 방향:
+- 요식업/병의원을 엄격히 나누기보다 "고객 유입과 신뢰 형성"이라는 공통 문제를 중심에 둔다.
+- 병의원은 전문성 있는 정보로 신뢰와 상담 전환을 만드는 비중이 높다.
+- 요식업은 신뢰뿐 아니라 친근함, 가벼운 실행, 재방문 설계가 중요하다.
+- 너무 전문가 관점으로 쓰지 않고, 독자가 "내 업체에 바로 녹일 수 있겠다"고 느껴야 한다.
+- 일반론도 가능하지만 타깃과 적용 장면이 명확해야 한다.
+- 리드마그넷은 실제 도움이 될 때만 제안한다. 필요 없다면 만들지 않는다.
+
 운영 원칙:
 - 자동 발행은 하지 않는다. 최종 발행은 사람이 검수한다.
 - 수집보다 중요한 것은 "왜 이 콘텐츠가 기브니즈 고객에게 의미 있는가"를 선명하게 만드는 것이다.
@@ -79,11 +93,22 @@ agent_sources
 
 중간 산출물:
 - `target_persona`
+- `business_contexts`
 - `topic_cluster`
+- `signal_type`
+- `reader_problem`
+- `why_now`
 - `content_angles`
+- `content_angle`
+- `practical_takeaway`
+- `execution_steps`
+- `tone_direction`
 - `recommended_title`
+- `lead_magnet`
 - `lead_magnet_idea`
 - `relevance_reason`
+- `approval_reason`
+- `risk_flags`
 
 중요한 구분:
 - `brief`는 기획 산출물이다.
@@ -101,6 +126,17 @@ agent_sources
 - lead magnet 타입 enum을 둔다.
 - 예: checklist, worksheet, template, calculator, audit_sheet, script_pack, calendar, benchmark_table, briefing_doc
 - 각 타입에 "언제 적합한지"와 "필수 구성요소"를 정의한다.
+
+현재 lead magnet 타입:
+- `guidebook`: 방법론을 단계별로 익히는 자료
+- `template`: 바로 복사/수정해서 쓰는 양식
+- `audit_sheet`: 내 업체 상태를 점검하는 표
+- `calculator`: 광고비/전환/객단가 등을 계산하는 도구
+- `script_pack`: 상담/리뷰/DM/전화 응대 스크립트 묶음
+- `calendar`: 콘텐츠/프로모션 운영 일정표
+- `benchmark_table`: 경쟁 업체나 사례 비교표
+- `case_study`: 내 업종에 적용 가능한 사례 해설
+- `none`: 억지로 만들 필요 없음
 
 ### 4. 생성
 
