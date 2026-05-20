@@ -5,6 +5,8 @@ import { requireAdmin } from '@/lib/adminAuth';
 
 export const runtime = 'nodejs';
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 /**
  * GET  /api/campaigns/[id]/resources
  *   - 공개: is_enabled=true 만
@@ -13,6 +15,7 @@ export const runtime = 'nodejs';
 export async function GET(request, { params }) {
   const { id } = await params;
   if (!id) return NextResponse.json({ error: 'campaign id 누락' }, { status: 400 });
+  if (!UUID_RE.test(id)) return NextResponse.json({ resources: [] });
 
   const { searchParams } = new URL(request.url);
   const isAdminRequest = searchParams.get('admin') === 'true';
@@ -57,6 +60,12 @@ export async function GET(request, { params }) {
 export async function POST(request, { params }) {
   const { id } = await params;
   if (!id) return NextResponse.json({ error: 'campaign id 누락' }, { status: 400 });
+  if (!UUID_RE.test(id)) {
+    return NextResponse.json(
+      { error: '첨부 자료를 추가하려면 먼저 캠페인을 저장해 주세요.' },
+      { status: 400 },
+    );
+  }
 
   const auth = await requireAdmin(request);
   if (auth.error) return auth.error;

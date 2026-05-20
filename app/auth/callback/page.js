@@ -4,13 +4,14 @@ import { useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { supabase, isDummyMode } from '@/lib/supabase';
+import { clearAuthRedirect, getSafeAuthRedirect, readAuthRedirect } from '@/lib/authRedirect';
 
 function AuthCallbackInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    const next = searchParams.get('next') || '/chat';
+    const next = getSafeAuthRedirect(searchParams.get('next'), readAuthRedirect('/chat'));
     const code = searchParams.get('code');
     const errorDescription = searchParams.get('error_description');
 
@@ -20,6 +21,7 @@ function AuthCallbackInner() {
         return;
       }
       if (isDummyMode || !supabase) {
+        clearAuthRedirect();
         router.replace(next);
         return;
       }
@@ -42,6 +44,7 @@ function AuthCallbackInner() {
         const welcomeUrl = next.includes('?')
           ? `${next}&welcome=1`
           : `${next}?welcome=1`;
+        clearAuthRedirect();
         router.replace(welcomeUrl);
       } catch (err) {
         console.error('Auth callback error:', err);

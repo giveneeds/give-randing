@@ -15,6 +15,10 @@ function formatSize(bytes) {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
+function isPersistedId(id) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id || '');
+}
+
 export default function ResourcesManager({
   parentType = 'magazine',
   parentId,
@@ -25,6 +29,7 @@ export default function ResourcesManager({
   // 하위 호환: magazineId 만 넘어온 경우에도 동작
   const effectiveParentId = parentId ?? magazineId;
   const effectiveParentType = parentId ? parentType : (magazineId ? 'magazine' : parentType);
+  const canManageResources = isPersistedId(effectiveParentId);
   const basePath = `/api/${effectiveParentType}s/${effectiveParentId}/resources`;
 
   const [resources, setResources] = useState([]);
@@ -41,7 +46,11 @@ export default function ResourcesManager({
   }, []);
 
   const load = useCallback(async () => {
-    if (!effectiveParentId) return;
+    if (!canManageResources) {
+      setLoading(false);
+      setResources([]);
+      return;
+    }
     setLoading(true);
     try {
       const res = await fetch(
@@ -57,7 +66,7 @@ export default function ResourcesManager({
     } finally {
       setLoading(false);
     }
-  }, [effectiveParentId, basePath, authHeaders]);
+  }, [canManageResources, basePath, authHeaders]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -180,7 +189,7 @@ export default function ResourcesManager({
     cancelEdit();
   }
 
-  if (!effectiveParentId) {
+  if (!canManageResources) {
     const label = effectiveParentType === 'campaign' ? '캠페인(랜딩페이지)' : '매거진';
     return (
       <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 p-5 text-center">
