@@ -1,0 +1,28 @@
+sequenceDiagram
+  autonumber
+  participant 크론 as 크론·수동 트리거
+  participant API as 수집 API<br/>/admin/content-studio/collect
+  participant 매체 as agent_sources<br/>(활성 매체)
+  participant 수집기 as 매체별 collector
+  participant 강화 as enrichItem
+  participant LLM as Claude·OpenAI
+  participant 잡 as agent_jobs<br/>(잡 이력)
+  participant 아이템 as agent_items<br/>(수집 결과)
+  participant 로그 as agent_ai_logs<br/>(AI 호출 로그)
+
+  크론->>API: 트리거 (cron 또는 수동)
+  API->>잡: INSERT (status=running)
+  API->>매체: 활성 매체 조회
+  loop 각 매체별
+    API->>수집기: fetch() 호출
+    수집기-->>API: 원본 아이템 목록
+    loop 각 원본 아이템
+      API->>강화: 정규화·분류·요약 요청
+      강화->>LLM: 프롬프트 전송
+      LLM-->>강화: JSON 결과
+      강화->>로그: 호출 비용·지연 기록
+      강화-->>API: 강화된 아이템
+      API->>아이템: UPSERT (중복 시 스킵)
+    end
+  end
+  API->>잡: UPDATE status=success, 통계 저장
