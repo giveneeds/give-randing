@@ -33,6 +33,8 @@ export default function ContentStudioReviewPage() {
   const [loading, setLoading] = useState(true);
   const [sourceFilter, setSourceFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [themeFilter, setThemeFilter] = useState('all');
+  const [themes, setThemes] = useState([]);
   const [page, setPage] = useState(1);
   const [busy, setBusy] = useState({});
   const [collecting, setCollecting] = useState(false);
@@ -45,7 +47,20 @@ export default function ContentStudioReviewPage() {
     };
   }, []);
 
-  useEffect(() => { setPage(1); }, [sourceFilter, statusFilter]);
+  useEffect(() => { setPage(1); }, [sourceFilter, statusFilter, themeFilter]);
+
+  // 주제 목록 1회 로드 — 필터 드롭다운 + 카드 배지에서 사용.
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch('/api/admin/content-studio/themes', { headers: await authHeaders() });
+        const data = await res.json();
+        if (res.ok) setThemes(data.rows || []);
+      } catch {
+        // 주제 로드 실패는 무시 — 검토함 기본 기능은 동작.
+      }
+    })();
+  }, [authHeaders]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -53,6 +68,7 @@ export default function ContentStudioReviewPage() {
       const params = new URLSearchParams();
       if (sourceFilter !== 'all') params.set('source', sourceFilter);
       if (statusFilter !== 'all') params.set('status', statusFilter);
+      if (themeFilter !== 'all') params.set('theme_id', themeFilter);
       params.set('limit', String(PAGE_SIZE));
       params.set('offset', String((page - 1) * PAGE_SIZE));
       const res = await fetch(`/api/admin/content-studio/items?${params.toString()}`, {
@@ -63,11 +79,11 @@ export default function ContentStudioReviewPage() {
       setRows(data.rows || []);
       setTotal(data.total || 0);
     } catch (e) {
-      alert('수집 결과 조회 실패: ' + e.message);
+      alert('자료 조회 실패: ' + e.message);
     } finally {
       setLoading(false);
     }
-  }, [sourceFilter, statusFilter, page, authHeaders]);
+  }, [sourceFilter, statusFilter, themeFilter, page, authHeaders]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -189,11 +205,24 @@ export default function ContentStudioReviewPage() {
         <div className="relative">
           <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={14} />
           <select
+            value={themeFilter}
+            onChange={(e) => setThemeFilter(e.target.value)}
+            className="w-full pl-11 pr-4 py-3 bg-white border border-[var(--admin-border)] rounded-md text-sm outline-none appearance-none cursor-pointer shadow-sm"
+          >
+            <option value="all">모든 주제</option>
+            {themes.map((t) => (
+              <option key={t.id} value={t.id}>{t.name}</option>
+            ))}
+          </select>
+        </div>
+        <div className="relative">
+          <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={14} />
+          <select
             value={sourceFilter}
             onChange={(e) => setSourceFilter(e.target.value)}
             className="w-full pl-11 pr-4 py-3 bg-white border border-[var(--admin-border)] rounded-md text-sm outline-none appearance-none cursor-pointer shadow-sm"
           >
-            <option value="all">모든 소스</option>
+            <option value="all">모든 매체</option>
             {Object.entries(SOURCE_LABEL).map(([k, v]) => (
               <option key={k} value={k}>{v.label}</option>
             ))}
@@ -283,6 +312,11 @@ function ItemCard({ item, busy, onPatch, onNotify }) {
         <span className={`inline-block text-[10px] font-bold border px-2 py-1 rounded-full ${sourceCfg.cls}`}>
           {sourceCfg.label}
         </span>
+        {item.theme?.name && (
+          <span className="inline-block text-[10px] font-bold border border-indigo-200 bg-indigo-50 text-indigo-700 px-2 py-1 rounded-full">
+            📌 {item.theme.name}
+          </span>
+        )}
         {item.source_account && (
           <span className="text-[10px] font-bold text-zinc-500">@{item.source_account}</span>
         )}
@@ -374,9 +408,14 @@ function ItemCard({ item, busy, onPatch, onNotify }) {
             {typeof confidence === 'number' && (
               <span className="text-zinc-400">신뢰도 {(confidence * 100).toFixed(0)}%</span>
             )}
+            {typeof item.classification?.fit_score === 'number' && (
+              <span className="text-zinc-400">적합도 {(item.classification.fit_score * 100).toFixed(0)}%</span>
+            )}
           </div>
         </div>
       </div>
+
+      <BriefAndResearch item={item} />
 
       <div className="px-5 py-3 bg-zinc-50/50 border-t border-zinc-100 flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2">
@@ -414,6 +453,144 @@ function ItemCard({ item, busy, onPatch, onNotify }) {
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+// 콘텐츠 기획 브리프 + 리서치 컨텍스트를 펼침/접힘으로 노출.
+// 자료가 어떤 주제 페인포인트·후킹 구조를 기반으로 가공됐는지 투명하게 보여준다.
+function BriefAndResearch({ item }) {
+  const [open, setOpen] = useState(false);
+  const c = item.classification || {};
+  const rc = item.research_context || {};
+  const angles = Array.isArray(c.content_angles) ? c.content_angles : [];
+  const angle = c.content_angle;
+  const recommendedTitle = c.recommended_title;
+  const readerProblem = c.reader_problem;
+  const whyNow = c.why_now;
+  const practical = c.practical_takeaway;
+  const execSteps = Array.isArray(c.execution_steps) ? c.execution_steps : [];
+  const leadMagnet = c.lead_magnet?.title || c.lead_magnet_idea;
+  const painPoints = Array.isArray(rc.pain_points) ? rc.pain_points : [];
+  const viralHooks = Array.isArray(rc.viral_hooks) ? rc.viral_hooks : [];
+  const recAngles = Array.isArray(rc.recommended_angles) ? rc.recommended_angles : [];
+
+  const hasBrief = recommendedTitle || angle || angles.length > 0 || practical || execSteps.length > 0;
+  const hasResearch = painPoints.length > 0 || viralHooks.length > 0 || recAngles.length > 0;
+  if (!hasBrief && !hasResearch) return null;
+
+  return (
+    <div className="px-5 py-3 border-t border-zinc-100 bg-white">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-zinc-900 transition"
+      >
+        <span className="text-zinc-300">{open ? '▼' : '▶'}</span>
+        콘텐츠 기획 브리프 {hasResearch && <span className="text-violet-400 normal-case font-bold">· 리서치 반영됨</span>}
+      </button>
+      {open && (
+        <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-5">
+          {hasBrief && (
+            <div className="space-y-3">
+              <div className="text-[10px] font-black uppercase tracking-widest text-zinc-400">브리프</div>
+              {recommendedTitle && (
+                <div>
+                  <div className="text-[10px] font-bold text-zinc-400 mb-0.5">추천 제목</div>
+                  <div className="text-sm font-black text-zinc-900">✍️ {recommendedTitle}</div>
+                </div>
+              )}
+              {readerProblem && (
+                <div>
+                  <div className="text-[10px] font-bold text-zinc-400 mb-0.5">독자 문제</div>
+                  <p className="text-xs text-zinc-700">{readerProblem}</p>
+                </div>
+              )}
+              {whyNow && (
+                <div>
+                  <div className="text-[10px] font-bold text-zinc-400 mb-0.5">왜 지금</div>
+                  <p className="text-xs text-zinc-700">{whyNow}</p>
+                </div>
+              )}
+              {angle && (
+                <div>
+                  <div className="text-[10px] font-bold text-zinc-400 mb-0.5">핵심 앵글</div>
+                  <p className="text-xs text-zinc-700 font-medium">📐 {angle}</p>
+                </div>
+              )}
+              {angles.length > 0 && (
+                <div>
+                  <div className="text-[10px] font-bold text-zinc-400 mb-1">대안 앵글</div>
+                  <ul className="space-y-0.5">
+                    {angles.slice(0, 3).map((a, i) => (
+                      <li key={i} className="text-xs text-zinc-600">· {a}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {practical && (
+                <div>
+                  <div className="text-[10px] font-bold text-zinc-400 mb-0.5">실용 takeaway</div>
+                  <p className="text-xs text-zinc-700">💡 {practical}</p>
+                </div>
+              )}
+              {execSteps.length > 0 && (
+                <div>
+                  <div className="text-[10px] font-bold text-zinc-400 mb-1">실행 단계</div>
+                  <ol className="space-y-0.5 list-decimal list-inside">
+                    {execSteps.slice(0, 4).map((s, i) => (
+                      <li key={i} className="text-xs text-zinc-600">{s}</li>
+                    ))}
+                  </ol>
+                </div>
+              )}
+              {leadMagnet && (
+                <div>
+                  <div className="text-[10px] font-bold text-zinc-400 mb-0.5">리드마그넷 후보</div>
+                  <p className="text-xs text-zinc-700">📎 {leadMagnet}</p>
+                </div>
+              )}
+            </div>
+          )}
+          {hasResearch && (
+            <div className="space-y-3 md:border-l md:border-zinc-100 md:pl-5">
+              <div className="text-[10px] font-black uppercase tracking-widest text-violet-400">참고한 리서치 인사이트</div>
+              {painPoints.length > 0 && (
+                <div>
+                  <div className="text-[10px] font-bold text-zinc-400 mb-1">사장님 페인포인트</div>
+                  <ul className="space-y-0.5">
+                    {painPoints.slice(0, 4).map((p, i) => (
+                      <li key={i} className="text-xs text-zinc-700">⚠️ {p}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {viralHooks.length > 0 && (
+                <div>
+                  <div className="text-[10px] font-bold text-zinc-400 mb-1">자주 쓰이는 후킹</div>
+                  <ul className="space-y-0.5">
+                    {viralHooks.slice(0, 3).map((h, i) => (
+                      <li key={i} className="text-xs">
+                        <span className="font-bold text-zinc-900">{h.pattern}</span>
+                        {h.example && <span className="text-zinc-500"> — &ldquo;{h.example}&rdquo;</span>}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {recAngles.length > 0 && (
+                <div>
+                  <div className="text-[10px] font-bold text-zinc-400 mb-1">리서치 기반 추천 앵글</div>
+                  <ul className="space-y-0.5">
+                    {recAngles.slice(0, 3).map((a, i) => (
+                      <li key={i} className="text-xs text-zinc-700">→ {a}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
