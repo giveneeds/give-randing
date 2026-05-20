@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import {
   Loader2, Filter, ExternalLink, ChevronLeft, ChevronRight,
-  Inbox, Check, X, Send, Tag, Clock, Languages, Play, Zap,
+  Inbox, Check, X, Send, Tag, Clock, Languages, Play, Zap, MessageSquare,
 } from 'lucide-react';
 
 const PAGE_SIZE = 20;
@@ -163,6 +163,31 @@ export default function ContentStudioReviewPage() {
     }
   }
 
+  // 검토함 카드의 자료 1건을 스레드 드래프트로 변환. 변환 후 드래프트 편집 페이지로 이동 안내.
+  async function makeThreadDraft(id) {
+    setBusy((b) => ({ ...b, [id]: 'thread' }));
+    try {
+      const res = await fetch(`/api/admin/content-studio/items/${id}/to-thread`, {
+        method: 'POST',
+        headers: await authHeaders(),
+        body: JSON.stringify({ formatTypeHint: 'short_thread' }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert('스레드 드래프트 생성 실패: ' + (data.error || ''));
+        return;
+      }
+      const goto = confirm(`스레드 드래프트 ${data.postCount}포스트 생성 완료. 편집 페이지로 이동할까요?`);
+      if (goto) {
+        window.location.href = `/admin/content-studio/thread-drafts/${data.draftId}`;
+      }
+    } catch (e) {
+      alert('네트워크 오류: ' + e.message);
+    } finally {
+      setBusy((b) => { const { [id]: _, ...rest } = b; return rest; });
+    }
+  }
+
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const totalLabel = useMemo(() => {
     const start = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
@@ -261,6 +286,7 @@ export default function ContentStudioReviewPage() {
               busy={busy[r.id]}
               onPatch={patchItem}
               onNotify={notifyTelegram}
+              onMakeThread={makeThreadDraft}
             />
           ))}
         </div>
@@ -292,7 +318,7 @@ export default function ContentStudioReviewPage() {
   );
 }
 
-function ItemCard({ item, busy, onPatch, onNotify }) {
+function ItemCard({ item, busy, onPatch, onNotify, onMakeThread }) {
   const sourceCfg = SOURCE_LABEL[item.source] || { label: item.source, cls: 'bg-zinc-100 text-zinc-600 border-zinc-200' };
   const statusCfg = STATUS_LABEL[item.status] || STATUS_LABEL.collected;
   const original = item.normalized?.extracted_text || '';
@@ -429,6 +455,14 @@ function ItemCard({ item, busy, onPatch, onNotify }) {
           </a>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={() => onMakeThread(item.id)}
+            disabled={!!busy}
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md border border-blue-200 text-blue-700 text-xs font-bold hover:bg-blue-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+          >
+            {busy === 'thread' ? <Loader2 size={12} className="animate-spin" /> : <MessageSquare size={12} />}
+            스레드 만들기
+          </button>
           <button
             onClick={() => onNotify(item.id)}
             disabled={!!busy}
