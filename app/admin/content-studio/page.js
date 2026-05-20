@@ -20,11 +20,11 @@ const SOURCE_LABEL = {
 };
 
 const STATUS_LABEL = {
-  collected: { label: '수집됨', cls: 'bg-zinc-100 text-zinc-600' },
-  reviewed: { label: '검수됨', cls: 'bg-blue-50 text-blue-600' },
-  approved: { label: '승인', cls: 'bg-emerald-50 text-emerald-600' },
-  rejected: { label: '반려', cls: 'bg-red-50 text-red-600' },
-  sent: { label: '발송됨', cls: 'bg-violet-50 text-violet-600' },
+  collected: { label: '새 자료', cls: 'bg-zinc-100 text-zinc-600' },
+  reviewed: { label: '검토 중', cls: 'bg-blue-50 text-blue-600' },
+  approved: { label: '채택', cls: 'bg-emerald-50 text-emerald-600' },
+  rejected: { label: '폐기', cls: 'bg-red-50 text-red-600' },
+  sent: { label: '매거진으로 보냄', cls: 'bg-violet-50 text-violet-600' },
 };
 
 export default function ContentStudioReviewPage() {
@@ -90,7 +90,7 @@ export default function ContentStudioReviewPage() {
     }
   }
 
-  // 수집 트리거 — cron 흐름과 동일하게 매체별 1건씩 + 텔레그램 발송까지 한 번에.
+  // 수집 트리거 — 자동 cron 과 동일하게 매체별 1건씩 + 채택 게이트(외부 알림)까지 한 번에.
   // mode='test'  : src당 1건 cap + 발송 (cron 시뮬레이션 / 빠른 검증)
   // mode='full'  : cap 없이 전 매체 + 발송 X (검수만 쌓아두기)
   async function runCollect(mode) {
@@ -117,8 +117,8 @@ export default function ContentStudioReviewPage() {
       const dupNote = skippedDup > 0 ? ` (중복 ${skippedDup})` : '';
       const msg =
         mode === 'test'
-          ? `수집 ${collected}건${dupNote} · 텔레그램 발송 ${sent}건 · 낮은 적합도 스킵 ${skippedFit}건`
-          : `수집 ${collected}건${dupNote} (발송 X). 카드별 [텔레그램 보내기]로 개별 발송 가능.`;
+          ? `자료 ${collected}건 모음${dupNote} · 외부 알림 ${sent}건 · 주제 적합도 낮아 제외 ${skippedFit}건`
+          : `자료 ${collected}건 모음${dupNote}. 카드별 [채택 알림 보내기]로 개별 알림 가능.`;
       alert(msg);
       load();
     } catch (e) {
@@ -137,11 +137,11 @@ export default function ContentStudioReviewPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        alert('텔레그램 발송 실패: ' + (data.error || ''));
+        alert('채택 알림 실패: ' + (data.error || ''));
         return;
       }
       setRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...data.row } : r)));
-      alert(`텔레그램 발송 완료 (${data.delivered_count || 0}명)`);
+      alert(`채택 알림 보냄 (${data.delivered_count || 0}명)`);
     } finally {
       setBusy((b) => { const { [id]: _, ...rest } = b; return rest; });
     }
@@ -156,13 +156,13 @@ export default function ContentStudioReviewPage() {
 
   return (
     <div className="space-y-5">
-      {/* 수집 트리거 — cron 시뮬레이션(매체 1건씩 + 발송) / 전량(검수만) */}
+      {/* 자료 모으기 트리거 — 자동 cron 시뮬레이션 / 전량 모으기 */}
       <div className="bg-white rounded-md border border-[var(--admin-border)] shadow-sm p-4 flex items-center gap-3 flex-wrap">
         <div className="flex-1 min-w-0">
-          <div className="text-xs font-black text-zinc-900 uppercase tracking-widest">수집 실행</div>
+          <div className="text-xs font-black text-zinc-900 uppercase tracking-widest">지금 자료 모으기</div>
           <p className="text-[11px] text-zinc-500 mt-1">
-            [빠른 검증]은 cron과 동일하게 매체별 1건씩 수집 + 즉시 텔레그램 발송.
-            [전체 수집]은 cap 없이 검수함에만 쌓고 발송은 카드별로 수동.
+            [빠른 모음]은 매체별로 신선한 1건씩만 모으고 채택 알림까지 한 번에. 다음 자동 수집을 기다리지 않고 검증할 때 사용.
+            [전체 모음]은 제한 없이 검토함에 쌓아두고 카드별로 채택 결정.
           </p>
         </div>
         <button
@@ -171,7 +171,7 @@ export default function ContentStudioReviewPage() {
           className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-violet-600 text-white text-xs font-bold hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
         >
           {collecting ? <Loader2 size={14} className="animate-spin" /> : <Zap size={14} />}
-          빠른 검증 (1건씩 + 발송)
+          빠른 모음 (매체별 1건 + 알림)
         </button>
         <button
           onClick={() => runCollect('full')}
@@ -179,7 +179,7 @@ export default function ContentStudioReviewPage() {
           className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-zinc-300 text-zinc-700 text-xs font-bold hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
         >
           {collecting ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />}
-          전체 수집 (발송 없음)
+          전체 모음 (알림 없이)
         </button>
       </div>
 
@@ -291,17 +291,17 @@ function ItemCard({ item, busy, onPatch, onNotify }) {
         </span>
         {item.approved_via && (
           <span className="text-[10px] font-bold text-zinc-400">
-            via {item.approved_via}
+            외부 채택
           </span>
         )}
         {item.notified_at && (
           <span className="text-[10px] font-bold text-violet-500 inline-flex items-center gap-1">
-            <Send size={10} /> 발송 {new Date(item.notified_at).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+            <Send size={10} /> 알림 {new Date(item.notified_at).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
           </span>
         )}
         <div className="ml-auto text-[10px] text-zinc-400">
           {item.posted_at && <span className="mr-2"><Clock size={10} className="inline mr-0.5" /> {new Date(item.posted_at).toLocaleDateString('ko-KR')}</span>}
-          <span>수집 {new Date(item.collected_at).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+          <span>모음 {new Date(item.collected_at).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
         </div>
       </div>
 
@@ -338,7 +338,7 @@ function ItemCard({ item, busy, onPatch, onNotify }) {
           ) : isKorean ? (
             <p className="text-xs text-zinc-300 italic">한국어 원문이라 번역 불필요</p>
           ) : (
-            <p className="text-xs text-zinc-300 italic">아직 번역 안 됨 — 텔레그램 발송 시 자동 번역</p>
+            <p className="text-xs text-zinc-300 italic">아직 번역 안 됨 — 채택 알림 시 자동 번역</p>
           )}
         </div>
 
@@ -396,21 +396,21 @@ function ItemCard({ item, busy, onPatch, onNotify }) {
             className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md border border-violet-200 text-violet-700 text-xs font-bold hover:bg-violet-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
           >
             {busy === 'notify' ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
-            텔레그램 보내기
+            채택 알림 보내기
           </button>
           <button
             onClick={() => onPatch(item.id, { status: 'approved' })}
             disabled={!!busy || item.status === 'approved'}
             className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md border border-emerald-200 text-emerald-700 text-xs font-bold hover:bg-emerald-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
           >
-            <Check size={12} /> 승인
+            <Check size={12} /> 채택
           </button>
           <button
             onClick={() => onPatch(item.id, { status: 'rejected', send_flag: false })}
             disabled={!!busy || item.status === 'rejected'}
             className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md border border-red-200 text-red-600 text-xs font-bold hover:bg-red-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
           >
-            <X size={12} /> 반려
+            <X size={12} /> 폐기
           </button>
         </div>
       </div>

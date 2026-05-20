@@ -1,15 +1,16 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Inbox, CheckCircle2, Rss, Send, ListChecks, Sparkles } from 'lucide-react';
+import { Target, Search, Inbox, CheckCircle2, Activity } from 'lucide-react';
 
+// 콘텐츠 스튜디오는 5단계 흐름.
+// 주제 정의 → 시장 리서치 → 검토함(자동 모은 자료) → 발행(매거진으로 흘려보낸 결과) → 진행(자동화 상태).
 const TABS = [
-  { href: '/admin/content-studio', label: '검수', icon: Inbox, exact: true },
-  { href: '/admin/content-studio/approved', label: '승인됨', icon: CheckCircle2 },
-  { href: '/admin/content-studio/sources', label: '소스', icon: Rss },
-  { href: '/admin/content-studio/telegram', label: '텔레그램', icon: Send },
-  { href: '/admin/content-studio/jobs', label: '잡 로그', icon: ListChecks },
-  { href: '/admin/content-studio/ai-logs', label: 'AI 로그', icon: Sparkles },
+  { href: '/admin/content-studio/themes', label: '주제', icon: Target },
+  { href: '/admin/content-studio/research', label: '리서치', icon: Search },
+  { href: '/admin/content-studio', label: '검토함', icon: Inbox, exact: true },
+  { href: '/admin/content-studio/published', label: '발행', icon: CheckCircle2 },
+  { href: '/admin/content-studio/activity', label: '진행', icon: Activity },
 ];
 
 export default function ContentStudioLayout({ children }) {
@@ -21,7 +22,7 @@ export default function ContentStudioLayout({ children }) {
           콘텐츠 스튜디오
         </h1>
         <p className="text-[var(--admin-text-muted)] text-sm mt-1">
-          에이전트가 수집·요약·번역한 결과를 검수하고 텔레그램·매거진으로 흘려보냅니다.
+          주제를 정하고 자료를 모아 매거진으로 발행하기까지의 흐름을 한 곳에서 관리합니다.
         </p>
       </div>
 
