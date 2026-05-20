@@ -128,13 +128,16 @@ export default function ContentStudioReviewPage() {
       }
       const collected = data.stats?.collected ?? 0;
       const skippedDup = data.stats?.skipped ?? 0;
-      const sent = data.dispatch?.sent_items ?? 0;
-      const skippedFit = data.dispatch?.skipped_low_fit ?? 0;
+      const planningSent = data.planning?.sent ?? 0;
+      const candidateCount = data.planning?.candidates ?? 0;
+      const planningSkip = data.planning?.skipped_reason;
       const dupNote = skippedDup > 0 ? ` (중복 ${skippedDup})` : '';
       const msg =
         mode === 'test'
-          ? `자료 ${collected}건 모음${dupNote} · 외부 알림 ${sent}건 · 주제 적합도 낮아 제외 ${skippedFit}건`
-          : `자료 ${collected}건 모음${dupNote}. 카드별 [채택 알림 보내기]로 개별 알림 가능.`;
+          ? planningSkip
+            ? `자료 ${collected}건 모음${dupNote} · 1차 보고 스킵 (${planningSkip})`
+            : `자료 ${collected}건 모음${dupNote} · 1차 보고서 ${planningSent}명에게 발송 (후보 ${candidateCount}건)`
+          : `자료 ${collected}건 모음${dupNote}. 보고는 텔레그램으로 도착합니다.`;
       alert(msg);
       load();
     } catch (e) {

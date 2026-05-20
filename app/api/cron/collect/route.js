@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { runCollection } from '@/lib/agent/runCollection';
-import { sendItemCards } from '@/lib/agent/sendDailyDigest';
+import { runAutoContentPlanning } from '@/lib/agent/runAutoContentPlanning';
 
 export const runtime = 'nodejs';
 // 외부 API + LLM enrich + 다이제스트 발송 = 길어질 수 있음. Vercel hobby plan 한도 60s, Pro 300s.
@@ -20,10 +20,10 @@ function timingSafeEqual(a, b) {
 /**
  * POST /api/cron/collect
  *
- * GitHub Actions cron 이 호출하는 엔드포인트.
- * Authorization: Bearer <CRON_SECRET> 헤더 검증.
+ * GitHub Actions cron 이 호출하는 엔드포인트. Authorization: Bearer <CRON_SECRET>.
  *
- * 흐름: runCollection → sendDailyDigest → 결과 반환.
+ * 흐름: runCollection → runAutoContentPlanning (1차 자연어 보고서 + 텔레그램 발송).
+ * 사용자 응답은 webhook 이 받아 finishPlanningSession 으로 2차 워크플로우 트리거.
  */
 export async function POST(request) {
   const expected = process.env.CRON_SECRET;
@@ -38,15 +38,19 @@ export async function POST(request) {
   }
 
   try {
-    const result = await runCollection({ trigger: 'cron' });
-    // 건당 카드 + 승인/반려 버튼으로 발송. fit_score 낮은 건은 자동 스킵.
-    const dispatch = await sendItemCards({ jobId: result.jobId });
+    const collect = await runCollection({ trigger: 'cron' });
+    const planning = await runAutoContentPlanning({ jobId: collect.jobId });
     return NextResponse.json({
       ok: true,
-      jobId: result.jobId,
-      stats: result.stats,
-      errors: result.errors,
-      dispatch,
+      jobId: collect.jobId,
+      stats: collect.stats,
+      errors: collect.errors,
+      planning: {
+        session_id: planning.sessionId,
+        sent: planning.sent,
+        candidates: planning.candidateCount,
+        skipped_reason: planning.skippedReason || null,
+      },
     });
   } catch (e) {
     return NextResponse.json({ ok: false, error: e.message }, { status: 500 });

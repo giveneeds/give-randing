@@ -19,7 +19,7 @@ export async function GET(request) {
   let query = supabaseAdmin
     .from('thread_drafts')
     .select(
-      'id, agent_item_id, theme_id, channel, format_type, hook_pattern, tone_pattern, title, posts, cta, hashtags, status, published_at, published_url, risk_flags, generator_model, created_at, updated_at',
+      'id, agent_item_id, theme_id, channel, format_type, hook_pattern, tone_pattern, title, posts, cta, hashtags, status, published_at, published_url, risk_flags, generator_model, created_at, updated_at, auto_generated, selection_reason, rejected_candidates, planning_session_id',
       { count: 'exact' }
     )
     .order('created_at', { ascending: false })

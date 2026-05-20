@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { convertItemToMagazineDraft } from '@/lib/agent/convertItemToDraft';
+import { parseUserDecision } from '@/lib/agent/parseUserDecision';
+import { finishPlanningSession } from '@/lib/agent/finishPlanningSession';
 import {
   verifyWebhookSecret, sendInlineMessage, editInlineMessage,
   answerCallbackQuery, buildItemCard, tgEscape,
@@ -53,6 +55,7 @@ async function handleMessage(message) {
   const chatId = chat.id;
   const username = from?.username || null;
   const displayName = [from?.first_name, from?.last_name].filter(Boolean).join(' ') || username || `chat_${chatId}`;
+  const text = (message.text || '').trim();
 
   // upsert. 처음이면 active=false, 이미 있으면 메타만 갱신.
   const { data: existing } = await supabaseAdmin
@@ -73,25 +76,108 @@ async function handleMessage(message) {
         `안녕하세요 ${tgEscape(displayName)}님. 등록을 접수했습니다.\n` +
         '관리자가 어드민 페이지에서 활성화하면 이 봇이 콘텐츠 카드를 보내드립니다.',
     });
-  } else {
-    // 기존 사용자에게 메타 갱신만
-    await supabaseAdmin
-      .from('agent_telegram_recipients')
-      .update({ username, display_name: displayName })
-      .eq('chat_id', chatId);
-
-    if (existing.active) {
-      await sendInlineMessage({
-        chatId,
-        text: '✅ 이미 활성화된 수신자입니다. 새 콘텐츠가 도착하면 알려드릴게요.',
-      });
-    } else {
-      await sendInlineMessage({
-        chatId,
-        text: '⏳ 관리자 활성화 대기 중입니다.',
-      });
-    }
+    return;
   }
+
+  // 기존 사용자에게 메타 갱신.
+  await supabaseAdmin
+    .from('agent_telegram_recipients')
+    .update({ username, display_name: displayName })
+    .eq('chat_id', chatId);
+
+  if (!existing.active) {
+    await sendInlineMessage({ chatId, text: '⏳ 관리자 활성화 대기 중입니다.' });
+    return;
+  }
+
+  // 활성 수신자의 자유 텍스트 → 진행 중인 planning_session 의 1차 보고 응답으로 해석.
+  if (text) {
+    const handled = await handleDailyReportReply({ chatId, text });
+    if (handled) return;
+  }
+
+  await sendInlineMessage({
+    chatId,
+    text: '✅ 활성화된 수신자입니다. 다음 아침 보고를 받으면 자유롭게 답글로 결정 알려주세요.',
+  });
+}
+
+// 정욱님이 1차 보고서에 자유 텍스트로 답하면 진행 중인 세션을 찾아 액션 결정.
+// 가장 최근 phase1_reported 또는 awaiting_decision 상태의 세션 1건만 처리.
+async function handleDailyReportReply({ chatId, text }) {
+  const { data: session } = await supabaseAdmin
+    .from('planning_sessions')
+    .select('id, status, candidates_summary, telegram_chat_id')
+    .eq('telegram_chat_id', chatId)
+    .in('status', ['phase1_reported', 'awaiting_decision'])
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!session) return false;
+
+  // LLM 으로 사용자 의도 파싱.
+  const parsed = await parseUserDecision({
+    sessionId: session.id,
+    userText: text,
+    candidatesSummary: session.candidates_summary || {},
+  });
+
+  await supabaseAdmin
+    .from('planning_sessions')
+    .update({
+      user_decision_raw: text,
+      user_decision_parsed: parsed,
+      decided_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', session.id);
+
+  if (parsed.action === 'cancel') {
+    await supabaseAdmin
+      .from('planning_sessions')
+      .update({ status: 'cancelled', updated_at: new Date().toISOString() })
+      .eq('id', session.id);
+    await sendInlineMessage({ chatId, text: '알겠습니다. 오늘은 발행 스킵하겠습니다. 내일 아침에 다시 정리해 보낼게요.' });
+    return true;
+  }
+
+  if (parsed.action === 'request_research') {
+    await supabaseAdmin
+      .from('planning_sessions')
+      .update({ status: 'awaiting_decision', updated_at: new Date().toISOString() })
+      .eq('id', session.id);
+    await sendInlineMessage({
+      chatId,
+      text:
+        `요청 확인했습니다 (${tgEscape(parsed.user_intent_note || '추가 리서치')}).\n` +
+        '내일 보고에 더 보강된 리서치를 반영하겠습니다. 지금 즉시 다른 후보로 진행하길 원하시면 [후보 N] 형태로 알려주세요.',
+    });
+    return true;
+  }
+
+  if (parsed.action === 'ambiguous' || !parsed.selected_item_id) {
+    await supabaseAdmin
+      .from('planning_sessions')
+      .update({ status: 'awaiting_decision', updated_at: new Date().toISOString() })
+      .eq('id', session.id);
+    await sendInlineMessage({
+      chatId,
+      text: parsed.followup_message || '답변을 이해하지 못했습니다. 후보 라벨([후보 1] 같은 형태) 또는 "패스" / "추가 리서치" 로 답해 주세요.',
+    });
+    return true;
+  }
+
+  // select — 비동기로 2차 워크플로우 트리거. webhook 응답은 즉시 200 으로 빠지게.
+  await sendInlineMessage({
+    chatId,
+    text: `OK, 선택하신 후보로 진행합니다. 2차 리서치 + 콘텐츠 생성 들어갈게요. 완성되면 다시 알려드리겠습니다.`,
+  });
+
+  // fire-and-forget. 실패 시 finishPlanningSession 내부에서 텔레그램으로 보고.
+  finishPlanningSession({ sessionId: session.id, selectedItemId: parsed.selected_item_id })
+    .catch((e) => console.error('[telegram webhook] finishPlanningSession 실패', e));
+
+  return true;
 }
 
 async function handleCallback(cb) {

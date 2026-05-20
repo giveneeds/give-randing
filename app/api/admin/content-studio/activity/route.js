@@ -15,13 +15,25 @@ export async function GET(request) {
   const startToday = new Date(now); startToday.setHours(0, 0, 0, 0);
   const startWeek = new Date(now); startWeek.setDate(now.getDate() - 7); startWeek.setHours(0, 0, 0, 0);
 
-  const [todayItems, weekItems, recentJobs, draftMags, publishedMags, researchSnaps] = await Promise.all([
+  const [todayItems, weekItems, recentJobs, draftMags, publishedMags, researchSnaps, awaitingSessions, recentSessions, weekThreadDrafts] = await Promise.all([
     supabaseAdmin.from('agent_items').select('id, status', { count: 'exact', head: true }).gte('collected_at', startToday.toISOString()),
     supabaseAdmin.from('agent_items').select('id, status', { count: 'exact', head: true }).gte('collected_at', startWeek.toISOString()),
     supabaseAdmin.from('agent_jobs').select('id, status, started_at, stats, error').order('started_at', { ascending: false }).limit(5),
     supabaseAdmin.from('magazines').select('id', { count: 'exact', head: true }).eq('status', 'draft'),
     supabaseAdmin.from('magazines').select('id', { count: 'exact', head: true }).eq('status', 'published').gte('created_at', startWeek.toISOString()),
     supabaseAdmin.from('theme_research_snapshots').select('id', { count: 'exact', head: true }).gte('snapshotted_at', startWeek.toISOString()),
+    supabaseAdmin
+      .from('planning_sessions')
+      .select('id, status, candidate_item_ids, created_at, telegram_message_id_phase1')
+      .in('status', ['phase1_reported', 'awaiting_decision'])
+      .order('created_at', { ascending: false })
+      .limit(5),
+    supabaseAdmin
+      .from('planning_sessions')
+      .select('id, status, candidate_item_ids, created_at, completed_at, thread_draft_id, error')
+      .order('created_at', { ascending: false })
+      .limit(10),
+    supabaseAdmin.from('thread_drafts').select('id', { count: 'exact', head: true }).gte('created_at', startWeek.toISOString()),
   ]);
 
   // 최근 잡 중 에러가 있던 것만 별도 표시 (사용자 친화).
@@ -51,10 +63,27 @@ export async function GET(request) {
       collected: weekItems.count || 0,
       published: publishedMags.count || 0,
       research_runs: researchSnaps.count || 0,
+      thread_drafts: weekThreadDrafts.count || 0,
     },
     pending: {
       drafts: draftMags.count || 0,
+      awaiting_decisions: (awaitingSessions.data || []).length,
     },
+    awaiting_sessions: (awaitingSessions.data || []).map((s) => ({
+      id: s.id,
+      status: s.status,
+      candidate_count: (s.candidate_item_ids || []).length,
+      created_at: s.created_at,
+    })),
+    recent_sessions: (recentSessions.data || []).map((s) => ({
+      id: s.id,
+      status: s.status,
+      candidate_count: (s.candidate_item_ids || []).length,
+      created_at: s.created_at,
+      completed_at: s.completed_at,
+      thread_draft_id: s.thread_draft_id,
+      error: s.error,
+    })),
     recent_errors: recentErrors,
     next_cron: nextCron,
   });

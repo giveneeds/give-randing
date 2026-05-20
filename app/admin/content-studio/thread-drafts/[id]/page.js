@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import {
   Loader2, ArrowLeft, Copy, Save, Send, Trash2, ExternalLink, Plus, X, AlertTriangle,
+  ChevronDown, ChevronRight, Sparkles, Shield, FileText, Search,
 } from 'lucide-react';
 
 export default function ThreadDraftEditorPage({ params }) {
@@ -140,6 +141,11 @@ export default function ThreadDraftEditorPage({ params }) {
         <div className="flex items-center gap-2 flex-wrap text-[11px] text-zinc-500">
           {draft.theme?.name && <span className="bg-indigo-50 text-indigo-700 border border-indigo-200 font-bold px-2 py-0.5 rounded-full">📌 {draft.theme.name}</span>}
           <span className="bg-zinc-100 text-zinc-600 font-bold px-2 py-0.5 rounded-full">{draft.format_type}</span>
+          {draft.auto_generated && (
+            <span className="inline-flex items-center gap-1 bg-violet-50 text-violet-700 border border-violet-200 font-bold px-2 py-0.5 rounded-full">
+              <Sparkles size={10} /> 자동 생성
+            </span>
+          )}
           {draft.hook_pattern && <span className="text-zinc-400">hook: {draft.hook_pattern}</span>}
           {draft.tone_pattern && <span className="text-zinc-400">· tone: {draft.tone_pattern}</span>}
         </div>
@@ -158,6 +164,8 @@ export default function ThreadDraftEditorPage({ params }) {
           </a>
         )}
       </div>
+
+      <DecisionMetaSection draft={draft} />
 
       <div className="space-y-3">
         {(draft.posts || []).map((p, i) => (
@@ -247,6 +255,173 @@ export default function ThreadDraftEditorPage({ params }) {
           저장
         </button>
       </div>
+    </div>
+  );
+}
+
+// 의사결정 메타 펼침 — 자동 워크플로우가 채운 selection_reason / rejected_candidates /
+// governance_applied / research_context_used 를 한 카드에서 펼치게.
+// 사용자가 "왜 이거고 왜 다른 건 폐기됐는지" 5초 안에 판단할 수 있게.
+function DecisionMetaSection({ draft }) {
+  const [open, setOpen] = useState(true);
+  const selectionReason = draft.selection_reason;
+  const rejected = Array.isArray(draft.rejected_candidates) ? draft.rejected_candidates : [];
+  const governance = draft.governance_applied || {};
+  const research = draft.research_context_used || {};
+
+  const hasAny = selectionReason || rejected.length > 0 || governance.applied_docs?.length > 0
+    || research.phase1 || research.phase2_deep;
+  if (!hasAny) return null;
+
+  const phase1 = research.phase1 || {};
+  const phase2 = research.phase2_deep || {};
+
+  return (
+    <div className="bg-white border border-[var(--admin-border)] rounded-md overflow-hidden">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="w-full px-5 py-3 flex items-center gap-2 text-left hover:bg-zinc-50 transition border-b border-zinc-50"
+      >
+        {open ? <ChevronDown size={14} className="text-zinc-400" /> : <ChevronRight size={14} className="text-zinc-400" />}
+        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-700">의사결정 근거</span>
+        <span className="text-[10px] text-zinc-400 ml-auto">
+          {selectionReason && '· 선정 사유'}
+          {rejected.length > 0 && ` · 폐기 ${rejected.length}건`}
+          {governance.applied_docs?.length > 0 && ` · 거버넌스 ${governance.applied_docs.length}건`}
+          {(phase1.pain_points?.length || phase2.hook_patterns?.length) && ' · 리서치 반영'}
+        </span>
+      </button>
+      {open && (
+        <div className="px-5 py-4 grid grid-cols-1 md:grid-cols-2 gap-5">
+          {selectionReason && (
+            <div className="md:col-span-2">
+              <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1.5 inline-flex items-center gap-1">
+                <Sparkles size={11} className="text-violet-500" /> 왜 이 자료를 골랐는가
+              </div>
+              <p className="text-xs text-zinc-700 leading-relaxed">{selectionReason}</p>
+            </div>
+          )}
+
+          {governance.applied_docs?.length > 0 && (
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1.5 inline-flex items-center gap-1">
+                <Shield size={11} className="text-emerald-500" /> 적용된 거버넌스·KB
+              </div>
+              <div className="space-y-1">
+                {governance.topic_cluster && (
+                  <div className="text-[11px] text-zinc-500">토픽 클러스터: <span className="text-zinc-700 font-bold">{governance.topic_cluster}</span></div>
+                )}
+                {governance.persona && (
+                  <div className="text-[11px] text-zinc-500">페르소나: <span className="text-zinc-700 font-bold">{governance.persona}</span></div>
+                )}
+                <ul className="space-y-0.5 mt-1.5">
+                  {governance.applied_docs.map((d, i) => (
+                    <li key={i} className="text-[11px] text-zinc-600 font-mono">📄 {d}</li>
+                  ))}
+                </ul>
+                {governance.risk_flags?.length > 0 && (
+                  <div className="mt-2 text-[11px]">
+                    <span className="text-amber-700 font-bold">리스크 표시:</span>{' '}
+                    <span className="text-zinc-600">{governance.risk_flags.join(', ')}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {rejected.length > 0 && (
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1.5 inline-flex items-center gap-1">
+                <X size={11} className="text-red-500" /> 같은 사이클에서 폐기된 후보
+              </div>
+              <ul className="space-y-2">
+                {rejected.slice(0, 5).map((r, i) => (
+                  <li key={i} className="text-[11px] text-zinc-600 border-l-2 border-zinc-200 pl-2">
+                    <div className="font-bold text-zinc-700 truncate">{r.title || r.theme || '(제목 없음)'}</div>
+                    <div className="text-zinc-400 mt-0.5">
+                      {r.theme && <span>주제: {r.theme}</span>}
+                      {typeof r.fit_score === 'number' && <span> · 적합도 {Math.round(r.fit_score * 100)}%</span>}
+                    </div>
+                    {r.reason && <div className="text-zinc-500 mt-0.5">{r.reason}</div>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {(phase1.pain_points?.length > 0 || phase1.viral_hooks?.length > 0) && (
+            <div className="md:col-span-2 border-t border-zinc-100 pt-4">
+              <div className="text-[10px] font-black uppercase tracking-widest text-violet-500 mb-2 inline-flex items-center gap-1">
+                <Search size={11} /> 1차 리서치 (주제 시장 페인포인트)
+              </div>
+              {phase1.pain_points?.length > 0 && (
+                <div className="mb-2">
+                  <div className="text-[10px] font-bold text-zinc-400 mb-1">페인포인트</div>
+                  <ul className="space-y-0.5">
+                    {phase1.pain_points.slice(0, 4).map((p, i) => (
+                      <li key={i} className="text-xs text-zinc-700">⚠️ {p}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {phase1.viral_hooks?.length > 0 && (
+                <div>
+                  <div className="text-[10px] font-bold text-zinc-400 mb-1">자주 쓰이는 후킹</div>
+                  <ul className="space-y-0.5">
+                    {phase1.viral_hooks.slice(0, 3).map((h, i) => (
+                      <li key={i} className="text-xs">
+                        <span className="font-bold text-zinc-900">{h.pattern}</span>
+                        {h.example && <span className="text-zinc-500"> — &ldquo;{h.example}&rdquo;</span>}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+
+          {(phase2.hook_patterns?.length > 0 || phase2.audience_reactions?.length > 0 || phase2.adapted_angles?.length > 0) && (
+            <div className="md:col-span-2 border-t border-zinc-100 pt-4">
+              <div className="text-[10px] font-black uppercase tracking-widest text-violet-500 mb-2 inline-flex items-center gap-1">
+                <FileText size={11} /> 2차 깊이 리서치 (SNS 후킹 반응)
+              </div>
+              {phase2.hook_patterns?.length > 0 && (
+                <div className="mb-2">
+                  <div className="text-[10px] font-bold text-zinc-400 mb-1">후킹 패턴</div>
+                  <ul className="space-y-0.5">
+                    {phase2.hook_patterns.map((h, i) => (
+                      <li key={i} className="text-xs">
+                        <span className="font-bold text-zinc-900">{h.pattern}</span>
+                        {h.example && <span className="text-zinc-500"> — &ldquo;{h.example}&rdquo;</span>}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {phase2.audience_reactions?.length > 0 && (
+                <div className="mb-2">
+                  <div className="text-[10px] font-bold text-zinc-400 mb-1">독자 반응 패턴</div>
+                  <ul className="space-y-0.5">
+                    {phase2.audience_reactions.map((r, i) => (
+                      <li key={i} className="text-xs text-zinc-700">→ {r}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {phase2.adapted_angles?.length > 0 && (
+                <div>
+                  <div className="text-[10px] font-bold text-zinc-400 mb-1">조정된 앵글</div>
+                  <ul className="space-y-0.5">
+                    {phase2.adapted_angles.map((a, i) => (
+                      <li key={i} className="text-xs text-zinc-700">📐 {a}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

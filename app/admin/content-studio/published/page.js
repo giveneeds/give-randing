@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
-import { Loader2, ExternalLink, BookOpen, Calendar, MessageSquare, FileText, Trash2 } from 'lucide-react';
+import { Loader2, ExternalLink, BookOpen, Calendar, MessageSquare, FileText, Trash2, Sparkles } from 'lucide-react';
 import { clsx } from 'clsx';
 
 const TABS = [
@@ -139,12 +139,25 @@ function ThreadList({ rows, statusFilter }) {
           <div className="flex items-center gap-2 flex-wrap text-[10px]">
             <span className="bg-blue-50 text-blue-700 border border-blue-200 font-bold px-2 py-0.5 rounded-full">{d.format_type}</span>
             {d.theme?.name && <span className="bg-indigo-50 text-indigo-700 border border-indigo-200 font-bold px-2 py-0.5 rounded-full">📌 {d.theme.name}</span>}
+            {d.auto_generated && (
+              <span className="inline-flex items-center gap-1 bg-violet-50 text-violet-700 border border-violet-200 font-bold px-2 py-0.5 rounded-full">
+                <Sparkles size={10} /> 자동
+              </span>
+            )}
             <span className="ml-auto text-zinc-400">{new Date(d.created_at).toLocaleDateString('ko-KR')}</span>
           </div>
           <h3 className="font-black text-sm text-zinc-900 line-clamp-2">{d.title || '(제목 없음)'}</h3>
           <p className="text-xs text-zinc-500 line-clamp-3">{(d.posts || [])[0]?.body || ''}</p>
+          {d.selection_reason && (
+            <p className="text-[10px] text-violet-600 italic line-clamp-2 border-l-2 border-violet-200 pl-2">{d.selection_reason}</p>
+          )}
           <div className="flex items-center justify-between text-[10px] text-zinc-400 pt-1">
-            <span>{(d.posts || []).length} 포스트</span>
+            <span>
+              {(d.posts || []).length} 포스트
+              {Array.isArray(d.rejected_candidates) && d.rejected_candidates.length > 0 && (
+                <span className="ml-2">· 폐기 {d.rejected_candidates.length}건</span>
+              )}
+            </span>
             {d.published_url && (
               <a href={d.published_url} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="inline-flex items-center gap-1 text-zinc-500 hover:text-zinc-900">
                 발행본 보기 <ExternalLink size={10} />
