@@ -4,7 +4,7 @@ import { requireAdmin } from '@/lib/adminAuth';
 
 export const runtime = 'nodejs';
 
-const ALLOWED_SOURCES = new Set(['youtube', 'threads', 'instagram', 'hackernews', 'web']);
+const ALLOWED_SOURCES = new Set(['youtube', 'threads', 'instagram', 'hackernews', 'reddit', 'naver_news', 'google_news', 'web']);
 const ALLOWED_STATUSES = new Set(['collected', 'reviewed', 'approved', 'rejected', 'sent']);
 
 /**
@@ -13,7 +13,7 @@ const ALLOWED_STATUSES = new Set(['collected', 'reviewed', 'approved', 'rejected
  * 수집된 콘텐츠 아이템 목록 조회. 검수 카드 그리드 데이터 소스.
  *
  * Query:
- *   source    youtube | threads | instagram | hackernews | web
+ *   source    youtube | threads | instagram | hackernews | reddit | naver_news | google_news | web
  *   status    collected | reviewed | approved | rejected | sent
  *   limit     default 20, max 100
  *   offset    default 0

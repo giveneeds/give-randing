@@ -13,6 +13,9 @@ const SOURCE_LABEL = {
   threads: { label: 'Threads', cls: 'bg-zinc-100 text-zinc-700 border-zinc-200' },
   instagram: { label: 'Instagram', cls: 'bg-pink-50 text-pink-600 border-pink-200' },
   hackernews: { label: 'Hacker News', cls: 'bg-orange-50 text-orange-600 border-orange-200' },
+  reddit: { label: 'Reddit', cls: 'bg-orange-50 text-orange-700 border-orange-200' },
+  google_news: { label: '구글뉴스', cls: 'bg-blue-50 text-blue-600 border-blue-200' },
+  naver_news: { label: '네이버', cls: 'bg-green-50 text-green-600 border-green-200' },
   web: { label: 'Web', cls: 'bg-blue-50 text-blue-600 border-blue-200' },
 };
 

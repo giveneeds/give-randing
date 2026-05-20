@@ -8,6 +8,9 @@ const SOURCE_LABEL = {
   threads: 'Threads',
   instagram: 'Instagram',
   hackernews: 'Hacker News',
+  reddit: 'Reddit',
+  google_news: '구글뉴스',
+  naver_news: '네이버',
   web: 'Web',
 };
 

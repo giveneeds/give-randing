@@ -6,7 +6,7 @@ export const runtime = 'nodejs';
 
 const ALLOWED_TYPES = new Set([
   'youtube', 'threads', 'instagram', 'hackernews',
-  'naver_news', 'google_news',
+  'naver_news', 'google_news', 'reddit',
 ]);
 
 /**

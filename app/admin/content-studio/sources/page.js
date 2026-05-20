@@ -6,11 +6,25 @@ import { Loader2, Plus, Trash2, Rss, ToggleLeft, ToggleRight, Play } from 'lucid
 const SOURCE_TYPES = [
   { value: 'naver_news',  label: '네이버 뉴스',  placeholder: 'B2B 마케팅 (검색어)',  hint: '한국어 뉴스 검색어' },
   { value: 'google_news', label: '구글 뉴스',    placeholder: 'AI marketing',         hint: '구글 뉴스 검색어 (한국어/영어 모두)' },
+  { value: 'reddit',      label: 'Reddit',       placeholder: 'smallbusiness:AI marketing', hint: '해외 시장 신호 수집. meta에 인기 기준을 JSON으로 지정할 수 있습니다.' },
   { value: 'hackernews',  label: 'Hacker News',  placeholder: 'marketing, growth, b2b', hint: '콤마로 구분된 영어 키워드' },
   { value: 'youtube',     label: 'YouTube',      placeholder: 'UCfz8x0lVzJpb_dgWm9kPVrw', hint: '채널 ID (등록은 가능, 수집기는 Phase 2)' },
   { value: 'threads',     label: 'Threads',      placeholder: 'username',             hint: '계정 핸들 — 현재 수집 미지원 (Phase 2)' },
   { value: 'instagram',   label: 'Instagram',    placeholder: 'username',             hint: '현재 미지원' },
 ];
+
+const DEFAULT_META_TEXT = {
+  reddit: JSON.stringify({
+    format: 'json',
+    sort: 'top',
+    time: 'month',
+    max: 10,
+    daily_limit: 3,
+    min_score: 2,
+    min_comments: 1,
+    min_market_signal_score: 10,
+  }, null, 2),
+};
 
 export default function ContentStudioSourcesPage() {
   const [rows, setRows] = useState([]);
@@ -18,6 +32,7 @@ export default function ContentStudioSourcesPage() {
   const [sourceType, setSourceType] = useState('naver_news');
   const [identifier, setIdentifier] = useState('');
   const [label, setLabel] = useState('');
+  const [metaText, setMetaText] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [collecting, setCollecting] = useState(false);
 
@@ -50,6 +65,16 @@ export default function ContentStudioSourcesPage() {
     if (!identifier.trim()) return;
     setSubmitting(true);
     try {
+      let meta = {};
+      if (metaText.trim()) {
+        try {
+          meta = JSON.parse(metaText);
+        } catch {
+          alert('meta JSON 형식이 올바르지 않습니다.');
+          return;
+        }
+      }
+
       const res = await fetch('/api/admin/content-studio/sources', {
         method: 'POST',
         headers: await authHeaders(),
@@ -57,6 +82,7 @@ export default function ContentStudioSourcesPage() {
           source_type: sourceType,
           identifier: identifier.trim(),
           label: label.trim() || null,
+          meta,
         }),
       });
       const data = await res.json();
@@ -67,6 +93,7 @@ export default function ContentStudioSourcesPage() {
       setRows((prev) => [data.row, ...prev]);
       setIdentifier('');
       setLabel('');
+      setMetaText('');
     } finally {
       setSubmitting(false);
     }
@@ -130,6 +157,7 @@ export default function ContentStudioSourcesPage() {
   }
 
   const currentType = SOURCE_TYPES.find((t) => t.value === sourceType);
+  const metaPlaceholder = DEFAULT_META_TEXT[sourceType] || '{\n  "daily_limit": 1\n}';
 
   return (
     <div className="space-y-5">
@@ -152,7 +180,11 @@ export default function ContentStudioSourcesPage() {
         <div className="grid grid-cols-1 md:grid-cols-12 gap-2">
           <select
             value={sourceType}
-            onChange={(e) => setSourceType(e.target.value)}
+            onChange={(e) => {
+              const nextType = e.target.value;
+              setSourceType(nextType);
+              setMetaText(DEFAULT_META_TEXT[nextType] || '');
+            }}
             className="md:col-span-2 px-3 py-2.5 bg-white border border-[var(--admin-border)] rounded-md text-sm cursor-pointer"
           >
             {SOURCE_TYPES.map((t) => (
@@ -186,6 +218,21 @@ export default function ContentStudioSourcesPage() {
         {currentType?.hint && (
           <p className="text-[11px] text-zinc-500">💡 {currentType.hint}</p>
         )}
+        <div className="space-y-1.5">
+          <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400">
+            meta JSON 선택 입력
+          </label>
+          <textarea
+            value={metaText}
+            onChange={(e) => setMetaText(e.target.value)}
+            placeholder={metaPlaceholder}
+            rows={sourceType === 'reddit' ? 8 : 4}
+            className="w-full px-3 py-2.5 bg-white border border-[var(--admin-border)] rounded-md text-xs font-mono outline-none focus:ring-2 focus:ring-zinc-900/10 resize-y"
+          />
+          <p className="text-[11px] text-zinc-400">
+            Reddit 인기 기준 예: sort=top, time=month, min_score, min_comments, min_market_signal_score.
+          </p>
+        </div>
       </form>
 
       <div className="bg-white rounded-md border border-[var(--admin-border)] shadow-sm overflow-hidden">
@@ -203,7 +250,7 @@ export default function ContentStudioSourcesPage() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-zinc-50/50 border-b border-zinc-100">
-                {['종류', '식별자', '표시명', '활성', '최근 수집', '액션'].map((h, i) => (
+                {['종류', '식별자', '표시명', '설정', '활성', '최근 수집', '액션'].map((h, i) => (
                   <th key={i} className="px-4 py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -218,6 +265,9 @@ export default function ContentStudioSourcesPage() {
                     </td>
                     <td className="px-4 py-3 text-[12px] text-zinc-800 font-mono">{r.identifier}</td>
                     <td className="px-4 py-3 text-[12px] text-zinc-600">{r.label || '—'}</td>
+                    <td className="px-4 py-3 text-[11px] text-zinc-500 font-mono max-w-[220px] truncate">
+                      {r.meta && Object.keys(r.meta).length > 0 ? JSON.stringify(r.meta) : '—'}
+                    </td>
                     <td className="px-4 py-3">
                       <button
                         onClick={() => toggleActive(r.id, !r.active)}

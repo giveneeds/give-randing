@@ -6,7 +6,7 @@
 
 ## 목표
 
-기브니즈를 알릴 수 있는 마케팅 콘텐츠를 매일 반자동으로 발굴하고, 요식업/병의원 사장님에게 실용적인 매거진 초안과 리드마그넷 후보로 전환한다.
+기브니즈를 알릴 수 있는 마케팅 콘텐츠를 매일 반자동으로 발굴하고, 요식업/병의원 사장님에게 실용적인 Threads 초안, 매거진 초안, 리드마그넷 후보로 전환한다.
 
 핵심 독자 문제:
 - 지금 마케팅을 하고 있지만 효과가 안 나와 방법을 바꿔야 하나 고민한다.
@@ -43,6 +43,11 @@ agent_sources
   -> publish manually
 ```
 
+2026-05-19 운영 우선순위:
+- 매거진 draft 자동 생성은 구현되어 있지만, 오늘의 1차 실험 채널은 Threads다.
+- Threads는 단일글과 연결글의 구조가 다르므로 별도 패턴 하네스를 둔다.
+- 참조 문서: `docs/threads-content-pattern-harness.md`
+
 ## 단계별 역할
 
 ### 1. 수집
@@ -54,7 +59,45 @@ agent_sources
 
 입력:
 - `agent_sources`
-- 현재 소스 타입: `naver_news`, `google_news`, `hackernews`
+- 현재 소스 타입: `naver_news`, `google_news`, `hackernews`, `reddit`
+
+Reddit source identifier 예시:
+- `smallbusiness`: `r/smallbusiness` 최신 글
+- `restaurateur`: 식당 운영자 커뮤니티 최신 글
+- `smallbusiness:AI marketing`: 특정 subreddit 안에서 검색
+- `all:restaurant marketing`: Reddit 전체 검색 RSS
+- 용도: 해외 소상공인/마케터의 AI 활용, 마케팅 실행, 고객 유입, 운영 개선 신호를 한국 자영업자/브랜드 콘텐츠 기획에 변환한다.
+
+Reddit 인기 신호 수집 기준:
+- 기본 RSS는 점수/댓글 수를 안정적으로 주지 않으므로, 인기 기준이 필요하면 `meta.format = "json"`을 사용한다.
+- `sort`: `top`, `hot`, `new`, `comments`, `relevance`
+- `time`: `day`, `week`, `month`, `year`, `all`
+- `min_score`: 최소 추천 점수
+- `min_comments`: 최소 댓글 수
+- `min_upvote_ratio`: 최소 긍정 비율
+- `min_market_signal_score`: 내부 시장 신호 점수 하한
+- `score_weights`: 내부 시장 신호 점수 가중치. 기본값은 `score=1`, `comments=3`, `upvote_ratio=10`, `crossposts=2`
+
+Reddit meta 예시:
+
+```json
+{
+  "format": "json",
+  "sort": "top",
+  "time": "month",
+  "max": 10,
+  "daily_limit": 3,
+  "min_score": 2,
+  "min_comments": 1,
+  "min_market_signal_score": 10,
+  "purpose": "ai_marketing_market_signal"
+}
+```
+
+운영 해석:
+- 레딧은 한국 자영업자에게 그대로 보여줄 출처가 아니라, 해외 소상공인/마케터가 이미 겪는 고민과 해결 실험을 찾는 시장 신호 수집원이다.
+- 점수가 낮아도 댓글이 많으면 페인포인트가 강한 글일 수 있으므로, 댓글 가중치를 기본적으로 추천 점수보다 높게 둔다.
+- 수집 결과는 곧바로 발행하지 않고, 기브니즈 지식베이스와 한국 플레이스/광고/콘텐츠 맥락에 맞게 재해석한다.
 
 중간 산출물:
 - `agent_jobs`
@@ -160,6 +203,9 @@ agent_sources
 개선 예정:
 - draft 생성 결과의 품질 평가 로그를 남긴다.
 - 제목/도입/본문/결론/출처/실행 체크포인트 유무를 검증한다.
+- Threads 전용 초안 생성 레이어를 추가한다.
+- Threads 초안은 단일 문자열이 아니라 `format_type`, `why_this_format`, `posts[]` 구조로 만든다.
+- Telegram 검수 카드에서 "왜 이 소재가 스레드용인지", "단일글/연결글 중 무엇이 맞는지"를 보여준다.
 
 ### 5. 검수
 
@@ -204,6 +250,8 @@ agent_sources
 
 ## 다음 개선 후보
 
+- Threads 레퍼런스 패턴 데이터셋 구축
+- Threads 전용 초안 생성/검수 카드 추가
 - lead magnet 다양성 prompt 개선
 - brief 품질 평가 rubric 추가
 - draft 품질 평가 rubric 추가
