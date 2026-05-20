@@ -3,6 +3,7 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { convertItemToMagazineDraft } from '@/lib/agent/convertItemToDraft';
 import { parseUserDecision } from '@/lib/agent/parseUserDecision';
 import { finishPlanningSession } from '@/lib/agent/finishPlanningSession';
+import { composeFreeChatReply } from '@/lib/agent/replyToFreeChat';
 import {
   verifyWebhookSecret, sendInlineMessage, editInlineMessage,
   answerCallbackQuery, buildItemCard, tgEscape,
@@ -90,16 +91,30 @@ async function handleMessage(message) {
     return;
   }
 
-  // 활성 수신자의 자유 텍스트 → 진행 중인 planning_session 의 1차 보고 응답으로 해석.
-  if (text) {
-    const handled = await handleDailyReportReply({ chatId, text });
-    if (handled) return;
+  if (!text) {
+    await sendInlineMessage({ chatId, text: '✅ 활성화된 수신자입니다. 텍스트로 질문하시면 답변해 드릴게요.' });
+    return;
   }
 
-  await sendInlineMessage({
-    chatId,
-    text: '✅ 활성화된 수신자입니다. 다음 아침 보고를 받으면 자유롭게 답글로 결정 알려주세요.',
-  });
+  // 1) 진행 중 세션이 있으면 의사결정 답변으로 처리.
+  const handled = await handleDailyReportReply({ chatId, text });
+  if (handled) return;
+
+  // 2) 진행 중 세션이 없으면 일반 LLM 자유 채팅으로 응답.
+  try {
+    const { replyText } = await composeFreeChatReply({
+      chatId,
+      userText: text,
+      displayName,
+    });
+    await sendInlineMessage({ chatId, text: replyText });
+  } catch (e) {
+    console.error('[telegram webhook] free chat 실패', e);
+    await sendInlineMessage({
+      chatId,
+      text: '답변 생성 중 문제가 발생했습니다. 잠시 후 다시 보내주세요.',
+    });
+  }
 }
 
 // 정욱님이 1차 보고서에 자유 텍스트로 답하면 진행 중인 세션을 찾아 액션 결정.
