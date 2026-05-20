@@ -192,6 +192,32 @@
 - 새 시장 조사 소스는 바로 콘텐츠로 쓰지 않고 `market_signal -> reader_pain -> giveneeds_topic -> threads_format` 단계로 변환한다.
 - 인기 기준은 고정값으로 숨기지 않고 `agent_sources.meta`에 남겨 다음 실행에서 왜 이 소스가 들어왔는지 추적한다.
 
+### 운영 Vercel에서 Reddit JSON 403 발생
+
+증상:
+- 로컬에서는 Reddit 공개 JSON 검색이 성공했지만, 운영 cron에서 `collect reddit/smallbusiness:AI marketing: Reddit JSON 403`으로 실패했다.
+- 같은 cron 실행에서 네이버/구글 수집, LLM enrich, 텔레그램 카드 발송은 정상 동작했다.
+
+레이어:
+- 실행 환경
+- 상태 관리
+
+원인:
+- Reddit이 일부 서버리스/데이터센터 IP의 JSON 요청을 차단하는 것으로 보인다.
+- JSON 수집은 점수/댓글 수를 얻는 데 유리하지만, 차단 시 수집 자체가 멈추는 단일 실패 지점이 됐다.
+
+조치:
+- Reddit JSON 403 발생 시 같은 identifier/search 조건의 RSS 수집으로 자동 폴백하도록 보강했다.
+- 폴백 시 `score`, `num_comments`, `market_signal_score`는 잃지만, 레딧 시장 신호 본문과 URL 수집은 이어갈 수 있다.
+
+검증 예정:
+- 다음 운영 cron에서 Reddit source가 더 이상 failed로 끝나지 않는지 확인한다.
+- RSS 폴백 결과가 너무 약하면 Reddit 수집은 GitHub Actions runner 또는 별도 프록시 수집원으로 분리한다.
+
+재발 방지:
+- 외부 소스 수집기는 주요 API가 막힐 때 가능한 대체 경로를 둔다.
+- 인기 지표가 없는 폴백 데이터는 브리프 단계에서 `source_quality` 또는 `confidence`를 낮게 평가하도록 후속 보강한다.
+
 ## 반복 운영 규칙
 
 새 실패가 나오면 아래 형식으로 추가한다.
