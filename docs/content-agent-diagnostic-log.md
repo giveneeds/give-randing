@@ -209,6 +209,7 @@
 조치:
 - Reddit JSON 403 발생 시 같은 identifier/search 조건의 RSS 수집으로 자동 폴백하도록 보강했다.
 - 폴백 시 `score`, `num_comments`, `market_signal_score`는 잃지만, 레딧 시장 신호 본문과 URL 수집은 이어갈 수 있다.
+- `www.reddit.com`이 403을 반환하면 `old.reddit.com`으로 한 번 더 재시도하도록 보강했다.
 
 검증 예정:
 - 다음 운영 cron에서 Reddit source가 더 이상 failed로 끝나지 않는지 확인한다.
