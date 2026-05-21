@@ -12,6 +12,11 @@ export function useAdmin() {
   return useContext(AdminContext);
 }
 
+const SidebarContext = createContext({ open: false, setOpen: () => {} });
+export function useSidebar() {
+  return useContext(SidebarContext);
+}
+
 export default function AdminLayout({ children }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -19,6 +24,12 @@ export default function AdminLayout({ children }) {
 
   const [checking, setChecking] = useState(true);
   const [profile, setProfile] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // 라우트 이동 시 드로어 자동 닫힘
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     if (isPublicPage) {
@@ -84,17 +95,26 @@ export default function AdminLayout({ children }) {
 
   return (
     <AdminContext.Provider value={{ handleLogout, profile }}>
-      <div className="flex bg-zinc-50 text-zinc-900 min-h-screen" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>
-        <Sidebar handleLogout={handleLogout} />
-        <div className="flex-1 ml-64 flex flex-col min-h-screen">
-          <AdminHeader />
-          <main className="flex-1 p-8 overflow-y-auto">
-            <div className="max-w-[1200px] mx-auto">
-              {children}
-            </div>
-          </main>
+      <SidebarContext.Provider value={{ open: sidebarOpen, setOpen: setSidebarOpen }}>
+        <div className="bg-zinc-50 text-zinc-900 min-h-screen" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>
+          <Sidebar handleLogout={handleLogout} open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+          {sidebarOpen && (
+            <div
+              className="fixed inset-0 bg-zinc-900/40 z-30 lg:hidden"
+              onClick={() => setSidebarOpen(false)}
+              aria-hidden="true"
+            />
+          )}
+          <div className="flex flex-col min-h-screen lg:ml-64">
+            <AdminHeader onMenuClick={() => setSidebarOpen(true)} />
+            <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+              <div className="max-w-[1200px] mx-auto">
+                {children}
+              </div>
+            </main>
+          </div>
         </div>
-      </div>
+      </SidebarContext.Provider>
     </AdminContext.Provider>
   );
 }

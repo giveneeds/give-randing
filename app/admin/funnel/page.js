@@ -308,19 +308,19 @@ export default function FunnelPage() {
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       {/* Header */}
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-zinc-900 rounded-xl flex items-center justify-center">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-9 h-9 bg-zinc-900 rounded-xl flex items-center justify-center flex-shrink-0">
             <BarChart2 size={18} className="text-white" />
           </div>
-          <div>
+          <div className="min-w-0">
             <h1 className="text-lg font-black text-zinc-900 tracking-tight">퍼널 분석</h1>
-            <p className="text-xs text-zinc-400">외부 방문자가 문의까지 도달하는 흐름을 단계별로 봅니다 · 각 단계를 클릭하면 세부 내역</p>
+            <p className="text-[11px] sm:text-xs text-zinc-400 leading-snug">외부 방문자가 문의까지 도달하는 흐름을 단계별로 봅니다 · 각 단계를 클릭하면 세부 내역</p>
           </div>
         </div>
         <Link
           href="/admin/funnel/user"
-          className="flex items-center gap-2 px-4 py-2 bg-zinc-900 text-white text-xs font-bold rounded-xl hover:bg-zinc-700 transition-colors"
+          className="self-start sm:self-auto flex items-center gap-2 px-4 py-2 bg-zinc-900 text-white text-xs font-bold rounded-xl hover:bg-zinc-700 transition-colors flex-shrink-0"
         >
           <Users size={14} />
           방문자 여정
@@ -337,7 +337,7 @@ export default function FunnelPage() {
 
       {/* Funnel Steps (clickable) */}
       <div className="bg-white rounded-xl border border-zinc-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-zinc-100">
+        <div className="px-4 sm:px-6 py-4 border-b border-zinc-100">
           <h2 className="text-[11px] font-black text-zinc-900 uppercase tracking-widest">전환 퍼널</h2>
         </div>
 
@@ -355,22 +355,22 @@ export default function FunnelPage() {
                 {/* Step row — clickable */}
                 <button
                   onClick={() => handleStepClick(step.key)}
-                  className="w-full flex items-center gap-4 px-6 py-5 hover:bg-zinc-50 transition-colors text-left group"
+                  className="w-full flex items-center gap-3 sm:gap-4 px-3 sm:px-6 py-4 sm:py-5 hover:bg-zinc-50 transition-colors text-left group"
                 >
-                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${cfg.color}`}>
+                  <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${cfg.color}`}>
                     <Icon size={16} />
                   </div>
 
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1.5">
+                    <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 flex-wrap">
                       <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
                         Step {i + 1}
                       </span>
-                      <span className="text-sm font-black text-zinc-900">
+                      <span className="text-xs sm:text-sm font-black text-zinc-900">
                         {step.label}
                       </span>
                       {cfg.sub && (
-                        <span className="text-[11px] text-zinc-400 font-medium">— {cfg.sub}</span>
+                        <span className="hidden sm:inline text-[11px] text-zinc-400 font-medium">— {cfg.sub}</span>
                       )}
                       <Tooltip text={cfg.tooltip} />
                     </div>
@@ -387,8 +387,8 @@ export default function FunnelPage() {
                     </div>
                   </div>
 
-                  <div className="flex-shrink-0 text-right w-16">
-                    <p className="text-sm font-black text-zinc-900">{step.count.toLocaleString()}</p>
+                  <div className="flex-shrink-0 text-right w-12 sm:w-16">
+                    <p className="text-xs sm:text-sm font-black text-zinc-900">{step.count.toLocaleString()}</p>
                     {i > 0 && (
                       <p className={`text-[10px] font-bold ${step.conversion_rate >= 10 ? 'text-emerald-600' : step.conversion_rate >= 3 ? 'text-amber-600' : 'text-red-500'}`}>
                         {step.conversion_rate}%

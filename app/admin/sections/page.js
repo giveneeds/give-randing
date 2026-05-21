@@ -184,35 +184,35 @@ export default function SectionsPage() {
     <div className="flex flex-col gap-6 animate-in fade-in duration-500" style={{ minHeight: 'calc(100vh - 120px)' }}>
 
       {/* ── 상단 헤더 바 ── */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4">
         <div>
-          <h1 className="text-2xl font-black text-[var(--admin-text-main)] tracking-tighter uppercase">홈 섹션 관리</h1>
-          <p className="text-[var(--admin-text-muted)] text-sm mt-1 tracking-tight">왼쪽에서 섹션 순서를 변경하고 저장하면, 오른쪽 프리뷰에서 실제 홈페이지 흐름을 확인하세요.</p>
+          <h1 className="text-xl sm:text-2xl font-black text-[var(--admin-text-main)] tracking-tighter uppercase">홈 섹션 관리</h1>
+          <p className="text-[var(--admin-text-muted)] text-xs sm:text-sm mt-1 tracking-tight">왼쪽에서 섹션 순서를 변경하고 저장하면, 오른쪽 프리뷰에서 실제 홈페이지 흐름을 확인하세요.</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           {isOrderDirty && (
             <button
               onClick={handleSaveOrder}
               disabled={saving}
-              className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-60 text-white px-5 py-2.5 rounded-lg font-bold text-sm transition-all shadow-sm tracking-widest uppercase"
+              className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-60 text-white px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg font-bold text-xs sm:text-sm transition-all shadow-sm tracking-widest uppercase"
             >
-              <Save size={16} /> {saving ? '저장 중...' : '순서 저장 & 적용'}
+              <Save size={14} /> {saving ? '저장 중...' : '순서 저장'}
             </button>
           )}
           <button
             onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-2 bg-[var(--admin-primary)] hover:bg-[var(--admin-primary-hover)] text-white px-5 py-2.5 rounded-lg font-bold text-sm transition-all shadow-sm tracking-widest uppercase"
+            className="flex items-center gap-2 bg-[var(--admin-primary)] hover:bg-[var(--admin-primary-hover)] text-white px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg font-bold text-xs sm:text-sm transition-all shadow-sm tracking-widest uppercase"
           >
-            <Plus size={16} /> 새 섹션 추가
+            <Plus size={14} /> 새 섹션
           </button>
         </div>
       </div>
 
-      {/* ── 좌우 분할 메인 뷰 ── */}
-      <div className="flex gap-6" style={{ height: 'calc(100vh - 200px)', minHeight: '600px' }}>
+      {/* ── 좌우 분할 메인 뷰 (모바일에서는 세로 스택) ── */}
+      <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 lg:h-[calc(100vh-200px)] lg:min-h-[600px]">
 
         {/* ── 왼쪽: 섹션 순서 관리 리스트 ── */}
-        <div className="w-[400px] shrink-0 flex flex-col gap-3 overflow-y-auto pr-2 custom-scrollbar">
+        <div className="w-full lg:w-[400px] lg:shrink-0 flex flex-col gap-3 lg:overflow-y-auto lg:pr-2 custom-scrollbar">
 
           {/* 안내 메시지 */}
           {isOrderDirty && (
@@ -326,7 +326,7 @@ export default function SectionsPage() {
         </div>
 
         {/* ── 오른쪽: 전체 홈페이지 라이브 프리뷰 ── */}
-        <div className="flex-1 flex flex-col overflow-hidden rounded-2xl border-[10px] border-zinc-900 shadow-2xl bg-zinc-100">
+        <div className="flex-1 flex flex-col overflow-hidden rounded-xl lg:rounded-2xl border-4 sm:border-[10px] border-zinc-900 shadow-2xl bg-zinc-100 min-h-[400px] lg:min-h-0 h-[480px] lg:h-auto">
           {/* 상단 브라우저 바 */}
           <div className="bg-zinc-900 px-4 py-2 flex items-center gap-3 shrink-0">
             <div className="flex gap-1.5">
@@ -362,19 +362,19 @@ export default function SectionsPage() {
 
       {/* Add Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-zinc-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in zoom-in duration-300">
-           <div className="bg-white w-full max-w-4xl max-h-[85vh] flex flex-col rounded-md overflow-hidden shadow-2xl border border-white/20">
-              <div className="p-8 border-b border-zinc-100 flex justify-between items-center bg-zinc-50/50">
-                <div>
-                  <h2 className="text-xl font-black uppercase tracking-tighter">새 섹션 추가</h2>
-                  <p className="text-xs text-zinc-500 mt-1 tracking-tight">마스터 라이브러리에서 검증된 템플릿을 가져오거나 기본 섹션을 추가하세요.</p>
+        <div className="fixed inset-0 bg-zinc-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4 animate-in fade-in zoom-in duration-300">
+           <div className="bg-white w-full max-w-4xl max-h-[92vh] sm:max-h-[85vh] flex flex-col rounded-md overflow-hidden shadow-2xl border border-white/20">
+              <div className="p-4 sm:p-8 border-b border-zinc-100 flex justify-between items-start bg-zinc-50/50">
+                <div className="min-w-0">
+                  <h2 className="text-lg sm:text-xl font-black uppercase tracking-tighter">새 섹션 추가</h2>
+                  <p className="text-[11px] sm:text-xs text-zinc-500 mt-1 tracking-tight">마스터 라이브러리에서 검증된 템플릿을 가져오거나 기본 섹션을 추가하세요.</p>
                 </div>
-                <button onClick={() => setShowAddModal(false)} className="p-2 hover:bg-zinc-200 rounded-md">
+                <button onClick={() => setShowAddModal(false)} className="p-2 hover:bg-zinc-200 rounded-md shrink-0">
                   <X size={20} />
                 </button>
               </div>
-              
-              <div className="flex-1 overflow-y-auto p-8 space-y-12">
+
+              <div className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-8 sm:space-y-12">
                 {/* 1. Master Library Sections */}
                 {library.blocks.length > 0 && (
                   <div>
@@ -479,24 +479,24 @@ export default function SectionsPage() {
 
           {/* Right Side: Editor Panel */}
           <div className="bg-white w-full lg:w-[500px] xl:w-[600px] shrink-0 h-full flex flex-col shadow-2xl animate-in slide-in-from-right duration-300 ease-out border-l border-zinc-200 z-20">
-            <div className="p-6 border-b border-zinc-100 flex justify-between items-center bg-zinc-50/50 shrink-0">
-              <div className="flex items-center gap-3">
+            <div className="p-4 sm:p-6 border-b border-zinc-100 flex justify-between items-center bg-zinc-50/50 shrink-0">
+              <div className="flex items-center gap-3 min-w-0">
                 <div className="w-8 h-8 bg-zinc-900 rounded-md shadow-sm border border-black flex items-center justify-center text-white shrink-0">
                   {getIcon(editingSection.type)}
                 </div>
-                <div>
-                  <h2 className="text-lg font-black uppercase text-zinc-900 tracking-tighter">{SECTION_TYPES[editingSection.type]?.label} 편집</h2>
+                <div className="min-w-0">
+                  <h2 className="text-base sm:text-lg font-black uppercase text-zinc-900 tracking-tighter truncate">{SECTION_TYPES[editingSection.type]?.label} 편집</h2>
                 </div>
               </div>
-              <button 
-                onClick={() => setEditingSection(null)} 
+              <button
+                onClick={() => setEditingSection(null)}
                 className="p-2 hover:bg-zinc-200 rounded-md transition-colors text-zinc-400 hover:text-zinc-900 shrink-0"
               >
                 <X size={20} />
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-8 space-y-10 custom-scrollbar relative">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-8 sm:space-y-10 custom-scrollbar relative">
                <div className="space-y-6">
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">공통 헤더 타이틀</label>

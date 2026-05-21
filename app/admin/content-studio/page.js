@@ -201,30 +201,32 @@ export default function ContentStudioReviewPage() {
   return (
     <div className="space-y-5">
       {/* 자료 모으기 트리거 — 자동 cron 시뮬레이션 / 전량 모으기 */}
-      <div className="bg-white rounded-md border border-[var(--admin-border)] shadow-sm p-4 flex items-center gap-3 flex-wrap">
+      <div className="bg-white rounded-md border border-[var(--admin-border)] shadow-sm p-4 flex flex-col md:flex-row md:items-center gap-3 md:flex-wrap">
         <div className="flex-1 min-w-0">
           <div className="text-xs font-black text-zinc-900 uppercase tracking-widest">지금 자료 모으기</div>
-          <p className="text-[11px] text-zinc-500 mt-1">
+          <p className="text-[11px] text-zinc-500 mt-1 leading-relaxed">
             [빠른 모음]은 매체별로 신선한 1건씩만 모으고 채택 알림까지 한 번에. 다음 자동 수집을 기다리지 않고 검증할 때 사용.
             [전체 모음]은 제한 없이 검토함에 쌓아두고 카드별로 채택 결정.
           </p>
         </div>
-        <button
-          onClick={() => runCollect('test')}
-          disabled={collecting}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-violet-600 text-white text-xs font-bold hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
-        >
-          {collecting ? <Loader2 size={14} className="animate-spin" /> : <Zap size={14} />}
-          빠른 모음 (매체별 1건 + 알림)
-        </button>
-        <button
-          onClick={() => runCollect('full')}
-          disabled={collecting}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-zinc-300 text-zinc-700 text-xs font-bold hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
-        >
-          {collecting ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />}
-          전체 모음 (알림 없이)
-        </button>
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full md:w-auto">
+          <button
+            onClick={() => runCollect('test')}
+            disabled={collecting}
+            className="inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 sm:py-2 rounded-md bg-violet-600 text-white text-xs font-bold hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+          >
+            {collecting ? <Loader2 size={14} className="animate-spin" /> : <Zap size={14} />}
+            <span>빠른 모음 (매체별 1건 + 알림)</span>
+          </button>
+          <button
+            onClick={() => runCollect('full')}
+            disabled={collecting}
+            className="inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 sm:py-2 rounded-md border border-zinc-300 text-zinc-700 text-xs font-bold hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+          >
+            {collecting ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />}
+            <span>전체 모음 (알림 없이)</span>
+          </button>
+        </div>
       </div>
 
       <div className="text-xs text-zinc-500 font-medium">{totalLabel}</div>
@@ -337,7 +339,7 @@ function ItemCard({ item, busy, onPatch, onNotify, onMakeThread }) {
 
   return (
     <div className="bg-white rounded-md border border-[var(--admin-border)] shadow-sm overflow-hidden">
-      <div className="px-5 pt-5 pb-3 flex items-center gap-2 flex-wrap border-b border-zinc-50">
+      <div className="px-3 sm:px-5 pt-3 sm:pt-5 pb-3 flex items-center gap-2 flex-wrap border-b border-zinc-50">
         <span className={`inline-block text-[10px] font-bold border px-2 py-1 rounded-full ${sourceCfg.cls}`}>
           {sourceCfg.label}
         </span>
@@ -368,7 +370,7 @@ function ItemCard({ item, busy, onPatch, onNotify, onMakeThread }) {
         </div>
       </div>
 
-      <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-5">
+      <div className="p-3 sm:p-5 grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
         {/* 원문 */}
         <div className="space-y-2">
           <div className="text-[10px] font-black uppercase tracking-widest text-zinc-400 inline-flex items-center gap-1">

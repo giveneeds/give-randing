@@ -144,21 +144,24 @@ export default function AdminLeads() {
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-black text-[var(--admin-text-main)] tracking-tighter uppercase">리드(DB) 조회</h1>
-          <p className="text-[var(--admin-text-muted)] text-sm mt-1">
-            전체 <span className="font-black text-zinc-900">{filteredLeads.length}</span>건 · 
-            문의 <span className="font-black text-violet-600">{leads.filter(l=>l.lead_type==='consultation').length}</span>건 · 
-            캠페인 <span className="font-black text-blue-600">{leads.filter(l=>l.lead_type==='campaign').length}</span>건 · 
-            매거진 <span className="font-black text-emerald-600">{leads.filter(l=>l.lead_type==='magazine').length}</span>건
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-black text-[var(--admin-text-main)] tracking-tighter uppercase">리드(DB) 조회</h1>
+          <p className="text-[var(--admin-text-muted)] text-xs sm:text-sm mt-1 flex flex-wrap gap-x-2 gap-y-0.5">
+            <span>전체 <span className="font-black text-zinc-900">{filteredLeads.length}</span>건</span>
+            <span className="text-zinc-300">·</span>
+            <span>문의 <span className="font-black text-violet-600">{leads.filter(l=>l.lead_type==='consultation').length}</span>건</span>
+            <span className="text-zinc-300">·</span>
+            <span>캠페인 <span className="font-black text-blue-600">{leads.filter(l=>l.lead_type==='campaign').length}</span>건</span>
+            <span className="text-zinc-300">·</span>
+            <span>매거진 <span className="font-black text-emerald-600">{leads.filter(l=>l.lead_type==='magazine').length}</span>건</span>
           </p>
         </div>
-        <button 
+        <button
           onClick={handleExportCSV}
-          className="flex items-center gap-2 bg-white border border-zinc-200 text-zinc-900 px-5 py-2.5 rounded-md font-bold text-sm hover:bg-zinc-50 transition-all shadow-sm"
+          className="self-start md:self-auto flex items-center gap-2 bg-white border border-zinc-200 text-zinc-900 px-4 sm:px-5 py-2 sm:py-2.5 rounded-md font-bold text-xs sm:text-sm hover:bg-zinc-50 transition-all shadow-sm"
         >
-          <Download size={16} /> CSV 내보내기
+          <Download size={14} className="sm:hidden" /><Download size={16} className="hidden sm:block" /> CSV 내보내기
         </button>
       </div>
 
@@ -212,8 +215,80 @@ export default function AdminLeads() {
         </div>
       </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-md border border-[var(--admin-border)] shadow-sm overflow-hidden">
+      {/* Mobile Card List (sm 미만) */}
+      <div className="sm:hidden space-y-3">
+        {loading ? (
+          <div className="bg-white rounded-md border border-zinc-200 py-16 text-center text-zinc-400 text-sm animate-pulse">데이터 불러오는 중...</div>
+        ) : pagedLeads.length > 0 ? pagedLeads.map(lead => {
+          const pipe = PIPELINE_CONFIG[lead.pipeline_stage || 'new'];
+          const r = prettyReferrer(lead.source_referrer);
+          return (
+            <div key={`m-${lead.id}`} className="bg-white rounded-lg border border-zinc-200 shadow-sm p-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-lg bg-zinc-100 border border-zinc-200 flex items-center justify-center font-black text-sm text-zinc-700 flex-shrink-0">
+                  {(lead.name || '?')[0]}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="font-bold text-zinc-900 text-sm truncate">{lead.name}</p>
+                      {lead.company_name && <p className="text-[11px] text-zinc-400 truncate">{lead.company_name}</p>}
+                    </div>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap ${pipe.color}`}>
+                      {pipe.label}
+                    </span>
+                  </div>
+                  <div className="mt-2 flex items-center gap-2 flex-wrap">
+                    {getLeadTypeBadge(lead.lead_type || 'organic')}
+                    {lead.budget && (
+                      <span className="text-[10px] font-bold text-zinc-600 bg-zinc-100 px-2 py-0.5 rounded-full">
+                        {BUDGET_LABEL[lead.budget] || lead.budget}
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-2 space-y-1">
+                    {lead.phone && <div className="flex items-center gap-1.5 text-xs text-zinc-600"><Phone size={11} className="text-zinc-400 flex-shrink-0"/><span className="truncate">{lead.phone}</span></div>}
+                    {lead.email && <div className="flex items-center gap-1.5 text-xs text-zinc-500"><Mail size={11} className="text-zinc-400 flex-shrink-0"/><span className="truncate">{lead.email}</span></div>}
+                  </div>
+                  <div className="mt-3 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1 text-[10px] text-zinc-400 font-medium">
+                      <Calendar size={10}/>{new Date(lead.created_at).toLocaleDateString('ko-KR')}
+                      {lead.channel_group && (
+                        <>
+                          <span className="text-zinc-300 mx-0.5">·</span>
+                          <span>{CHANNEL_LABELS[lead.channel_group] || lead.channel_group}</span>
+                        </>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Link
+                        href={`/admin/leads/${lead.id}`}
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-zinc-200 text-[10px] font-bold text-zinc-600 active:bg-zinc-900 active:text-white"
+                      >
+                        <ExternalLink size={10}/> 상세
+                      </Link>
+                      <Link
+                        href={`/admin/leads/${lead.id}/chat`}
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-zinc-200 text-[10px] font-bold text-zinc-600 active:bg-zinc-900 active:text-white"
+                      >
+                        <MessageSquare size={10}/> 대화
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        }) : (
+          <div className="bg-white rounded-md border border-zinc-200 py-16 text-center text-zinc-300">
+            <Users size={36} strokeWidth={1} className="mx-auto mb-2"/>
+            <p className="text-sm font-medium">조회 결과가 없습니다.</p>
+          </div>
+        )}
+      </div>
+
+      {/* Table (sm 이상) */}
+      <div className="hidden sm:block bg-white rounded-md border border-[var(--admin-border)] shadow-sm overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center py-24 text-zinc-400 text-sm animate-pulse">데이터 불러오는 중...</div>
         ) : (
@@ -391,21 +466,21 @@ export default function AdminLeads() {
             </table>
           </div>
         )}
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="p-5 border-t border-zinc-100 flex items-center justify-between bg-zinc-50/50">
-            <p className="text-xs text-zinc-500 font-medium">전체 {filteredLeads.length}건 중 {(currentPage-1)*PAGE_SIZE+1}–{Math.min(currentPage*PAGE_SIZE, filteredLeads.length)} 표시</p>
-            <div className="flex items-center gap-1.5">
-              <button onClick={() => setCurrentPage(p => Math.max(1,p-1))} disabled={currentPage===1} className="p-1.5 rounded-md border border-zinc-200 text-zinc-400 hover:bg-white disabled:opacity-30 transition-all"><ChevronLeft size={14}/></button>
-              {Array.from({length: totalPages}, (_, i) => i+1).map(p => (
-                <button key={p} onClick={() => setCurrentPage(p)} className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${p===currentPage ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:bg-white border border-transparent hover:border-zinc-200'}`}>{p}</button>
-              ))}
-              <button onClick={() => setCurrentPage(p => Math.min(totalPages,p+1))} disabled={currentPage===totalPages} className="p-1.5 rounded-md border border-zinc-200 text-zinc-400 hover:bg-white disabled:opacity-30 transition-all"><ChevronRight size={14}/></button>
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="bg-white rounded-md border border-zinc-200 p-3 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-zinc-50/50">
+          <p className="text-[11px] sm:text-xs text-zinc-500 font-medium">전체 {filteredLeads.length}건 중 {(currentPage-1)*PAGE_SIZE+1}–{Math.min(currentPage*PAGE_SIZE, filteredLeads.length)} 표시</p>
+          <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap">
+            <button onClick={() => setCurrentPage(p => Math.max(1,p-1))} disabled={currentPage===1} className="p-1.5 rounded-md border border-zinc-200 text-zinc-400 hover:bg-white disabled:opacity-30 transition-all"><ChevronLeft size={14}/></button>
+            {Array.from({length: totalPages}, (_, i) => i+1).map(p => (
+              <button key={p} onClick={() => setCurrentPage(p)} className={`px-2.5 sm:px-3 py-1.5 rounded-md text-[11px] sm:text-xs font-bold transition-all ${p===currentPage ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:bg-white border border-transparent hover:border-zinc-200'}`}>{p}</button>
+            ))}
+            <button onClick={() => setCurrentPage(p => Math.min(totalPages,p+1))} disabled={currentPage===totalPages} className="p-1.5 rounded-md border border-zinc-200 text-zinc-400 hover:bg-white disabled:opacity-30 transition-all"><ChevronRight size={14}/></button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

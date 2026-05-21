@@ -69,9 +69,9 @@ export default function AdminSignupPage() {
         <div className="relative z-10 text-zinc-600 text-xs">© 2026 Giveneeds</div>
       </div>
 
-      <div className="flex-1 flex items-center justify-center p-8 bg-white">
+      <div className="flex-1 flex items-center justify-center px-5 py-10 sm:p-8 bg-white">
         <div className="w-full max-w-sm">
-          <div className="mb-8">
+          <div className="mb-6 sm:mb-8">
             <h2 className="text-2xl font-black text-zinc-950 tracking-tighter mb-2">관리자 가입</h2>
             <p className="text-sm text-zinc-500">암호키와 함께 가입하면 즉시 관리자 권한이 부여됩니다.</p>
           </div>

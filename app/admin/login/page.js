@@ -87,9 +87,9 @@ function AdminLoginInner() {
         <div className="relative z-10 text-zinc-600 text-xs">© 2026 Giveneeds</div>
       </div>
 
-      <div className="flex-1 flex items-center justify-center p-8 bg-white">
+      <div className="flex-1 flex items-center justify-center px-5 py-10 sm:p-8 bg-white">
         <div className="w-full max-w-sm">
-          <div className="mb-10">
+          <div className="mb-8 sm:mb-10">
             <h2 className="text-2xl font-black text-zinc-950 tracking-tighter mb-2">관리자 로그인</h2>
             <p className="text-sm text-zinc-500">Supabase 관리자 계정으로 로그인하세요.</p>
           </div>

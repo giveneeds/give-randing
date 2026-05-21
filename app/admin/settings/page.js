@@ -62,21 +62,21 @@ export default function SettingsPage() {
 
       {/* Block Library Management */}
       <div className="admin-card" style={{ border: '2px solid var(--admin-primary)', background: 'linear-gradient(to bottom right, #fff, #f5f3ff)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-lg)' }}>
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3" style={{ marginBottom: 'var(--space-lg)' }}>
           <div>
             <h2 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 700, color: 'var(--admin-primary)' }}>📚 마스터 블록 라이브러리</h2>
             <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--admin-text-secondary)', marginTop: '4px' }}>
               시스템 전체에서 공통으로 사용할 블록의 원본 템플릿입니다.
             </p>
           </div>
-          <button className="admin-btn admin-btn-primary" onClick={() => saveSettingKey('section_library')} disabled={saving}>
+          <button className="admin-btn admin-btn-primary self-start sm:self-auto" onClick={() => saveSettingKey('section_library')} disabled={saving}>
             {savedKey === 'section_library' ? '✅ 라이브러리 반영됨' : '💾 라이브러리 전체 저장'}
           </button>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-xl)', marginTop: 'var(--space-xl)' }}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mt-4 sm:mt-8">
           {/* Website Blocks */}
-          <div className="p-6 bg-white rounded-xl border border-zinc-200 shadow-sm">
+          <div className="p-4 sm:p-6 bg-white rounded-xl border border-zinc-200 shadow-sm">
             <h3 className="flex items-center gap-2 font-bold mb-4 text-zinc-800">
               <span className="w-2 h-2 rounded-full bg-blue-500"></span>
               웹사이트 전용 블록
@@ -92,7 +92,7 @@ export default function SettingsPage() {
           </div>
 
           {/* Landing Page Blocks */}
-          <div className="p-6 bg-white rounded-xl border border-zinc-200 shadow-sm">
+          <div className="p-4 sm:p-6 bg-white rounded-xl border border-zinc-200 shadow-sm">
             <h3 className="flex items-center gap-2 font-bold mb-4 text-zinc-800">
               <span className="w-2 h-2 rounded-full bg-purple-500"></span>
               랜딩페이지 전용 블록
@@ -118,7 +118,7 @@ export default function SettingsPage() {
 
       {/* Brand Settings */}
       <div className="admin-card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-lg)' }}>
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3" style={{ marginBottom: 'var(--space-lg)' }}>
           <h2 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 700 }}>🏢 브랜드 정보</h2>
           <button className="admin-btn admin-btn-primary btn-sm" onClick={() => saveSettingKey('brand')} disabled={saving}>
             {savedKey === 'brand' ? '✅ 저장됨' : '💾 저장'}
@@ -132,19 +132,19 @@ export default function SettingsPage() {
           <label className="form-label">태그라인</label>
           <input className="form-input" value={brand.tagline || ''} onChange={e => updateSetting('brand', 'tagline', e.target.value)} placeholder="마케팅의 새로운 기준" />
         </div>
-        <div style={{ display: 'flex', gap: 'var(--space-md)' }}>
-          <div className="form-group" style={{ flex: 1 }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          <div className="form-group">
             <label className="form-label">주 색상</label>
-            <div style={{ display: 'flex', gap: 'var(--space-sm)', alignItems: 'center' }}>
-              <input type="color" value={brand.primary_color || '#6366f1'} onChange={e => updateSetting('brand', 'primary_color', e.target.value)} style={{ width: '40px', height: '40px', border: 'none', cursor: 'pointer' }} />
-              <input className="form-input" value={brand.primary_color || '#6366f1'} onChange={e => updateSetting('brand', 'primary_color', e.target.value)} />
+            <div className="flex gap-2 items-center">
+              <input type="color" value={brand.primary_color || '#6366f1'} onChange={e => updateSetting('brand', 'primary_color', e.target.value)} style={{ width: '40px', height: '40px', border: 'none', cursor: 'pointer', flexShrink: 0 }} />
+              <input className="form-input min-w-0 flex-1" value={brand.primary_color || '#6366f1'} onChange={e => updateSetting('brand', 'primary_color', e.target.value)} />
             </div>
           </div>
-          <div className="form-group" style={{ flex: 1 }}>
+          <div className="form-group">
             <label className="form-label">악센트 색상</label>
-            <div style={{ display: 'flex', gap: 'var(--space-sm)', alignItems: 'center' }}>
-              <input type="color" value={brand.accent_color || '#a78bfa'} onChange={e => updateSetting('brand', 'accent_color', e.target.value)} style={{ width: '40px', height: '40px', border: 'none', cursor: 'pointer' }} />
-              <input className="form-input" value={brand.accent_color || '#a78bfa'} onChange={e => updateSetting('brand', 'accent_color', e.target.value)} />
+            <div className="flex gap-2 items-center">
+              <input type="color" value={brand.accent_color || '#a78bfa'} onChange={e => updateSetting('brand', 'accent_color', e.target.value)} style={{ width: '40px', height: '40px', border: 'none', cursor: 'pointer', flexShrink: 0 }} />
+              <input className="form-input min-w-0 flex-1" value={brand.accent_color || '#a78bfa'} onChange={e => updateSetting('brand', 'accent_color', e.target.value)} />
             </div>
           </div>
         </div>
@@ -157,7 +157,7 @@ export default function SettingsPage() {
 
       {/* CTA Settings */}
       <div className="admin-card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-lg)' }}>
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3" style={{ marginBottom: 'var(--space-lg)' }}>
           <h2 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 700 }}>🎯 CTA 설정</h2>
           <button className="admin-btn admin-btn-primary btn-sm" onClick={() => saveSettingKey('cta_global')} disabled={saving}>
             {savedKey === 'cta_global' ? '✅ 저장됨' : '💾 저장'}
@@ -181,7 +181,7 @@ export default function SettingsPage() {
 
       {/* SEO Settings */}
       <div className="admin-card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-lg)' }}>
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3" style={{ marginBottom: 'var(--space-lg)' }}>
           <h2 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 700 }}>🔍 SEO 설정</h2>
           <button className="admin-btn admin-btn-primary btn-sm" onClick={() => saveSettingKey('seo')} disabled={saving}>
             {savedKey === 'seo' ? '✅ 저장됨' : '💾 저장'}
@@ -204,7 +204,7 @@ export default function SettingsPage() {
 
       {/* Footer Settings */}
       <div className="admin-card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-lg)' }}>
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3" style={{ marginBottom: 'var(--space-lg)' }}>
           <h2 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 700 }}>📋 푸터 설정</h2>
           <button className="admin-btn admin-btn-primary btn-sm" onClick={() => saveSettingKey('footer')} disabled={saving}>
             {savedKey === 'footer' ? '✅ 저장됨' : '💾 저장'}

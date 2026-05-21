@@ -125,27 +125,28 @@ export default function AdminDashboard() {
     <div className="space-y-8 animate-in fade-in duration-500">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-black text-zinc-900 tracking-tighter uppercase">대시보드</h1>
-        <p className="text-zinc-500 text-sm mt-1">오늘의 마케팅 엔진 가동 상태를 확인하세요.</p>
+        <h1 className="text-xl sm:text-2xl font-black text-zinc-900 tracking-tighter uppercase">대시보드</h1>
+        <p className="text-zinc-500 text-xs sm:text-sm mt-1">오늘의 마케팅 엔진 가동 상태를 확인하세요.</p>
       </div>
 
       {/* KPI Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {kpis.map((kpi) => (
           <Link
             key={kpi.label}
             href={kpi.href}
-            className="bg-white p-5 rounded-xl border border-zinc-200 shadow-sm hover:shadow-md hover:border-zinc-300 transition-all group"
+            className="bg-white p-3 sm:p-5 rounded-xl border border-zinc-200 shadow-sm hover:shadow-md hover:border-zinc-300 transition-all group"
           >
-            <div className="flex items-start justify-between mb-4">
-              <div className="p-2 bg-zinc-50 border border-zinc-100 rounded-lg">
-                <kpi.icon size={18} className="text-zinc-600" />
+            <div className="flex items-start justify-between mb-3 sm:mb-4">
+              <div className="p-1.5 sm:p-2 bg-zinc-50 border border-zinc-100 rounded-lg">
+                <kpi.icon size={16} className="text-zinc-600 sm:hidden" />
+                <kpi.icon size={18} className="text-zinc-600 hidden sm:block" />
               </div>
               <ArrowUpRight size={14} className="text-zinc-300 group-hover:text-zinc-600 transition-colors" />
             </div>
-            <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">{kpi.label}</p>
-            <h3 className={`text-3xl font-black tracking-tighter ${kpi.accent}`}>{kpi.value}</h3>
-            <p className="text-[11px] text-zinc-400 mt-1 font-medium">{kpi.sub}</p>
+            <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1 truncate">{kpi.label}</p>
+            <h3 className={`text-2xl sm:text-3xl font-black tracking-tighter ${kpi.accent}`}>{kpi.value}</h3>
+            <p className="text-[10px] sm:text-[11px] text-zinc-400 mt-1 font-medium truncate">{kpi.sub}</p>
           </Link>
         ))}
       </div>
@@ -154,7 +155,7 @@ export default function AdminDashboard() {
 
         {/* Recent Leads */}
         <div className="lg:col-span-2 bg-white rounded-xl border border-zinc-200 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-zinc-100 flex items-center justify-between">
+          <div className="px-4 sm:px-6 py-4 border-b border-zinc-100 flex items-center justify-between">
             <h3 className="text-sm font-black text-zinc-900 flex items-center gap-2 uppercase tracking-widest">
               <Clock size={14} /> 최근 리드
             </h3>
@@ -169,7 +170,7 @@ export default function AdminDashboard() {
                 <Link
                   key={lead.id}
                   href={`/admin/leads/${lead.id}`}
-                  className="flex items-center gap-4 px-6 py-3.5 hover:bg-zinc-50 transition-colors"
+                  className="flex items-center gap-3 sm:gap-4 px-4 sm:px-6 py-3.5 hover:bg-zinc-50 transition-colors"
                 >
                   <div className="w-8 h-8 rounded-lg bg-zinc-100 flex items-center justify-center font-black text-sm text-zinc-700 flex-shrink-0">
                     {(lead.name || '?')[0]}

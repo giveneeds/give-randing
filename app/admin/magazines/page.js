@@ -67,38 +67,38 @@ export default function MagazineListPage() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4">
         <div>
-          <h1 className="text-2xl font-black text-zinc-900 tracking-tighter uppercase">Magazine Management</h1>
-          <p className="text-zinc-500 text-sm mt-1 tracking-tight">발행된 마케팅 아카이브와 인사이트를 관리하고 순서를 조정하세요.</p>
+          <h1 className="text-xl sm:text-2xl font-black text-zinc-900 tracking-tighter uppercase">Magazine Management</h1>
+          <p className="text-zinc-500 text-xs sm:text-sm mt-1 tracking-tight">발행된 마케팅 아카이브와 인사이트를 관리하고 순서를 조정하세요.</p>
         </div>
-        <div className="flex gap-3">
-          <button 
+        <div className="flex gap-2 sm:gap-3">
+          <button
             onClick={() => setShowPreview(!showPreview)}
-            className={clsx("flex items-center gap-2 px-4 py-2.5 rounded-md font-bold text-sm transition-all uppercase tracking-widest border", 
+            className={clsx("flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-md font-bold text-xs sm:text-sm transition-all uppercase tracking-widest border",
               showPreview ? "bg-blue-50 border-blue-200 text-blue-600" : "bg-white border-zinc-200 text-zinc-500 hover:text-zinc-900"
             )}
           >
-            <Eye size={16} /> {showPreview ? '프리뷰 닫기' : '메인 프리뷰'}
+            <Eye size={14} /> <span className="hidden sm:inline">{showPreview ? '프리뷰 닫기' : '메인 프리뷰'}</span><span className="sm:hidden">{showPreview ? '닫기' : '프리뷰'}</span>
           </button>
-          <Link 
-            href="/admin/magazines/editor" 
-            className="flex items-center justify-center gap-2 bg-zinc-900 hover:bg-black text-white px-5 py-2.5 rounded-md font-bold text-sm shadow-sm transition-all uppercase tracking-widest"
+          <Link
+            href="/admin/magazines/editor"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-zinc-900 hover:bg-black text-white px-3 sm:px-5 py-2 sm:py-2.5 rounded-md font-bold text-xs sm:text-sm shadow-sm transition-all uppercase tracking-widest"
           >
-            <Plus size={18} /> New Archive
+            <Plus size={16} /> <span className="hidden sm:inline">New Archive</span><span className="sm:hidden">신규</span>
           </Link>
         </div>
       </div>
 
       {/* ─── Preview Panel ─── */}
       {showPreview && (
-        <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-6 space-y-4">
+        <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-4 sm:p-6 space-y-4">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">매거진 메인 프리뷰 (현재 순서 기준)</span>
           </div>
-          <div className="bg-white rounded-lg border border-zinc-100 p-4 overflow-hidden">
+          <div className="bg-white rounded-lg border border-zinc-100 p-3 sm:p-4 overflow-hidden">
             {/* 미니 그리드 프리뷰 */}
-            <div className="grid grid-cols-3 gap-2" style={{ maxHeight: '300px', overflow: 'hidden' }}>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2" style={{ maxHeight: '300px', overflow: 'hidden' }}>
               {filtered.filter(m => m.is_published !== false).slice(0, 6).map((m, i) => (
                 <div 
                   key={m.id} 
@@ -129,7 +129,7 @@ export default function MagazineListPage() {
 
       {/* ─── Table ─── */}
       <div className="bg-white rounded-md border border-zinc-100 overflow-hidden shadow-sm">
-      <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-4 bg-white p-2 rounded-2xl border border-zinc-200 shadow-sm">
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-3 sm:gap-4 bg-white p-2 rounded-2xl border border-zinc-200 shadow-sm">
         <div className="flex p-1 bg-zinc-100 rounded-xl overflow-x-auto no-scrollbar shrink-0">
           {[
             { id: 'all', label: '전체', icon: <Filter size={14} /> },
@@ -140,15 +140,15 @@ export default function MagazineListPage() {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={clsx(
-                "flex items-center gap-2 px-6 py-2.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap",
-                activeTab === tab.id 
-                  ? "bg-white text-zinc-900 shadow-sm border border-zinc-200" 
+                "flex items-center gap-2 px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-[11px] sm:text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap",
+                activeTab === tab.id
+                  ? "bg-white text-zinc-900 shadow-sm border border-zinc-200"
                   : "text-zinc-400 hover:text-zinc-600"
               )}
             >
               {tab.icon} {tab.label}
               <span className={clsx(
-                "ml-1.5 px-1.5 py-0.5 rounded-md text-[10px] transition-colors",
+                "ml-1 px-1.5 py-0.5 rounded-md text-[10px] transition-colors",
                 activeTab === tab.id ? "bg-zinc-900 text-white" : "bg-zinc-200 text-zinc-500"
               )}>
                 {tab.id === 'all' ? magazines.length : magazines.filter(m => (m.status || 'draft') === tab.id).length}
@@ -159,7 +159,7 @@ export default function MagazineListPage() {
 
         <div className="relative flex-1">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" size={16} />
-          <input 
+          <input
             className="w-full pl-10 pr-4 py-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-zinc-900/10 transition-all font-bold text-zinc-900 placeholder:text-zinc-400"
             placeholder="아카이브 제목 검색..."
             value={searchTerm}
@@ -168,7 +168,50 @@ export default function MagazineListPage() {
         </div>
       </div>
 
-        <div className="overflow-x-auto">
+        {/* Mobile Card List */}
+        <div className="md:hidden divide-y divide-zinc-100">
+          {filtered.length > 0 ? filtered.map((mag, index) => (
+            <div key={`m-${mag.id}`} className="p-4">
+              <div className="flex gap-3">
+                <div className="w-16 h-12 bg-zinc-100 border border-zinc-200 rounded-md overflow-hidden flex-shrink-0">
+                  {mag.thumbnail_url ? <img src={mag.thumbnail_url} className="w-full h-full object-cover" alt="" /> : <div className="w-full h-full flex items-center justify-center"><FileText size={14} className="text-zinc-300" /></div>}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <Link href={`/magazine/${mag.slug}`} className="font-bold text-zinc-900 text-sm leading-snug line-clamp-2 block">{mag.title}</Link>
+                  <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                    <span className={clsx(
+                      "text-[9px] font-black px-1.5 py-0.5 rounded-sm tracking-tighter uppercase",
+                      (mag.status || 'draft') === 'published' ? "bg-emerald-50 text-emerald-600" : "bg-zinc-100 text-zinc-400"
+                    )}>{mag.status || 'draft'}</span>
+                    {mag.is_featured && (
+                      <span className="text-[9px] font-black px-1.5 py-0.5 rounded-sm tracking-tighter uppercase bg-blue-50 text-blue-600 flex items-center gap-0.5">
+                        <Star size={8} className="fill-blue-500" /> F
+                      </span>
+                    )}
+                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">{mag.category}</span>
+                  </div>
+                  <div className="text-[10px] text-zinc-400 mt-0.5">{new Date(mag.created_at).toLocaleDateString('ko-KR')}</div>
+                </div>
+              </div>
+              <div className="mt-3 flex items-center justify-between">
+                <div className="flex items-center gap-0.5">
+                  <button onClick={() => handleReorder(index, 'up')} disabled={index === 0} className="p-1.5 rounded text-zinc-400 disabled:opacity-20"><ChevronUp size={14} /></button>
+                  <span className="text-[11px] font-black text-zinc-500 tabular-nums px-1">{mag.sort_order || index + 1}</span>
+                  <button onClick={() => handleReorder(index, 'down')} disabled={index === filtered.length - 1} className="p-1.5 rounded text-zinc-400 disabled:opacity-20"><ChevronDown size={14} /></button>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Link href={`/admin/magazines/editor?id=${mag.id}`} className="p-2 rounded-md border border-zinc-200 text-zinc-500"><Edit3 size={14} /></Link>
+                  <a href={`/magazine/${mag.slug}`} target="_blank" className="p-2 rounded-md border border-zinc-200 text-zinc-500"><Eye size={14} /></a>
+                  <button onClick={() => handleDelete(mag.id)} className="p-2 rounded-md border border-zinc-200 text-red-500"><Trash2 size={14} /></button>
+                </div>
+              </div>
+            </div>
+          )) : (
+            <div className="py-16 text-center text-zinc-400 text-sm italic">기록된 아카이브가 없습니다.</div>
+          )}
+        </div>
+
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[900px]">
              <thead>
                <tr className="bg-zinc-50/50">

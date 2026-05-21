@@ -70,7 +70,7 @@ const NAV_GROUPS = [
   },
 ];
 
-export default function Sidebar({ handleLogout }) {
+export default function Sidebar({ handleLogout, open = false, onClose = () => {} }) {
   const pathname = usePathname();
   const ctx = useAdmin();
   const role = ctx?.profile?.role || 'admin';
@@ -82,9 +82,14 @@ export default function Sidebar({ handleLogout }) {
     .filter((g) => g.items.length > 0);
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-64 bg-white border-r border-zinc-200 flex flex-col z-30 transition-colors duration-300">
-      <div className="p-6">
-        <Link href="/admin" className="flex items-center gap-2 group">
+    <aside
+      className={cn(
+        "fixed left-0 top-0 h-screen w-64 max-w-[85vw] bg-white border-r border-zinc-200 flex flex-col z-40 transition-transform duration-200 ease-out lg:translate-x-0",
+        open ? "translate-x-0 shadow-xl" : "-translate-x-full lg:shadow-none"
+      )}
+    >
+      <div className="p-6 flex items-start justify-between">
+        <Link href="/admin" className="flex items-center gap-2 group" onClick={onClose}>
           <div className="w-8 h-8 bg-zinc-900 rounded-sm flex items-center justify-center text-white font-bold group-hover:scale-105 transition-transform shadow-sm">
             G
           </div>
@@ -92,8 +97,18 @@ export default function Sidebar({ handleLogout }) {
             Giveneeds
           </span>
         </Link>
+        <button
+          type="button"
+          onClick={onClose}
+          className="lg:hidden p-1.5 -m-1.5 text-zinc-400 hover:text-zinc-900 rounded-md"
+          aria-label="메뉴 닫기"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div className="px-6 -mt-3">
         {/* 역할 배지 */}
-        <div className="mt-3 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest"
+        <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest"
           style={superAdmin
             ? { background: '#fef3c7', color: '#b45309' }
             : { background: '#e0e7ff', color: '#4338ca' }}>
@@ -116,6 +131,7 @@ export default function Sidebar({ handleLogout }) {
                   <Link
                     key={item.href}
                     href={item.href}
+                    onClick={onClose}
                     className={cn(
                       "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 uppercase tracking-tight",
                       isActive
