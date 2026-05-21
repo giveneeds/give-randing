@@ -22,7 +22,7 @@ import { ga } from '@/lib/analytics/ga4';
 import { metaLead } from '@/lib/analytics/metaPixel';
 import { AVAILABLE_FIELDS, DEFAULT_BASIC_FORM_FIELDS, normalizeBasicFormFields, validateFieldValue } from '@/lib/leadFormFields';
 
-const KAKAO_CHANNEL_URL = 'https://pf.kakao.com/_giveneeds';
+const KAKAO_CHANNEL_URL = 'https://pf.kakao.com/_lutxdG';
 const FIELD_ICONS = { name: User, phone: Phone, email: Mail };
 
 /**
