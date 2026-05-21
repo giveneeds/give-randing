@@ -15,6 +15,7 @@ import { ParticleTextEffect } from '@/components/ui/particle-text-effect';
 import LeadForm from '@/components/ui/LeadForm';
 import AiSolutionBlock from '@/components/ui/AiSolutionBlock';
 import MagazineList from '@/components/landing/MagazineList';
+import { AVAILABLE_FIELDS, FIELD_INPUT_TYPES, DEFAULT_BASIC_FORM_FIELDS, normalizeBasicFormFields } from '@/lib/leadFormFields';
 
 // ─────────────────────────────────────────────
 // 📦 UI Sub-components
@@ -109,6 +110,232 @@ function DraggableItem({ index, type, dragState, onDragStart, onDragOver, onDrop
       )}
     >
       {children}
+    </div>
+  );
+}
+
+function BasicFormFieldsEditor({ value, onChange }) {
+  // value: 캠페인.hero_content.basic_form_fields 의 raw 배열
+  const fields = Array.isArray(value) && value.length > 0
+    ? value
+    : DEFAULT_BASIC_FORM_FIELDS.map((f) => ({ ...f })); // 첫 진입 시 레거시 기본값 미러링
+
+  const updateAt = (idx, patch) => {
+    const next = fields.map((f, i) => (i === idx ? { ...f, ...patch } : f));
+    onChange(next);
+  };
+  const removeAt = (idx) => {
+    onChange(fields.filter((_, i) => i !== idx));
+  };
+  const moveAt = (idx, dir) => {
+    const j = idx + dir;
+    if (j < 0 || j >= fields.length) return;
+    const next = [...fields];
+    [next[idx], next[j]] = [next[j], next[idx]];
+    onChange(next);
+  };
+  const addField = (id) => {
+    const meta = AVAILABLE_FIELDS[id];
+    if (!meta) return;
+    onChange([
+      ...fields,
+      {
+        id,
+        inputType: meta.inputTypes[0],
+        required: meta.mandatoryRequired || false,
+        options: meta.defaultOptions ? meta.defaultOptions.map((o) => ({ ...o })) : [],
+      },
+    ]);
+  };
+
+  const usedIds = new Set(fields.map((f) => f.id));
+  const availableToAdd = Object.entries(AVAILABLE_FIELDS).filter(([id]) => !usedIds.has(id));
+
+  return (
+    <div className="space-y-3 pt-3 border-t border-blue-100">
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] font-black text-zinc-700 uppercase tracking-[0.2em]">기본 폼 필드 설정</span>
+        <span className="text-[9px] text-zinc-400 font-bold uppercase tracking-widest">{fields.length}개 활성</span>
+      </div>
+
+      <div className="space-y-2">
+        {fields.map((field, idx) => {
+          const meta = AVAILABLE_FIELDS[field.id];
+          if (!meta) return null;
+          const allowedTypes = meta.inputTypes;
+          const isButton = field.inputType === 'button_select';
+          const requiredLocked = !!meta.mandatoryRequired;
+          return (
+            <div key={`${field.id}-${idx}`} className="rounded-xl border border-zinc-200 bg-white p-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="flex flex-col gap-0.5">
+                  <button type="button" onClick={() => moveAt(idx, -1)} disabled={idx === 0} className="p-0.5 text-zinc-300 hover:text-zinc-600 disabled:opacity-20">
+                    <ChevronUp size={12} />
+                  </button>
+                  <button type="button" onClick={() => moveAt(idx, 1)} disabled={idx === fields.length - 1} className="p-0.5 text-zinc-300 hover:text-zinc-600 disabled:opacity-20">
+                    <ChevronDown size={12} />
+                  </button>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[11px] font-black text-zinc-900">{meta.label}</div>
+                  <div className="text-[9px] text-zinc-400 font-mono">id: {field.id}</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => removeAt(idx)}
+                  className="p-1.5 rounded-md text-zinc-300 hover:text-red-500 hover:bg-red-50"
+                  title="필드 제거"
+                >
+                  <Trash2 size={12} />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">입력 방식</label>
+                  <div className="flex gap-1">
+                    {allowedTypes.map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => updateAt(idx, { inputType: t })}
+                        className={clsx(
+                          'flex-1 px-2 py-1.5 rounded-md text-[10px] font-bold transition-all border',
+                          field.inputType === t
+                            ? 'bg-zinc-900 text-white border-zinc-900'
+                            : 'bg-white text-zinc-500 border-zinc-200 hover:border-zinc-400'
+                        )}
+                      >
+                        {FIELD_INPUT_TYPES[t].icon} {FIELD_INPUT_TYPES[t].label}
+                      </button>
+                    ))}
+                    {allowedTypes.length === 1 && (
+                      <span className="text-[9px] text-zinc-400 self-center px-1">고정</span>
+                    )}
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">필수 여부</label>
+                  <button
+                    type="button"
+                    disabled={requiredLocked}
+                    onClick={() => updateAt(idx, { required: !field.required })}
+                    className={clsx(
+                      'w-full px-2 py-1.5 rounded-md text-[10px] font-bold transition-all border',
+                      field.required
+                        ? 'bg-rose-50 text-rose-600 border-rose-200'
+                        : 'bg-white text-zinc-500 border-zinc-200 hover:border-zinc-400',
+                      requiredLocked && 'cursor-not-allowed opacity-60'
+                    )}
+                  >
+                    {field.required ? '필수' : '선택'}{requiredLocked && ' · 고정'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">라벨 (선택 — 비우면 기본값)</label>
+                <input
+                  type="text"
+                  className="w-full px-2.5 py-1.5 bg-zinc-50 border border-zinc-200 rounded-md text-xs outline-none focus:ring-2 focus:ring-zinc-900/10"
+                  value={field.label || ''}
+                  placeholder={meta.label}
+                  onChange={(e) => updateAt(idx, { label: e.target.value })}
+                />
+              </div>
+
+              {!isButton && (
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">플레이스홀더</label>
+                  <input
+                    type="text"
+                    className="w-full px-2.5 py-1.5 bg-zinc-50 border border-zinc-200 rounded-md text-xs outline-none focus:ring-2 focus:ring-zinc-900/10"
+                    value={field.placeholder || ''}
+                    placeholder={meta.placeholder}
+                    onChange={(e) => updateAt(idx, { placeholder: e.target.value })}
+                  />
+                </div>
+              )}
+
+              {isButton && (
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">버튼 옵션</label>
+                    <button
+                      type="button"
+                      onClick={() => updateAt(idx, { options: [...(field.options || []), { value: `opt_${Date.now()}`, label: '새 옵션' }] })}
+                      className="text-[10px] font-bold text-blue-600 hover:text-blue-700"
+                    >
+                      + 옵션 추가
+                    </button>
+                  </div>
+                  {(field.options || []).length === 0 ? (
+                    <p className="text-[10px] text-zinc-400 italic">옵션이 없습니다. 추가하세요.</p>
+                  ) : (
+                    <div className="space-y-1">
+                      {(field.options || []).map((opt, oi) => (
+                        <div key={oi} className="flex gap-1.5">
+                          <input
+                            type="text"
+                            className="flex-1 px-2 py-1 bg-zinc-50 border border-zinc-200 rounded-md text-[11px] outline-none"
+                            placeholder="버튼 라벨"
+                            value={opt.label}
+                            onChange={(e) => {
+                              const opts = [...field.options];
+                              opts[oi] = { ...opts[oi], label: e.target.value };
+                              updateAt(idx, { options: opts });
+                            }}
+                          />
+                          <input
+                            type="text"
+                            className="w-24 px-2 py-1 bg-white border border-zinc-200 rounded-md text-[10px] font-mono outline-none"
+                            placeholder="value"
+                            value={opt.value}
+                            onChange={(e) => {
+                              const opts = [...field.options];
+                              opts[oi] = { ...opts[oi], value: e.target.value };
+                              updateAt(idx, { options: opts });
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => updateAt(idx, { options: field.options.filter((_, i) => i !== oi) })}
+                            className="p-1 rounded-md text-zinc-300 hover:text-red-500"
+                          >
+                            <X size={10} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {availableToAdd.length > 0 && (
+        <div className="space-y-1.5">
+          <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">필드 추가</label>
+          <div className="flex flex-wrap gap-1.5">
+            {availableToAdd.map(([id, meta]) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => addField(id)}
+                className="px-2.5 py-1.5 rounded-lg border border-dashed border-zinc-300 text-[10px] font-bold text-zinc-600 hover:bg-zinc-50 hover:border-zinc-500"
+              >
+                + {meta.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <p className="text-[10px] text-zinc-400 leading-relaxed bg-zinc-50 p-2 rounded-md border border-zinc-100">
+        💡 이름·전화번호 중 하나는 반드시 포함하는 것을 권장합니다. 어드민 리드 화면에서는 매핑된 컬럼(예: 예산·문의 유형)으로 자동 저장됩니다.
+      </p>
     </div>
   );
 }
@@ -507,10 +734,14 @@ export default function CampaignEditorUnified({ campaign, sections, onSave, onCl
                                   </div>
                                 )}
                                 {formMode === 'basic' && (
-                                  <div className="pt-2 border-t border-zinc-100">
+                                  <div className="pt-2 border-t border-zinc-100 space-y-3">
                                     <p className="text-[10px] text-zinc-500 leading-relaxed bg-zinc-50 p-2.5 rounded-lg border border-zinc-200">
                                       💡 기본 폼은 첨부 파일을 제공하지 않습니다. 신청 데이터는 <code className="bg-white px-1 py-0.5 rounded text-zinc-700 text-[10px]">/admin/leads</code> 에서 확인하세요.
                                     </p>
+                                    <BasicFormFieldsEditor
+                                      value={current.hero_content?.basic_form_fields}
+                                      onChange={(next) => setHero({ basic_form_fields: next })}
+                                    />
                                   </div>
                                 )}
                               </div>
@@ -811,7 +1042,7 @@ function PreviewContent({ current, liveSections, particleWords, isMobile }) {
               <p className="text-base text-zinc-500">{current.hero_content?.description || ''}</p>
             </div>
             <div className="flex-1 w-full max-w-sm">
-              <LeadForm title={current.hero_content?.file_name} ctaLabel={current.hero_content?.cta_label} campaignId="preview" formMode={previewFormMode} />
+              <LeadForm title={current.hero_content?.file_name} ctaLabel={current.hero_content?.cta_label} campaignId="preview" formMode={previewFormMode} basicFormFields={current.hero_content?.basic_form_fields} />
             </div>
           </div>
         </section>

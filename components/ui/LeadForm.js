@@ -20,9 +20,10 @@ import { signInWithKakao } from '@/lib/authKakao';
 import { getTrackingSnapshot, trackEvent } from '@/lib/tracker';
 import { ga } from '@/lib/analytics/ga4';
 import { metaLead } from '@/lib/analytics/metaPixel';
+import { AVAILABLE_FIELDS, DEFAULT_BASIC_FORM_FIELDS, normalizeBasicFormFields, validateFieldValue } from '@/lib/leadFormFields';
 
 const KAKAO_CHANNEL_URL = 'https://pf.kakao.com/_giveneeds';
-const PHONE_PATTERN = /^01[016789]-?\d{3,4}-?\d{4}$/;
+const FIELD_ICONS = { name: User, phone: Phone, email: Mail };
 
 /**
  * LeadForm — 리드 마그넷 / 캠페인 LP 의 리드 캡처 컴포넌트.
@@ -30,7 +31,7 @@ const PHONE_PATTERN = /^01[016789]-?\d{3,4}-?\d{4}$/;
  * @param {'kakao'|'basic'} formMode - 'kakao' (기본): 카카오 OAuth 로그인 흐름 / 'basic': 이름+전화번호 입력 폼.
  *                                     캠페인의 hero_content.lead_form_mode 로 결정됨.
  */
-export default function LeadForm({ title, subtitle, ctaLabel, campaignId, magazineId, category = 'organic', formMode = 'kakao' }) {
+export default function LeadForm({ title, subtitle, ctaLabel, campaignId, magazineId, category = 'organic', formMode = 'kakao', basicFormFields }) {
   const searchParams = useSearchParams();
   const shouldAutoDownload = searchParams?.get('lead_dl') === '1';
 
@@ -41,9 +42,18 @@ export default function LeadForm({ title, subtitle, ctaLabel, campaignId, magazi
   // { url, fileName }
   const [kakaoLoading, setKakaoLoading] = useState(false);
 
-  // Basic form state (formMode === 'basic')
-  const [basicForm, setBasicForm] = useState({ name: '', phone: '', email: '', agree: false });
+  // Basic form: 어드민 설정 기반 동적 필드. 미설정이면 레거시 기본값.
+  const fields = normalizeBasicFormFields(basicFormFields);
+  const [basicValues, setBasicValues] = useState(() => {
+    const init = { agree: false };
+    fields.forEach((f) => { init[f.id] = ''; });
+    return init;
+  });
   const [basicSubmitting, setBasicSubmitting] = useState(false);
+
+  function setFieldValue(id, value) {
+    setBasicValues((prev) => ({ ...prev, [id]: value }));
+  }
 
   // GA4: 폼 노출 1회 발화 (idle 상태일 때만)
   useEffect(() => {
@@ -190,23 +200,25 @@ export default function LeadForm({ title, subtitle, ctaLabel, campaignId, magazi
   const handleBasicSubmit = async (e) => {
     e.preventDefault();
     setErrorMessage('');
-    const name = basicForm.name.trim();
-    const phone = basicForm.phone.trim();
-    const email = basicForm.email.trim();
-    if (!name) { setErrorMessage('이름을 입력해 주세요.'); return; }
-    if (!phone) { setErrorMessage('전화번호를 입력해 주세요.'); return; }
-    if (!PHONE_PATTERN.test(phone.replace(/\s/g, ''))) {
-      setErrorMessage('전화번호 형식이 올바르지 않습니다. (예: 010-1234-5678)');
+
+    // 동의 체크 + 필드 검증
+    if (!basicValues.agree) { setErrorMessage('개인정보 수집 및 마케팅 활용에 동의해 주세요.'); return; }
+    for (const field of fields) {
+      const err = validateFieldValue(field, basicValues[field.id]);
+      if (err) { setErrorMessage(err); return; }
+    }
+    // 연락 수단 최소 1개 확보 (전화 or 이메일)
+    const phoneVal = (basicValues.phone || '').trim();
+    const emailVal = (basicValues.email || '').trim();
+    if (!phoneVal && !emailVal) {
+      setErrorMessage('연락 가능한 전화번호 또는 이메일 중 하나는 반드시 입력해 주세요.');
       return;
     }
-    if (!basicForm.agree) { setErrorMessage('개인정보 수집 및 마케팅 활용에 동의해 주세요.'); return; }
+
     setBasicSubmitting(true);
     try {
       const tracking = getTrackingSnapshot();
       const payload = {
-        name,
-        phone,
-        email: email || null,
         campaign_id: campaignId || null,
         magazine_id: magazineId || null,
         lead_type: campaignId ? 'campaign_basic_form' : 'magazine_basic_form',
@@ -216,6 +228,16 @@ export default function LeadForm({ title, subtitle, ctaLabel, campaignId, magazi
         agreements: { lead_magnet: true, marketing: true },
         ...tracking,
       };
+      // 필드 값을 leads 컬럼 키로 매핑
+      fields.forEach((f) => {
+        const meta = AVAILABLE_FIELDS[f.id];
+        if (!meta) return;
+        const val = (basicValues[f.id] ?? '').toString().trim();
+        payload[meta.columnKey] = val || null;
+      });
+      // 이름이 폼에 없으면 익명으로 — leads 테이블은 name 이 NOT NULL 이 아니지만 API validation 은 name 필요
+      if (!payload.name) payload.name = '이름 미입력';
+
       trackEvent('form_submit', { form: 'lead_magnet_basic', category, page: payload.source_page });
       ga.leadFormSubmit({ formMode: 'basic', campaignId, leadType: payload.lead_type });
       const res = await fetch('/api/leads', {
@@ -235,7 +257,9 @@ export default function LeadForm({ title, subtitle, ctaLabel, campaignId, magazi
         campaign_id: campaignId || null,
         magazine_id: magazineId || null,
       });
-      setBasicForm({ name: '', phone: '', email: '', agree: false });
+      const cleared = { agree: false };
+      fields.forEach((f) => { cleared[f.id] = ''; });
+      setBasicValues(cleared);
       setPhase('submitted');
     } catch (err) {
       setErrorMessage(err.message || '제출 중 오류가 발생했습니다.');
@@ -439,59 +463,86 @@ export default function LeadForm({ title, subtitle, ctaLabel, campaignId, magazi
             </p>
 
             <div className="space-y-3 mb-4">
-              <label className="block">
-                <span className="sr-only">이름</span>
-                <div className="relative">
-                  <User size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" />
-                  <input
-                    type="text"
-                    required
-                    autoComplete="name"
-                    placeholder="이름"
-                    value={basicForm.name}
-                    onChange={(e) => setBasicForm((f) => ({ ...f, name: e.target.value }))}
-                    className="w-full pl-11 pr-4 py-3.5 sm:py-4 bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-white/10 rounded-2xl text-sm sm:text-base text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
-                  />
-                </div>
-              </label>
+              {fields.map((field) => {
+                const meta = AVAILABLE_FIELDS[field.id];
+                if (!meta) return null;
+                const Icon = FIELD_ICONS[field.id];
+                const labelText = field.label || meta.label;
+                const placeholderText = field.placeholder || meta.placeholder;
 
-              <label className="block">
-                <span className="sr-only">전화번호</span>
-                <div className="relative">
-                  <Phone size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" />
-                  <input
-                    type="tel"
-                    required
-                    autoComplete="tel"
-                    placeholder="010-1234-5678"
-                    value={basicForm.phone}
-                    onChange={(e) => setBasicForm((f) => ({ ...f, phone: e.target.value }))}
-                    className="w-full pl-11 pr-4 py-3.5 sm:py-4 bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-white/10 rounded-2xl text-sm sm:text-base text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
-                  />
-                </div>
-              </label>
+                if (field.inputType === 'button_select') {
+                  const opts = field.options && field.options.length > 0 ? field.options : (meta.defaultOptions || []);
+                  return (
+                    <div key={field.id} className="block">
+                      <span className="block text-[11px] sm:text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
+                        {labelText}{field.required && <span className="text-rose-500 ml-0.5">*</span>}
+                      </span>
+                      <div className="flex flex-wrap gap-2">
+                        {opts.map((opt) => {
+                          const selected = basicValues[field.id] === opt.value;
+                          return (
+                            <button
+                              key={opt.value}
+                              type="button"
+                              onClick={() => setFieldValue(field.id, selected ? '' : opt.value)}
+                              className={`px-3 py-2 rounded-xl border text-xs sm:text-sm font-bold transition-all ${
+                                selected
+                                  ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 border-zinc-900 dark:border-white'
+                                  : 'bg-white dark:bg-zinc-800/50 border-zinc-200 dark:border-white/10 text-zinc-700 dark:text-zinc-300 hover:border-zinc-400'
+                              }`}
+                            >
+                              {opt.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                }
 
-              <label className="block">
-                <span className="sr-only">이메일 (선택)</span>
-                <div className="relative">
-                  <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" />
-                  <input
-                    type="email"
-                    autoComplete="email"
-                    placeholder="이메일 (선택)"
-                    value={basicForm.email}
-                    onChange={(e) => setBasicForm((f) => ({ ...f, email: e.target.value }))}
-                    className="w-full pl-11 pr-4 py-3.5 sm:py-4 bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-white/10 rounded-2xl text-sm sm:text-base text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
-                  />
-                </div>
-              </label>
+                if (meta.htmlType === 'textarea') {
+                  return (
+                    <label key={field.id} className="block">
+                      <span className="block text-[11px] sm:text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
+                        {labelText}{field.required && <span className="text-rose-500 ml-0.5">*</span>}
+                      </span>
+                      <textarea
+                        rows={3}
+                        required={field.required}
+                        placeholder={placeholderText}
+                        value={basicValues[field.id] || ''}
+                        onChange={(e) => setFieldValue(field.id, e.target.value)}
+                        className="w-full px-4 py-3.5 sm:py-4 bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-white/10 rounded-2xl text-sm sm:text-base text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary resize-none"
+                      />
+                    </label>
+                  );
+                }
+
+                return (
+                  <label key={field.id} className="block">
+                    <span className="sr-only">{labelText}</span>
+                    <div className="relative">
+                      {Icon && <Icon size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" />}
+                      <input
+                        type={meta.htmlType || 'text'}
+                        required={field.required}
+                        autoComplete={meta.autoComplete}
+                        placeholder={field.required ? placeholderText : `${placeholderText} (선택)`}
+                        value={basicValues[field.id] || ''}
+                        onChange={(e) => setFieldValue(field.id, e.target.value)}
+                        className={`w-full ${Icon ? 'pl-11' : 'pl-4'} pr-4 py-3.5 sm:py-4 bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-white/10 rounded-2xl text-sm sm:text-base text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary`}
+                      />
+                    </div>
+                  </label>
+                );
+              })}
             </div>
 
             <label className="flex items-start gap-2 mb-4 cursor-pointer">
               <input
                 type="checkbox"
-                checked={basicForm.agree}
-                onChange={(e) => setBasicForm((f) => ({ ...f, agree: e.target.checked }))}
+                checked={basicValues.agree}
+                onChange={(e) => setFieldValue('agree', e.target.checked)}
                 className="mt-0.5 w-4 h-4 rounded border-zinc-300 text-primary focus:ring-primary/40"
               />
               <span className="text-[11px] sm:text-xs text-zinc-500 dark:text-zinc-400 leading-snug">
