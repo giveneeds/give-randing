@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { supabase, isDummyMode } from '@/lib/supabase';
 import { appendCTA } from '@/lib/userTrail';
 import { getTrackingSnapshot, trackEvent } from '@/lib/tracker';
+import { metaContact } from '@/lib/analytics/metaPixel';
 import { 
   CheckCircle2, 
   ArrowRight, 
@@ -93,6 +94,12 @@ export default function ContactForm() {
       const resData = await res.json();
       if (!res.ok) throw new Error(resData.error || '제출 실패');
 
+      metaContact({
+        content_name: 'consultation',
+        content_category: 'contact_form',
+        lead_type: payload.lead_type,
+        page_path: payload.source_page,
+      });
       setSubmitted(true);
     } catch (err) {
       console.error('Inquiry submission failed:', err);

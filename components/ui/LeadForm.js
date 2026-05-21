@@ -19,6 +19,7 @@ import { isDummyMode, supabase } from '@/lib/supabase';
 import { signInWithKakao } from '@/lib/authKakao';
 import { getTrackingSnapshot, trackEvent } from '@/lib/tracker';
 import { ga } from '@/lib/analytics/ga4';
+import { metaLead } from '@/lib/analytics/metaPixel';
 
 const KAKAO_CHANNEL_URL = 'https://pf.kakao.com/_giveneeds';
 const PHONE_PATTERN = /^01[016789]-?\d{3,4}-?\d{4}$/;
@@ -114,11 +115,21 @@ export default function LeadForm({ title, subtitle, ctaLabel, campaignId, magazi
       };
       trackEvent('form_submit', { form: 'lead_magnet_oauth', category, page: payload.source_page });
       ga.leadFormSubmit({ formMode: 'kakao', campaignId, leadType: payload.lead_type });
-      await fetch('/api/leads', {
+      const res = await fetch('/api/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
+      if (res.ok) {
+        metaLead({
+          content_name: payload.lead_type,
+          content_category: category,
+          lead_type: payload.lead_type,
+          form_mode: 'kakao',
+          campaign_id: campaignId || null,
+          magazine_id: magazineId || null,
+        });
+      }
     } catch (err) {
       console.warn('lead register failed (계속 진행):', err?.message);
     }
@@ -216,6 +227,14 @@ export default function LeadForm({ title, subtitle, ctaLabel, campaignId, magazi
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error || '리드 등록에 실패했습니다.');
       }
+      metaLead({
+        content_name: payload.lead_type,
+        content_category: category,
+        lead_type: payload.lead_type,
+        form_mode: 'basic',
+        campaign_id: campaignId || null,
+        magazine_id: magazineId || null,
+      });
       setBasicForm({ name: '', phone: '', email: '', agree: false });
       setPhase('submitted');
     } catch (err) {

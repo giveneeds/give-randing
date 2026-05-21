@@ -7,6 +7,7 @@ import LoginToast from "@/components/ui/LoginToast";
 import BlueDotCursor from "@/components/ui/BlueDotCursor";
 import Tracker from "@/components/Tracker";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
+import MetaPixel from "@/components/MetaPixel";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
@@ -85,6 +86,7 @@ export default function RootLayout({ children }) {
           <BlueDotCursor />
           <Tracker />
           <GoogleAnalytics />
+          <MetaPixel />
           {children}
           <LoginToast />
           <FooterWrapper />
