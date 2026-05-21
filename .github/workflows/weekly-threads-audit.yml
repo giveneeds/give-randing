@@ -1,0 +1,48 @@
+name: Weekly Threads Audit
+
+# 매주 월요일 KST 07:00 (UTC 일요일 22:00)에 Threads 인기글 패턴을 수집해
+# docs/reference-data 의 최신 audit 문서로 커밋한다.
+
+on:
+  schedule:
+    - cron: '0 22 * * 0'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Collect Threads audit
+        env:
+          APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
+        run: |
+          if [ -z "$APIFY_TOKEN" ]; then
+            echo "::error::APIFY_TOKEN Secret 미설정 (Repo Settings → Actions → Secrets)"
+            exit 1
+          fi
+          npm run threads:audit
+
+      - name: Commit audit result
+        run: |
+          if git diff --quiet -- docs/reference-data; then
+            echo "No Threads audit changes."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/reference-data
+          git commit -m "chore(content): update weekly threads audit"
+          git push

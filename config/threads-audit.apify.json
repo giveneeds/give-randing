@@ -1,0 +1,24 @@
+{
+  "actorId": "futurizerush/meta-threads-scraper",
+  "input": {
+    "mode": "search",
+    "keywords": [
+      "마케팅",
+      "광고비",
+      "AI 마케팅"
+    ],
+    "search_filter": "top",
+    "start_date": "1 month",
+    "max_posts": 10
+  },
+  "thresholds": {
+    "minLikes": 50,
+    "minReplies": 30,
+    "minViews": 5000,
+    "minShareOrRepost": 40
+  },
+  "output": {
+    "maxItems": 50,
+    "auditDir": "docs/reference-data"
+  }
+}
