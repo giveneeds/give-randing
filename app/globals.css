@@ -679,6 +679,7 @@ a {
   border: 1px solid #d1d5db;
   border-radius: 4px;
 }
+
 .admin-btn:hover {
   background-color: #e5e7eb;
 }
@@ -953,4 +954,3 @@ a {
 .magazine-editor .ProseMirror mark { padding: 0 0.15em; border-radius: 2px; }
 .magazine-editor .ProseMirror strong { font-weight: 800; color: #18181b; }
 .magazine-editor .ProseMirror p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: #a1a1aa; float: left; pointer-events: none; height: 0; }
-

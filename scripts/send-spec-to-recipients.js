@@ -79,28 +79,35 @@ async function sendDoc(chatId, filePath, caption) {
 
 const PAYLOAD = [
   { type: 'text', text:
-`<b>📘 콘텐츠 스튜디오 파이프라인 명세서 (한국어판 재발송)</b>
-<i>2026-05-20 기준 · 다이어그램 라벨을 한국어로 교체</i>
+`<b>📘 콘텐츠 스튜디오 파이프라인 명세서 (결정 맥락판)</b>
+<i>2026-05-21 갱신</i>
 
-5탭 IA · 주제 → 리서치 → 검토함 → 발행 → 진행
+이번 버전 추가/수정:
+• <b>주요 결정 지점</b> 섹션 신설 — 왜 지금 이 모양인지 9개 결정 정리
+• <b>매일 도는 자동 워크플로우 7단계</b> 추가 (이전 버전 누락분)
+• 5탭 명칭 일부 변경: 발행 → 보관함
+• 외래어를 한국어로 정리 (드래프트→초안, 트리거→실행, 다이제스트→일일 요약 등)
+• 다이어그램 1·2·3 갱신 + 신규 5번 다이어그램 추가
 
-다이어그램 4종 + 전체 명세서(.md) 순서로 전달합니다.
-이전 발송본은 무시하셔도 됩니다.` },
+다이어그램 5종 + 명세서(.md) 순서로 전달합니다.` },
   { type: 'photo', file: '01-overview.png', caption:
-`<b>① 전체 파이프라인 오버뷰</b>
-외부 소스 → 5탭 → Supabase DB 데이터 흐름` },
-  { type: 'photo', file: '02-review-state.png', caption:
-`<b>② 검토함 상태 머신</b>
-collected → reviewed → approved → notified / thread_drafted` },
-  { type: 'photo', file: '03-thread-conversion.png', caption:
-`<b>③ 스레드 변환 흐름</b>
-검토함 → convertItemToThreadDraft → KB 주입 → LLM → thread_drafts` },
+`<b>① 전체 파이프라인 (자동 루프 + 5탭 통합)</b>
+외부 세계 · 매일 도는 7단계 자동 루프 · 어드민 5탭 · DB 한 그림에` },
+  { type: 'photo', file: '05-auto-workflow.png', caption:
+`<b>② 매일 도는 자동 워크플로우 7단계</b>
+수집 → 1차 자연어 보고 → 정욱님 응답 → 의도 파싱 → 깊이 리서치 → 초안 생성 → 마무리 보고` },
   { type: 'photo', file: '04-collect-sequence.png', caption:
-`<b>④ 수집 시퀀스</b>
-cron → collect → enrich(LLM) → agent_items + agent_ai_logs` },
+`<b>③ 수집 단계 상세 (자동 루프 1단계)</b>
+크론 → 매체별 1건 cap → enrich(LLM) → agent_items` },
+  { type: 'photo', file: '02-review-state.png', caption:
+`<b>④ 검토함 상태 머신</b>
+새자료 → 살펴봄 → 채택됨 → 알림완료 / 초안화됨` },
+  { type: 'photo', file: '03-thread-conversion.png', caption:
+`<b>⑤ 스레드 초안 생성 흐름</b>
+채택 → convertItemToThreadDraft → KB 5종 주입 → LLM → thread_drafts` },
   { type: 'doc', file: SPEC, caption:
-`<b>📎 전체 명세서 (Markdown)</b>
-의존성 매트릭스 · 외부 의존성 · 알려진 취약점 · 변경 체크리스트 포함` },
+`<b>📎 명세서 전문 (Markdown · 25KB+)</b>
+주요 결정 지점 9개 · 자동 워크플로우 7단계 · 의존성 표 · 문제 해결 · 회귀 시험 절차` },
 ];
 
 async function sendOneRecipient(chatId) {

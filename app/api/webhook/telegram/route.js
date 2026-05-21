@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { convertItemToMagazineDraft } from '@/lib/agent/convertItemToDraft';
 import { parseUserDecision } from '@/lib/agent/parseUserDecision';
@@ -10,7 +10,9 @@ import {
 } from '@/lib/telegram';
 
 export const runtime = 'nodejs';
-export const maxDuration = 60;
+// 사용자 답변 → 2차 워크플로우(깊이 리서치 + 스레드 생성 + 마무리 보고) 30~60초 소요.
+// after() 가 응답 후에도 작업을 끝까지 실행하지만 Vercel 함수 limit 안에 들어와야 함.
+export const maxDuration = 300;
 
 const SELECT_COLS = 'id, job_id, source, source_account, post_id, post_url, posted_at, collected_at, normalized, classification, summary, translation, status, send_flag, reviewed_at, note, notified_at, notification_message_id, approved_via';
 
@@ -182,15 +184,27 @@ async function handleDailyReportReply({ chatId, text }) {
     return true;
   }
 
-  // select — 비동기로 2차 워크플로우 트리거. webhook 응답은 즉시 200 으로 빠지게.
+  // select — 세션을 즉시 phase2_running 으로 잠가서 다음 메시지가 같은 세션을 다시 트리거하지 않게 한 뒤,
+  // after() 로 응답 이후에도 2차 워크플로우(깊이 리서치 → 스레드 생성 → 마무리 보고) 가 끝까지 실행되도록 보장한다.
+  // Vercel serverless 는 응답 후 즉시 종료가 기본이라 단순 fire-and-forget 은 잘림.
+  await supabaseAdmin
+    .from('planning_sessions')
+    .update({
+      status: 'phase2_running',
+      selected_item_id: parsed.selected_item_id,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', session.id);
+
   await sendInlineMessage({
     chatId,
     text: `OK, 선택하신 후보로 진행합니다. 2차 리서치 + 콘텐츠 생성 들어갈게요. 완성되면 다시 알려드리겠습니다.`,
   });
 
-  // fire-and-forget. 실패 시 finishPlanningSession 내부에서 텔레그램으로 보고.
-  finishPlanningSession({ sessionId: session.id, selectedItemId: parsed.selected_item_id })
-    .catch((e) => console.error('[telegram webhook] finishPlanningSession 실패', e));
+  after(
+    finishPlanningSession({ sessionId: session.id, selectedItemId: parsed.selected_item_id })
+      .catch((e) => console.error('[telegram webhook] finishPlanningSession 실패', e))
+  );
 
   return true;
 }

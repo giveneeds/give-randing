@@ -1,7 +1,7 @@
 flowchart LR
-  A[검토함<br/>스레드 만들기 클릭] --> B[POST /items/:id/to-thread<br/>API 호출]
-  B --> C[convertItemToThreadDraft<br/>스레드 변환기]
-  C --> D[아이템 로드<br/>분류·리서치 컨텍스트·번역문]
+  A[검토함 또는<br/>자동 워크플로우 채택 시점] --> B[POST /items/:id/to-thread]
+  B --> C[convertItemToThreadDraft]
+  C --> D[자료 로드<br/>분류·1차 리서치·번역문<br/>2차 깊이 리서치]
   C --> E[buildKnowledgeContext<br/>지식베이스 주입기]
   E --> KB1[페르소나 정의<br/>content-personas.md]
   E --> KB2[플레이스 마케팅 KB<br/>place-marketing-knowledge-base.md]
@@ -10,5 +10,5 @@ flowchart LR
   E --> KB5[인기글 감사 데이터<br/>reference-data/*.md]
   C --> F{LLM 호출<br/>gpt-4o · claude-3.5}
   F --> G[포스트 시퀀스 + 후킹 패턴<br/>+ 톤 + CTA + 해시태그]
-  G --> H[(스레드 드래프트 저장<br/>thread_drafts)]
-  H --> I[발행 탭에 노출]
+  G --> H[(스레드 초안 저장<br/>thread_drafts)]
+  H --> I[④ 보관함에 노출]

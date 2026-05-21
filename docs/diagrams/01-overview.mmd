@@ -1,61 +1,72 @@
-flowchart LR
-  subgraph EXT[외부 소스 · AI · 메신저]
+flowchart TB
+  subgraph EXT[외부 세계]
     NAVER[네이버 뉴스]
-    GOOG[구글 뉴스 RSS]
+    GOOG[구글 뉴스]
     HN[해커뉴스]
-    REDDIT[레딧 RSS]
-    TAVILY[(Tavily 웹 검색)]
+    REDDIT[레딧]
+    TAVILY[(Tavily 웹 검색<br/>1·2차 리서치)]
     LLM{{LLM<br/>Claude · OpenAI}}
-    TG[[텔레그램 봇]]
+    TG[[정욱님 텔레그램<br/>자유 텍스트 양방향]]
   end
 
-  subgraph CS[콘텐츠 스튜디오 · 5탭]
-    T1[① 주제<br/>페르소나·토픽 정의]
+  subgraph CRON[매일 크론 1회 · 자동 작업 루프]
+    direction TB
+    C1[1단계 — 새 자료 수집] --> C2[2단계 — LLM 1차 보고<br/>composeDailyReport]
+    C2 --> C3[3단계 — 정욱님 응답 대기]
+    C3 --> C4[4단계 — 응답 의도 파싱<br/>parseUserDecision]
+    C4 --> C5[5단계 — 채택 자료 깊이 리서치<br/>runDeepResearch]
+    C5 --> C6[6단계 — 스레드 초안 생성<br/>convertItemToThreadDraft]
+    C6 --> C7[7단계 — 보관함 정리 + 마무리 보고<br/>finishPlanningSession]
+  end
+
+  subgraph CS[어드민 5탭 · 사람이 확인하는 화면]
+    T1[① 주제<br/>대상·토픽 정의]
     T2[② 리서치<br/>웹 검색 스냅샷]
-    T3[③ 검토함<br/>아이템 검수]
-    T4[④ 발행<br/>스레드·매거진]
-    T5[⑤ 진행<br/>작동 현황]
+    T3[③ 검토함<br/>자료 살펴보기]
+    T4[④ 보관함<br/>초안·발행]
+    T5[⑤ 진행<br/>오늘 무엇이 돌았나]
   end
 
   subgraph DB[Supabase 데이터베이스]
-    DBT[주제 테이블<br/>content_themes]
-    DBS[리서치 스냅샷<br/>theme_research_snapshots]
-    DBJ[수집 잡 이력<br/>agent_jobs]
-    DBI[수집 아이템<br/>agent_items]
-    DBD[스레드 드래프트<br/>thread_drafts]
-    DBR[텔레그램 수신자<br/>agent_telegram_recipients]
-    DBL[AI 호출 로그<br/>agent_ai_logs]
-    DBSRC[수집 매체<br/>agent_sources]
+    DBT[content_themes<br/>주제]
+    DBSRC[agent_sources<br/>수집 매체]
+    DBS[theme_research_snapshots<br/>리서치 스냅샷]
+    DBJ[agent_jobs<br/>잡 이력]
+    DBI[agent_items<br/>수집 자료]
+    DBP[planning_sessions<br/>크론 세션]
+    DBD[thread_drafts<br/>스레드 초안]
+    DBR[agent_telegram_recipients<br/>텔레그램 수신자]
+    DBL[agent_ai_logs<br/>AI 호출 로그]
   end
 
-  T1 -->|주제 저장| DBT
-  T1 -->|리서치 실행| TAVILY
-  TAVILY -->|스냅샷 저장| DBS
-  DBT --> T2
-  DBS --> T2
+  NAVER --> C1
+  GOOG --> C1
+  HN --> C1
+  REDDIT --> C1
+  C1 --> LLM
+  LLM --> DBI
+  C1 --> DBJ
+  C1 --> DBL
+  DBT -.->|페르소나·토픽 매핑| C1
 
-  T1 -.->|소스 묶음 참조| DBSRC
-  DBSRC -->|수집 트리거| NAVER
-  DBSRC --> GOOG
-  DBSRC --> HN
-  DBSRC --> REDDIT
-  NAVER -->|원본 아이템| ENR[enrichItem<br/>정규화·분류·요약]
-  GOOG --> ENR
-  HN --> ENR
-  REDDIT --> ENR
-  ENR -->|프롬프트| LLM
-  LLM -->|JSON 결과| DBI
-  ENR --> DBJ
-  DBJ --> T5
-  ENR --> DBL
+  C2 --> LLM
+  C2 --> DBP
+  C2 -->|1차 보고 메시지| TG
+  TG -->|자유 텍스트 응답| C4
+  C4 --> LLM
+  C5 --> TAVILY
+  C6 --> LLM
+  C6 -->|지식베이스 주입| KB[(docs/*.md<br/>페르소나·KB·후킹 패턴)]
+  C6 --> DBD
+  C7 -->|마무리 보고| TG
+  C7 --> DBP
 
+  T1 --> DBT
+  T2 --> TAVILY
+  TAVILY --> DBS
+  T2 --> DBS
   DBI --> T3
-  T3 -->|스레드 만들기| CONV[convertItemToThreadDraft<br/>스레드 변환기]
-  CONV -->|지식베이스 주입| KB[(KB 로더<br/>docs/*.md)]
-  CONV --> LLM
-  LLM -->|포스트 시퀀스| DBD
-  DBI -->|승인+발송플래그| TG
-  DBR --> TG
-
+  T3 --> T4
   DBD --> T4
-  T4 -->|편집·발행| DBD
+  DBJ --> T5
+  DBP --> T5
