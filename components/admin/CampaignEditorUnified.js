@@ -722,7 +722,7 @@ export default function CampaignEditorUnified({ campaign, sections, onSave, onCl
                                 </div>
                                 <div className="grid grid-cols-2 gap-3">
                                   <div className="space-y-1.5"><label className="lbl">CTA 버튼 텍스트</label><input className="inp font-bold" value={current.hero_content?.cta_label || ''} onChange={e => setHero({ cta_label: e.target.value })} /></div>
-                                  <div className="space-y-1.5"><label className="lbl">제목 / 자료명</label><input className="inp font-mono text-xs" value={current.hero_content?.file_name || ''} onChange={e => setHero({ file_name: e.target.value })} /></div>
+                                  <div className="space-y-1.5"><label className="lbl">폼 박스 제목</label><input className="inp font-mono text-xs" placeholder="폼 박스 안 작은 제목 (좌측 헤드라인과 별개)" value={current.hero_content?.file_name || ''} onChange={e => setHero({ file_name: e.target.value })} /></div>
                                 </div>
                                 {formMode === 'kakao' && (
                                   <div className="space-y-2 pt-2 border-t border-blue-100">
@@ -1009,9 +1009,8 @@ function PreviewContent({ current, liveSections, particleWords, isMobile }) {
         return (
           <section key="lead_form" style={{ borderTop: '1px solid #f4f4f5', background: '#fff', padding: '2rem 1.25rem', boxSizing: 'border-box', width: '100%' }}>
             <div style={{ marginBottom: '1.25rem' }}>
-              <div style={{ fontSize: '0.65rem', fontWeight: 900, color: '#7c3aed', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Lead Magnet</div>
               <h2 style={{ fontSize: '1.25rem', fontWeight: 900, letterSpacing: '-0.02em', lineHeight: 1.3, marginBottom: '0.5rem', wordBreak: 'break-all' }}>
-                {current.hero_content?.file_name || current.hero_content?.headline || '리드 마그넷 제목'}
+                {current.hero_content?.file_name || '폼 박스 제목'}
               </h2>
               <p style={{ fontSize: '0.8125rem', color: '#71717a', lineHeight: 1.6 }}>
                 {current.hero_content?.description || (previewFormMode === 'kakao' ? '전략 리포트를 받기 위해 정보를 입력하세요.' : '정보를 남기시면 영업일 1일 내 연락드립니다.')}

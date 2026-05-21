@@ -411,9 +411,6 @@ export default function LeadForm({ title, subtitle, ctaLabel, campaignId, magazi
             animate={{ opacity: 1, y: 0 }}
             className="relative z-10 w-full bg-white/70 dark:bg-zinc-900/60 backdrop-blur-3xl p-5 sm:p-8 md:p-10 rounded-2xl sm:rounded-3xl md:rounded-[40px] border border-zinc-200/60 dark:border-white/10 shadow-[0_30px_100px_rgba(0,0,0,0.15)] overflow-hidden"
           >
-            <span className="text-[9px] sm:text-[10px] font-black tracking-[0.25em] sm:tracking-[0.3em] text-primary uppercase mb-1.5 sm:mb-3 block">
-              Lead Magnet
-            </span>
             <h2 className="text-lg sm:text-3xl md:text-4xl font-black mb-1.5 sm:mb-3 tracking-tighter leading-tight text-zinc-900 dark:text-white break-keep">
               {title || 'Premium Resource'}
             </h2>
@@ -452,9 +449,6 @@ export default function LeadForm({ title, subtitle, ctaLabel, campaignId, magazi
             animate={{ opacity: 1, y: 0 }}
             className="relative z-10 w-full bg-white/70 dark:bg-zinc-900/60 backdrop-blur-3xl p-5 sm:p-8 md:p-10 rounded-2xl sm:rounded-3xl md:rounded-[40px] border border-zinc-200/60 dark:border-white/10 shadow-[0_30px_100px_rgba(0,0,0,0.15)] overflow-hidden"
           >
-            <span className="text-[9px] sm:text-[10px] font-black tracking-[0.25em] sm:tracking-[0.3em] text-primary uppercase mb-1.5 sm:mb-3 block">
-              Lead Magnet
-            </span>
             <h2 className="text-lg sm:text-3xl md:text-4xl font-black mb-1.5 sm:mb-3 tracking-tighter leading-tight text-zinc-900 dark:text-white break-keep">
               {title || '상담 신청'}
             </h2>
