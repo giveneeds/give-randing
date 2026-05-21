@@ -175,10 +175,11 @@ export async function GET(request) {
     const status = searchParams.get('status');
     const pipelineStage = searchParams.get('pipeline_stage');
     const channelGroup = searchParams.get('channel_group');
+    const campaignId = searchParams.get('campaign_id');
 
     let query = supabase
       .from('leads')
-      .select('*')
+      .select('*, campaign:campaigns(id, slug, title)')
       .order('created_at', { ascending: false });
 
     if (leadType && leadType !== 'all') {
@@ -192,6 +193,13 @@ export async function GET(request) {
     }
     if (channelGroup && channelGroup !== 'all') {
       query = query.eq('channel_group', channelGroup);
+    }
+    if (campaignId && campaignId !== 'all') {
+      if (campaignId === 'none') {
+        query = query.is('campaign_id', null);
+      } else {
+        query = query.eq('campaign_id', campaignId);
+      }
     }
 
     const { data, error } = await query;

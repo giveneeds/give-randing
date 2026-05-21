@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect } from 'react';
 import {
   X, BarChart3, CheckCircle2, Save, Eye, Sparkles,
-  ClipboardList, Zap, Layout, Monitor, Smartphone, MessageSquare,
+  ClipboardList, Zap, Layout, Monitor, Smartphone, MessageSquare, MessageCircle,
   GripVertical, Trash2, ChevronUp, ChevronDown, Plus, Image as ImageIcon,
   BookOpen, ArrowUpDown, Link2, FileText, ChevronDown as CollapseIcon,
   Archive, Send
@@ -440,8 +440,53 @@ export default function CampaignEditorUnified({ campaign, sections, onSave, onCl
                                 <p className="text-[10px] text-zinc-400 leading-relaxed">💡 줄바꿈(Enter) = 한 장면. 약 3초 간격으로 전환됩니다.</p>
                               </div>
                             )}
-                            {blockId === 'lead_form' && (
+                            {blockId === 'lead_form' && (() => {
+                              const formMode = current.hero_content?.lead_form_mode || 'kakao';
+                              return (
                               <div className="ml-5 pl-5 border-l-2 border-blue-100 space-y-4 py-1">
+                                {/* 폼 모드 선택 */}
+                                <div className="space-y-2">
+                                  <label className="lbl">리드 수집 방식</label>
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => setHero({ lead_form_mode: 'kakao' })}
+                                      className={clsx(
+                                        'p-3 rounded-xl border-2 text-left transition-all',
+                                        formMode === 'kakao'
+                                          ? 'border-[#FEE500] bg-[#FFF9DB]'
+                                          : 'border-zinc-200 bg-white hover:border-zinc-300'
+                                      )}
+                                    >
+                                      <div className="flex items-center gap-1.5 mb-1">
+                                        <MessageCircle size={13} className="text-[#191919]" />
+                                        <span className="text-[11px] font-black text-zinc-900">카카오 로그인</span>
+                                      </div>
+                                      <p className="text-[10px] text-zinc-500 leading-snug">
+                                        3초 만에 인증 → 이름·이메일·전화 자동 수집. PDF 즉시 다운로드.
+                                      </p>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => setHero({ lead_form_mode: 'basic' })}
+                                      className={clsx(
+                                        'p-3 rounded-xl border-2 text-left transition-all',
+                                        formMode === 'basic'
+                                          ? 'border-zinc-900 bg-zinc-50'
+                                          : 'border-zinc-200 bg-white hover:border-zinc-300'
+                                      )}
+                                    >
+                                      <div className="flex items-center gap-1.5 mb-1">
+                                        <ClipboardList size={13} className="text-zinc-700" />
+                                        <span className="text-[11px] font-black text-zinc-900">기본 폼</span>
+                                      </div>
+                                      <p className="text-[10px] text-zinc-500 leading-snug">
+                                        이름·전화번호 직접 입력. 카카오 없이도 동작. 영업일 1일 내 연락 안내.
+                                      </p>
+                                    </button>
+                                  </div>
+                                </div>
+
                                 <div className="space-y-1.5"><label className="lbl">헤드라인</label>
                                   <textarea className="inp h-20 resize-none font-bold" value={current.hero_content?.headline || ''} onChange={e => setHero({ headline: e.target.value })} />
                                 </div>
@@ -450,17 +495,27 @@ export default function CampaignEditorUnified({ campaign, sections, onSave, onCl
                                 </div>
                                 <div className="grid grid-cols-2 gap-3">
                                   <div className="space-y-1.5"><label className="lbl">CTA 버튼 텍스트</label><input className="inp font-bold" value={current.hero_content?.cta_label || ''} onChange={e => setHero({ cta_label: e.target.value })} /></div>
-                                  <div className="space-y-1.5"><label className="lbl">제공 자료명</label><input className="inp font-mono text-xs" value={current.hero_content?.file_name || ''} onChange={e => setHero({ file_name: e.target.value })} /></div>
+                                  <div className="space-y-1.5"><label className="lbl">제목 / 자료명</label><input className="inp font-mono text-xs" value={current.hero_content?.file_name || ''} onChange={e => setHero({ file_name: e.target.value })} /></div>
                                 </div>
-                                <div className="space-y-2 pt-2 border-t border-blue-100">
-                                  <label className="lbl">리드 마그넷 첨부 파일 (PDF · DOCX · ZIP …)</label>
-                                  <p className="text-[10px] text-zinc-400 leading-relaxed">
-                                    카카오 로그인 후 사용자에게 즉시 다운로드되는 자료입니다. 활성화된 첫 번째 항목이 자동 사용돼요.
-                                  </p>
-                                  <ResourcesManager parentType="campaign" parentId={current.id} />
-                                </div>
+                                {formMode === 'kakao' && (
+                                  <div className="space-y-2 pt-2 border-t border-blue-100">
+                                    <label className="lbl">리드 마그넷 첨부 파일 (PDF · DOCX · ZIP …)</label>
+                                    <p className="text-[10px] text-zinc-400 leading-relaxed">
+                                      카카오 로그인 후 사용자에게 즉시 다운로드되는 자료입니다. 활성화된 첫 번째 항목이 자동 사용돼요.
+                                    </p>
+                                    <ResourcesManager parentType="campaign" parentId={current.id} />
+                                  </div>
+                                )}
+                                {formMode === 'basic' && (
+                                  <div className="pt-2 border-t border-zinc-100">
+                                    <p className="text-[10px] text-zinc-500 leading-relaxed bg-zinc-50 p-2.5 rounded-lg border border-zinc-200">
+                                      💡 기본 폼은 첨부 파일을 제공하지 않습니다. 신청 데이터는 <code className="bg-white px-1 py-0.5 rounded text-zinc-700 text-[10px]">/admin/leads</code> 에서 확인하세요.
+                                    </p>
+                                  </div>
+                                )}
                               </div>
-                            )}
+                              );
+                            })()}
                           </div>
                         )}
                       </div>
@@ -715,8 +770,11 @@ function PreviewContent({ current, liveSections, particleWords, isMobile }) {
       );
     }
     if (blockId === 'lead_form' && current.show_lead_form) {
+      const previewFormMode = current.hero_content?.lead_form_mode || 'kakao';
       // 모바일 프리뷰: 반응형 클래스 없이 고정 레이아웃
       if (isMobile) {
+        const ctaText = current.hero_content?.cta_label
+          || (previewFormMode === 'kakao' ? '카카오로 3초 만에 시작하기' : '무료 상담 신청하기');
         return (
           <section key="lead_form" style={{ borderTop: '1px solid #f4f4f5', background: '#fff', padding: '2rem 1.25rem', boxSizing: 'border-box', width: '100%' }}>
             <div style={{ marginBottom: '1.25rem' }}>
@@ -725,16 +783,23 @@ function PreviewContent({ current, liveSections, particleWords, isMobile }) {
                 {current.hero_content?.file_name || current.hero_content?.headline || '리드 마그넷 제목'}
               </h2>
               <p style={{ fontSize: '0.8125rem', color: '#71717a', lineHeight: 1.6 }}>
-                {current.hero_content?.description || '전략 리포트를 받기 위해 정보를 입력하세요.'}
+                {current.hero_content?.description || (previewFormMode === 'kakao' ? '전략 리포트를 받기 위해 정보를 입력하세요.' : '정보를 남기시면 영업일 1일 내 연락드립니다.')}
               </p>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
-              <input readOnly placeholder="이름" style={{ width: '100%', padding: '0.75rem 1rem', border: '1px solid #e4e4e7', borderRadius: '0.625rem', fontSize: '0.875rem', background: '#fafafa', boxSizing: 'border-box' }} />
-              <input readOnly placeholder="연락처" style={{ width: '100%', padding: '0.75rem 1rem', border: '1px solid #e4e4e7', borderRadius: '0.625rem', fontSize: '0.875rem', background: '#fafafa', boxSizing: 'border-box' }} />
+            {previewFormMode === 'basic' ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+                <input readOnly placeholder="이름" style={{ width: '100%', padding: '0.75rem 1rem', border: '1px solid #e4e4e7', borderRadius: '0.625rem', fontSize: '0.875rem', background: '#fafafa', boxSizing: 'border-box' }} />
+                <input readOnly placeholder="010-1234-5678" style={{ width: '100%', padding: '0.75rem 1rem', border: '1px solid #e4e4e7', borderRadius: '0.625rem', fontSize: '0.875rem', background: '#fafafa', boxSizing: 'border-box' }} />
+                <input readOnly placeholder="이메일 (선택)" style={{ width: '100%', padding: '0.75rem 1rem', border: '1px solid #e4e4e7', borderRadius: '0.625rem', fontSize: '0.875rem', background: '#fafafa', boxSizing: 'border-box' }} />
+                <button style={{ width: '100%', padding: '0.875rem', background: '#18181b', color: '#fff', border: 'none', borderRadius: '0.625rem', fontWeight: 900, fontSize: '0.875rem', cursor: 'default' }}>
+                  {ctaText}
+                </button>
+              </div>
+            ) : (
               <button style={{ width: '100%', padding: '0.875rem', background: '#FEE500', border: 'none', borderRadius: '0.625rem', fontWeight: 900, fontSize: '0.875rem', cursor: 'default', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                💬 {current.hero_content?.cta_label || '카카오로 3초 만에 시작하기'}
+                💬 {ctaText}
               </button>
-            </div>
+            )}
           </section>
         );
       }
@@ -746,7 +811,7 @@ function PreviewContent({ current, liveSections, particleWords, isMobile }) {
               <p className="text-base text-zinc-500">{current.hero_content?.description || ''}</p>
             </div>
             <div className="flex-1 w-full max-w-sm">
-              <LeadForm title={current.hero_content?.file_name} ctaLabel={current.hero_content?.cta_label} campaignId="preview" />
+              <LeadForm title={current.hero_content?.file_name} ctaLabel={current.hero_content?.cta_label} campaignId="preview" formMode={previewFormMode} />
             </div>
           </div>
         </section>

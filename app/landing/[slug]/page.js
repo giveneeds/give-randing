@@ -133,6 +133,7 @@ export default function CampaignLandingPage() {
                         ctaLabel={campaign.hero_content.cta_label}
                         campaignId={campaign.id}
                         category="campaign"
+                        formMode={campaign.hero_content.lead_form_mode || 'kakao'}
                       />
                     </div>
                   </div>

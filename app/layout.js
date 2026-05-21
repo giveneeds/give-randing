@@ -6,6 +6,7 @@ import BrandSplash from "@/components/ui/BrandSplash";
 import LoginToast from "@/components/ui/LoginToast";
 import BlueDotCursor from "@/components/ui/BlueDotCursor";
 import Tracker from "@/components/Tracker";
+import GoogleAnalytics from "@/components/GoogleAnalytics";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
@@ -83,6 +84,7 @@ export default function RootLayout({ children }) {
           <BrandSplash />
           <BlueDotCursor />
           <Tracker />
+          <GoogleAnalytics />
           {children}
           <LoginToast />
           <FooterWrapper />

@@ -10,10 +10,14 @@ import {
 import { prettyReferrer } from '@/lib/leadInflow';
 
 const LEAD_TYPE_CONFIG = {
-  consultation: { label: '문의하기', color: 'bg-violet-50 text-violet-600 border-violet-200' },
-  campaign:     { label: '캠페인 LP', color: 'bg-blue-50 text-blue-600 border-blue-200' },
-  magazine:     { label: '매거진 회원가입', color: 'bg-emerald-50 text-emerald-600 border-emerald-200' },
-  organic:      { label: '기타 유입', color: 'bg-zinc-50 text-zinc-500 border-zinc-200' },
+  consultation:          { label: '문의하기', color: 'bg-violet-50 text-violet-600 border-violet-200' },
+  campaign:              { label: '캠페인 LP', color: 'bg-blue-50 text-blue-600 border-blue-200' },
+  campaign_kakao_oauth:  { label: 'LP · 카카오', color: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
+  campaign_basic_form:   { label: 'LP · 기본 폼', color: 'bg-blue-50 text-blue-600 border-blue-200' },
+  magazine:              { label: '매거진 가입', color: 'bg-emerald-50 text-emerald-600 border-emerald-200' },
+  magazine_kakao_oauth:  { label: '매거진 · 카카오', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  magazine_basic_form:   { label: '매거진 · 기본 폼', color: 'bg-emerald-50 text-emerald-600 border-emerald-200' },
+  organic:               { label: '기타 유입', color: 'bg-zinc-50 text-zinc-500 border-zinc-200' },
 };
 
 const BUDGET_LABEL = {
@@ -51,17 +55,27 @@ const PAGE_SIZE = 10;
 
 export default function AdminLeads() {
   const [leads, setLeads] = useState([]);
+  const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [leadTypeFilter, setLeadTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [pipelineFilter, setPipelineFilter] = useState('all');
+  const [campaignFilter, setCampaignFilter] = useState('all');
   const [expandedId, setExpandedId] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     loadLeads();
-  }, [leadTypeFilter, statusFilter, pipelineFilter]);
+  }, [leadTypeFilter, statusFilter, pipelineFilter, campaignFilter]);
+
+  useEffect(() => {
+    // 캠페인 목록 1회 로드 (랜딩페이지별 필터 옵션용)
+    fetch('/api/campaigns?admin=true')
+      .then(r => r.json())
+      .then(d => setCampaigns(d.campaigns || []))
+      .catch(() => setCampaigns([]));
+  }, []);
 
   async function loadLeads() {
     setLoading(true);
@@ -70,6 +84,7 @@ export default function AdminLeads() {
       if (leadTypeFilter !== 'all') params.set('lead_type', leadTypeFilter);
       if (statusFilter !== 'all') params.set('status', statusFilter);
       if (pipelineFilter !== 'all') params.set('pipeline_stage', pipelineFilter);
+      if (campaignFilter !== 'all') params.set('campaign_id', campaignFilter);
       const res = await fetch(`/api/leads?${params.toString()}`);
       const data = await res.json();
       setLeads(data.leads || []);
@@ -183,9 +198,27 @@ export default function AdminLeads() {
           >
             <option value="all">모든 유입 경로</option>
             <option value="consultation">문의하기</option>
-            <option value="campaign">캠페인 LP</option>
+            <option value="campaign">캠페인 LP (전체)</option>
+            <option value="campaign_kakao_oauth">└ 카카오 로그인</option>
+            <option value="campaign_basic_form">└ 기본 폼</option>
             <option value="magazine">매거진 회원가입</option>
             <option value="organic">기타</option>
+          </select>
+        </div>
+        <div className="relative md:col-span-5">
+          <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={16} />
+          <select
+            className="w-full pl-11 pr-4 py-3 bg-white border border-[var(--admin-border)] rounded-md text-sm outline-none appearance-none cursor-pointer shadow-sm"
+            value={campaignFilter}
+            onChange={e => { setCampaignFilter(e.target.value); setCurrentPage(1); }}
+          >
+            <option value="all">모든 랜딩페이지 (전체 리드)</option>
+            <option value="none">└ 랜딩페이지 없음 (문의·매거진 등)</option>
+            {campaigns.map(c => (
+              <option key={c.id} value={c.id}>
+                /landing/{c.slug} — {c.title}
+              </option>
+            ))}
           </select>
         </div>
         <div className="relative">

@@ -62,16 +62,54 @@ CREATE TABLE IF NOT EXISTS global_sections (
 );
 
 -- 5. 고객 리드 데이터 (수집된 DB)
+-- 주의: 실제 컬럼 정의는 sql/crm_foundation.sql + sql/crm_visitor_identity.sql 의
+-- ALTER TABLE 들이 적용되어 있다. 이 CREATE 블록은 신규 환경 부트스트랩용.
 CREATE TABLE IF NOT EXISTS leads (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     campaign_id UUID REFERENCES campaigns(id),
     name TEXT,
     email TEXT,
     phone TEXT,
-    category TEXT, -- 추가: 리드 분류 (상담, 가이드북, 일반 등)
+    category TEXT,
     source_url TEXT,
-    created_at TIMESTAMPTZ DEFAULT NOW()
+    -- 폼 메타
+    company_name TEXT,
+    website_url TEXT,
+    inquiry_type TEXT,
+    budget TEXT,
+    message TEXT,
+    agreements JSONB,
+    magazine_id TEXT,
+    -- 유입 추적
+    lead_type TEXT DEFAULT 'organic',  -- organic / consultation / campaign_kakao_oauth / campaign_basic_form / magazine_kakao_oauth
+    source_page TEXT,
+    source_referrer TEXT,
+    click_element TEXT,
+    -- CRM 신원 추적 (crm_foundation.sql)
+    anonymous_id TEXT,
+    first_visit_url TEXT,
+    last_touch_url TEXT,
+    device_type TEXT,
+    browser TEXT,
+    utm_source TEXT,
+    utm_medium TEXT,
+    utm_campaign TEXT,
+    utm_term TEXT,
+    utm_content TEXT,
+    channel_group TEXT,
+    -- 운영
+    status TEXT DEFAULT 'new',
+    pipeline_stage TEXT DEFAULT 'new',
+    assigned_to TEXT,
+    tags TEXT[] DEFAULT '{}',
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+CREATE INDEX IF NOT EXISTS idx_leads_anonymous_id ON leads (anonymous_id);
+CREATE INDEX IF NOT EXISTS idx_leads_pipeline ON leads (pipeline_stage);
+CREATE INDEX IF NOT EXISTS idx_leads_channel ON leads (channel_group);
+CREATE INDEX IF NOT EXISTS idx_leads_created ON leads (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_leads_campaign ON leads (campaign_id);
 
 -- 6. AI 챗봇 메시지 기록
 CREATE TABLE IF NOT EXISTS chat_messages (
