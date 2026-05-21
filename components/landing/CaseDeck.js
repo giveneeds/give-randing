@@ -5,12 +5,13 @@ import Link from 'next/link';
 
 /**
  * CaseDeck — 덱 형식 캐러셀
- *  - 카드가 서로 15% 겹치며 한 줄 가로 배치
- *  - 중앙 카드가 active (opacity/scale 강조)
- *  - 좌/우 화살표 또는 터치 스와이프로 이동
+ *  - 한 번에 최대 3개(중앙 active + 좌우 각 1개)만 노출, 나머지는 화면 밖에서 대기
+ *  - 좌/우 화살표 또는 터치 스와이프로 이동하면 다음 카드가 새로 미끄러져 들어옴
  *  - 모듈로 기반 무한 루프 (항상 최단 경로로 회전)
  *  - 1개 항목만 있으면 네비게이션 숨김
  */
+const VISIBLE_RANGE = 1; // active 기준 ±N 까지만 화면에 노출
+
 export default function CaseDeck({ title, subtitle, items }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const touchStartX = useRef(0);
@@ -84,30 +85,36 @@ export default function CaseDeck({ title, subtitle, items }) {
           if (offset < -count / 2) offset += count;
 
           const isActive = offset === 0;
+          const isVisible = Math.abs(offset) <= VISIBLE_RANGE;
+
           // 15% overlap → 인접 카드 중심 간 간격 = 카드폭 * 0.85
-          const translate = offset * 85;
+          // 보이는 범위 밖 카드는 화면 양 끝으로 멀리 밀어 두어 어색한 잔상이 안 보이게.
+          const translatePct = isVisible
+            ? offset * 85
+            : (offset > 0 ? 1 : -1) * (VISIBLE_RANGE + 1) * 85;
           const scale = isActive ? 1 : 0.9;
-          const opacity = isActive ? 1 : 0.45;
-          const blur = isActive ? 0 : 1;
-          const zIndex = count - Math.abs(offset);
+          const opacity = isVisible ? (isActive ? 1 : 0.45) : 0;
+          const blur = isVisible ? (isActive ? 0 : 1) : 0;
+          const zIndex = isVisible ? count - Math.abs(offset) : 0;
 
           return (
             <div
               key={item.id || item.slug}
+              aria-hidden={!isVisible}
               style={{
                 position: 'absolute',
                 top: 0,
                 left: '50%',
                 width: 'min(88%, 640px)',
                 height: '100%',
-                transform: `translate(calc(-50% + ${translate}%), 0) scale(${scale})`,
+                transform: `translate(calc(-50% + ${translatePct}%), 0) scale(${scale})`,
                 opacity,
                 filter: `blur(${blur}px)`,
                 zIndex,
                 transition: 'transform 0.6s cubic-bezier(0.22, 0.61, 0.36, 1), opacity 0.5s ease, filter 0.5s ease',
                 pointerEvents: isActive ? 'auto' : 'none',
               }}
-              onClick={() => !isActive && setActiveIndex(activeIndex + offset)}
+              onClick={() => isVisible && !isActive && setActiveIndex(activeIndex + offset)}
             >
               <DeckCard item={item} />
             </div>
