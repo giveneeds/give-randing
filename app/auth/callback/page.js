@@ -11,7 +11,9 @@ function AuthCallbackInner() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    const next = getSafeAuthRedirect(searchParams.get('next'), readAuthRedirect('/chat'));
+    // 우선순위: 콜백 URL 의 ?next= (OAuth 왕복에도 살아남는 가장 견고한 채널)
+    //          → localStorage 에 저장해둔 next → '/' (authRedirect 의 DEFAULT_REDIRECT)
+    const next = getSafeAuthRedirect(searchParams.get('next'), readAuthRedirect());
     const code = searchParams.get('code');
     const errorDescription = searchParams.get('error_description');
 

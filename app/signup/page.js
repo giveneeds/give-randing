@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, Suspense, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -14,6 +14,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { signInWithKakao } from '@/lib/authKakao';
+import { inferReferrerPath } from '@/lib/authRedirect';
 import PrivacyPolicyDisclosure from '@/components/auth/PrivacyPolicyDisclosure';
 import BrandLoader from '@/components/ui/BrandLoader';
 
@@ -43,7 +44,16 @@ const BENEFITS = [
 
 function SignupPageInner() {
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get('redirect') || searchParams.get('next') || '/chat';
+  // /signup 진입 시 redirect 추론. 파라미터 → referrer → '/' 순으로 폴백.
+  const [redirectTo, setRedirectTo] = useState(() => {
+    return searchParams.get('redirect') || searchParams.get('next') || '/';
+  });
+  useEffect(() => {
+    const explicit = searchParams.get('redirect') || searchParams.get('next');
+    if (explicit) return;
+    const ref = inferReferrerPath();
+    if (ref) setRedirectTo(ref);
+  }, [searchParams]);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');

@@ -6,12 +6,23 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, MessageCircle, AlertCircle } from 'lucide-react';
 import { signInWithKakao } from '@/lib/authKakao';
+import { inferReferrerPath } from '@/lib/authRedirect';
 import PrivacyPolicyDisclosure from '@/components/auth/PrivacyPolicyDisclosure';
 import BrandLoader from '@/components/ui/BrandLoader';
 
 function LoginPageInner() {
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get('redirect') || searchParams.get('next') || '/chat';
+  // /login 진입 시 redirect 추론. 파라미터가 없으면 직전 페이지(referrer) → 그것도 없으면 '/'.
+  // referrer 는 마운트 시점에만 한 번 캡처해 두어, 이후 라우터 변화에도 안정적으로 유지.
+  const [redirectTo, setRedirectTo] = useState(() => {
+    return searchParams.get('redirect') || searchParams.get('next') || '/';
+  });
+  useEffect(() => {
+    const explicit = searchParams.get('redirect') || searchParams.get('next');
+    if (explicit) return;
+    const ref = inferReferrerPath();
+    if (ref) setRedirectTo(ref);
+  }, [searchParams]);
   const errorParam = searchParams.get('error');
 
   const [loading, setLoading] = useState(false);

@@ -11,7 +11,7 @@ import PrivacyPolicyDisclosure from '@/components/auth/PrivacyPolicyDisclosure';
 export default function LoginModal({
   open,
   onClose,
-  redirectPath = '/chat',
+  redirectPath,
   title = '로그인이 필요해요',
   description = '카카오 계정 한 번이면 끝나요. 별도 가입 절차도, 비밀번호도 필요 없어요.',
   dismissible = true,
@@ -31,6 +31,7 @@ export default function LoginModal({
   const handleKakao = async () => {
     setError('');
     setLoading(true);
+    // redirectPath 가 명시되지 않으면 signInWithKakao 가 현재 페이지를 추론
     const { ok, error: errMsg } = await signInWithKakao(redirectPath);
     if (!ok) {
       setError(errMsg || '카카오 로그인 중 오류가 발생했습니다.');
