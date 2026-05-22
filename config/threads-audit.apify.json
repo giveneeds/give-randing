@@ -19,6 +19,7 @@
   },
   "output": {
     "maxItems": 50,
+    "maxKeywords": 3,
     "auditDir": "docs/reference-data"
   }
 }

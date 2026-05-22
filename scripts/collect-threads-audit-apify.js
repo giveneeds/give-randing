@@ -16,6 +16,7 @@ const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
 const DEFAULT_CONFIG = path.join(ROOT, 'config', 'threads-audit.apify.json');
+const DEFAULT_PILLARS_CONFIG = path.join(ROOT, 'config', 'content-pillars.json');
 
 function todayKst() {
   return new Date(Date.now() + (9 * 60 * 60 * 1000)).toISOString().slice(0, 10);
@@ -42,6 +43,8 @@ function parseArgs(argv) {
     dryRun: false,
     inputJson: null,
     date: todayKst(),
+    pillars: null,
+    pillarConfig: DEFAULT_PILLARS_CONFIG,
   };
 
   for (let i = 2; i < argv.length; i += 1) {
@@ -50,11 +53,14 @@ function parseArgs(argv) {
     else if (arg === '--config') args.config = path.resolve(argv[++i]);
     else if (arg === '--input-json') args.inputJson = path.resolve(argv[++i]);
     else if (arg === '--date') args.date = argv[++i];
+    else if (arg === '--pillars') args.pillars = argv[++i].split(',').map((x) => x.trim()).filter(Boolean);
+    else if (arg === '--pillar-config') args.pillarConfig = path.resolve(argv[++i]);
     else if (arg === '--help' || arg === '-h') {
       console.log(`Usage:
   node scripts/collect-threads-audit-apify.js [--dry-run]
   node scripts/collect-threads-audit-apify.js --input-json ./items.json
   node scripts/collect-threads-audit-apify.js --date 2026-05-21
+  node scripts/collect-threads-audit-apify.js --pillars do_today,current_observation,trend_plain
 `);
       process.exit(0);
     }
@@ -65,6 +71,29 @@ function parseArgs(argv) {
 
 function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+}
+
+function unique(items) {
+  return [...new Set(items.filter(Boolean))];
+}
+
+function applyPillarKeywords(config, args) {
+  if (!args.pillars && !fs.existsSync(args.pillarConfig)) return config;
+  const pillarConfig = fs.existsSync(args.pillarConfig) ? readJson(args.pillarConfig) : null;
+  if (!pillarConfig?.pillars) return config;
+
+  const selected = args.pillars?.length ? args.pillars : (pillarConfig.defaultRotation || []);
+  const keywords = unique(selected.flatMap((key) => pillarConfig.pillars[key]?.threadKeywords || []));
+  if (keywords.length === 0) return config;
+
+  return {
+    ...config,
+    input: {
+      ...config.input,
+      keywords: keywords.slice(0, config.output?.maxKeywords || 3),
+    },
+    activePillars: selected,
+  };
 }
 
 function actorIdToPath(actorId) {
@@ -286,7 +315,7 @@ Apify 결과 필드는 Actor 업데이트에 따라 바뀔 수 있으므로, 이
 async function main() {
   loadEnv();
   const args = parseArgs(process.argv);
-  const config = readJson(args.config);
+  const config = applyPillarKeywords(readJson(args.config), args);
 
   if (args.dryRun) {
     console.log(JSON.stringify({
@@ -294,6 +323,7 @@ async function main() {
       input: config.input,
       thresholds: config.thresholds,
       output: config.output,
+      activePillars: config.activePillars || null,
     }, null, 2));
     return;
   }

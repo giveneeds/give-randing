@@ -33,6 +33,7 @@ jobs:
             exit 1
           fi
           npm run threads:audit
+          npm run threads:topics
 
       - name: Commit audit result
         run: |

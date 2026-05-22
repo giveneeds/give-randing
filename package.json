@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "threads:audit": "node scripts/collect-threads-audit-apify.js"
+    "threads:audit": "node scripts/collect-threads-audit-apify.js",
+    "threads:topics": "node scripts/generate-thread-topic-candidates.js"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
