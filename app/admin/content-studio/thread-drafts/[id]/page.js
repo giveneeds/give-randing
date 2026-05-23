@@ -270,9 +270,12 @@ function DecisionMetaSection({ draft }) {
   const research = draft.research_context_used || {};
   const generationDensity = research.generation_density_check || {};
   const generationDecision = research.generation_decision || {};
+  const variantReview = research.variant_review || {};
+  const variants = Array.isArray(variantReview.variants) ? variantReview.variants : [];
 
   const hasAny = selectionReason || rejected.length > 0 || governance.applied_docs?.length > 0
-    || research.phase1 || research.phase2_deep || generationDensity.source_signal || generationDecision.research_sufficiency;
+    || research.phase1 || research.phase2_deep || generationDensity.source_signal || generationDecision.research_sufficiency
+    || variants.length > 0;
   if (!hasAny) return null;
 
   const phase1 = research.phase1 || {};
@@ -302,6 +305,52 @@ function DecisionMetaSection({ draft }) {
                 <Sparkles size={11} className="text-violet-500" /> 왜 이 자료를 골랐는가
               </div>
               <p className="text-xs text-[var(--admin-text-main)] leading-relaxed">{selectionReason}</p>
+            </div>
+          )}
+
+          {variants.length > 0 && (
+            <div className="md:col-span-2 border-t border-[var(--admin-border)] pt-4">
+              <div className="text-[10px] font-black uppercase tracking-widest text-violet-500 mb-2 inline-flex items-center gap-1">
+                <Sparkles size={11} /> 7개 후보 자동 심사
+              </div>
+              {variantReview.selection_reason && (
+                <p className="text-xs text-[var(--admin-text-main)] leading-relaxed mb-3">
+                  {variantReview.selection_reason}
+                </p>
+              )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {variants.map((v) => {
+                  const selected = v.variant_id === variantReview.selected_variant_id;
+                  return (
+                    <div
+                      key={v.variant_id}
+                      className={`rounded-md border p-3 ${selected ? 'border-violet-300 bg-violet-50/60' : 'border-[var(--admin-border)] bg-[var(--admin-bg)]'}`}
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={`text-[10px] font-black ${selected ? 'text-violet-700' : 'text-zinc-400'}`}>
+                          후보 {v.variant_id}{selected ? ' · 선택' : ''}
+                        </span>
+                        {typeof v.scores?.overall === 'number' && (
+                          <span className="ml-auto text-[10px] font-bold text-[var(--admin-text-main)]">
+                            {v.scores.overall}/5
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-xs font-bold text-[var(--admin-text-main)] truncate">
+                        {v.title || v.angle || '(제목 없음)'}
+                      </div>
+                      <div className="text-[10px] text-zinc-400 mt-1">
+                        {[v.content_pillar, v.content_treatment, v.format_type].filter(Boolean).join(' · ')}
+                      </div>
+                      {v.score_reason && (
+                        <div className="text-[11px] text-[var(--admin-text-muted)] mt-1.5 line-clamp-2">
+                          {v.score_reason}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
 
