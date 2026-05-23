@@ -102,7 +102,11 @@ async function handleMessage(message) {
   const handled = await handleDailyReportReply({ chatId, text, message });
   if (handled) return;
 
-  // 2) 진행 중 세션이 없으면 일반 LLM 자유 채팅으로 응답.
+  // 2) 이미 완료된 보고에 "후보 4도"처럼 추가 생성을 요청하면 최근 완료 세션에서 후보를 다시 집어 처리.
+  const handledCompletedFollowup = await handleCompletedSessionFollowup({ chatId, text, message });
+  if (handledCompletedFollowup) return;
+
+  // 3) 진행 중 세션이 없으면 일반 LLM 자유 채팅으로 응답.
   try {
     const { replyText } = await composeFreeChatReply({
       chatId,
@@ -124,7 +128,7 @@ async function handleMessage(message) {
 async function handleDailyReportReply({ chatId, text, message }) {
   const { data: session } = await supabaseAdmin
     .from('planning_sessions')
-    .select('id, status, candidates_summary, telegram_chat_id, telegram_message_id_phase1')
+    .select('id, job_id, status, candidate_item_ids, candidates_summary, telegram_chat_id, telegram_message_id_phase1')
     .eq('telegram_chat_id', chatId)
     .in('status', ['phase1_reported', 'awaiting_decision'])
     .order('created_at', { ascending: false })
@@ -176,7 +180,9 @@ async function handleDailyReportReply({ chatId, text, message }) {
     return true;
   }
 
-  if (parsed.action === 'ambiguous' || !parsed.selected_item_id) {
+  const selectedItemIds = getSelectedItemIds(parsed);
+
+  if (parsed.action === 'ambiguous' || selectedItemIds.length === 0) {
     await supabaseAdmin
       .from('planning_sessions')
       .update({ status: 'awaiting_decision', updated_at: new Date().toISOString() })
@@ -191,26 +197,157 @@ async function handleDailyReportReply({ chatId, text, message }) {
   // select — 세션을 즉시 phase2_running 으로 잠가서 다음 메시지가 같은 세션을 다시 트리거하지 않게 한 뒤,
   // after() 로 응답 이후에도 2차 워크플로우(깊이 리서치 → 스레드 생성 → 마무리 보고) 가 끝까지 실행되도록 보장한다.
   // Vercel serverless 는 응답 후 즉시 종료가 기본이라 단순 fire-and-forget 은 잘림.
+  const [primaryItemId, ...additionalItemIds] = selectedItemIds;
   await supabaseAdmin
     .from('planning_sessions')
     .update({
       status: 'phase2_running',
-      selected_item_id: parsed.selected_item_id,
+      selected_item_id: primaryItemId,
       updated_at: new Date().toISOString(),
     })
     .eq('id', session.id);
 
+  const extraSessions = [];
+  for (const itemId of additionalItemIds) {
+    const extraSession = await createAdditionalPlanningSession({
+      baseSession: session,
+      selectedItemId: itemId,
+      userText: text,
+      parsed,
+    });
+    if (extraSession?.id) extraSessions.push(extraSession);
+  }
+
   await sendInlineMessage({
     chatId,
-    text: `OK, 선택하신 후보로 진행합니다. 2차 리서치 + 콘텐츠 생성 들어갈게요. 완성되면 다시 알려드리겠습니다.`,
+    text: selectedItemIds.length > 1
+      ? `OK, 선택하신 후보 ${selectedItemIds.length}개로 각각 진행합니다. 완성되면 후보별로 다시 알려드리겠습니다.`
+      : `OK, 선택하신 후보로 진행합니다. 2차 리서치 + 콘텐츠 생성 들어갈게요. 완성되면 다시 알려드리겠습니다.`,
   });
 
   after(
-    finishPlanningSession({ sessionId: session.id, selectedItemId: parsed.selected_item_id })
-      .catch((e) => console.error('[telegram webhook] finishPlanningSession 실패', e))
+    finishSelectedSessions([
+      { sessionId: session.id, selectedItemId: primaryItemId },
+      ...extraSessions.map((s) => ({ sessionId: s.id, selectedItemId: s.selectedItemId })),
+    ])
   );
 
   return true;
+}
+
+async function handleCompletedSessionFollowup({ chatId, text, message }) {
+  if (!isCompletedSessionCandidateFollowup(text)) return false;
+
+  const { data: session } = await supabaseAdmin
+    .from('planning_sessions')
+    .select('id, job_id, status, candidate_item_ids, candidates_summary, telegram_chat_id, telegram_message_id_phase1')
+    .eq('telegram_chat_id', chatId)
+    .eq('status', 'completed')
+    .not('candidates_summary', 'is', null)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!session) return false;
+
+  const parsed = await parseUserDecision({
+    sessionId: session.id,
+    userText: text,
+    candidatesSummary: session.candidates_summary || {},
+  });
+  const selectedItemIds = getSelectedItemIds(parsed);
+  if (parsed.action !== 'select' || selectedItemIds.length === 0) return false;
+
+  const childSessions = [];
+  for (const itemId of selectedItemIds) {
+    const childSession = await createAdditionalPlanningSession({
+      baseSession: session,
+      selectedItemId: itemId,
+      userText: text,
+      parsed,
+    });
+    if (childSession?.id) childSessions.push(childSession);
+  }
+
+  if (childSessions.length === 0) {
+    await sendInlineMessage({
+      chatId,
+      text: '추가 후보 생성 세션을 만들지 못했습니다. 잠시 후 다시 시도해 주세요.',
+    });
+    return true;
+  }
+
+  await sendInlineMessage({
+    chatId,
+    text: `확인했습니다. 완료된 보고서의 후보 ${childSessions.length}개를 추가로 생성해볼게요. 완성되면 다시 알려드리겠습니다.`,
+  });
+
+  after(
+    finishSelectedSessions(childSessions.map((s) => ({ sessionId: s.id, selectedItemId: s.selectedItemId })))
+  );
+
+  return true;
+}
+
+async function finishSelectedSessions(selections) {
+  for (const selection of selections) {
+    try {
+      await finishPlanningSession(selection);
+    } catch (e) {
+      console.error('[telegram webhook] finishPlanningSession 실패', e);
+    }
+  }
+}
+
+async function createAdditionalPlanningSession({ baseSession, selectedItemId, userText, parsed }) {
+  const now = new Date().toISOString();
+  const childParsed = {
+    ...parsed,
+    selected_item_id: selectedItemId,
+    selected_item_ids: [selectedItemId],
+    user_intent_note: `${parsed.user_intent_note || '사용자 추가 선택'} (추가 생성 세션)`,
+  };
+  const { data, error } = await supabaseAdmin
+    .from('planning_sessions')
+    .insert({
+      job_id: baseSession.job_id,
+      status: 'phase2_running',
+      candidate_item_ids: baseSession.candidate_item_ids || [],
+      candidates_summary: baseSession.candidates_summary || {},
+      telegram_chat_id: baseSession.telegram_chat_id,
+      telegram_message_id_phase1: baseSession.telegram_message_id_phase1,
+      user_decision_raw: userText,
+      user_decision_parsed: childParsed,
+      selected_item_id: selectedItemId,
+      decided_at: now,
+      updated_at: now,
+    })
+    .select('id')
+    .single();
+  if (error) {
+    console.error('[telegram webhook] 추가 planning_session 생성 실패', error);
+    return null;
+  }
+  return { id: data.id, selectedItemId };
+}
+
+function getSelectedItemIds(parsed) {
+  const ids = Array.isArray(parsed?.selected_item_ids) ? parsed.selected_item_ids : [];
+  const withFallback = ids.length > 0 ? ids : [parsed?.selected_item_id].filter(Boolean);
+  return [...new Set(withFallback.filter((id) => typeof id === 'string' && id))];
+}
+
+// 진행 중 세션이 없을 때 들어온 "후보 N" 류 메시지는 가장 최근 완료 세션의 후보 메타를 재사용해 추가 생성한다.
+// 어미("도/추가/같이/...")는 옵셔널 — "후보 4" 단독도 충분히 의도가 명확함.
+// 패스/취소/리서치 요청은 이 경로로 받지 않는다 (완료된 세션을 재오픈할 의미가 없음).
+// LLM 파싱 결과 action !== 'select' 면 호출자에서 false 처리되므로 광범위 매칭이라도 안전망 있음.
+function isCompletedSessionCandidateFollowup(text) {
+  const normalized = String(text || '').trim().toLowerCase();
+  if (!normalized) return false;
+  return [
+    /\[?\s*후보\s*\d+\s*\]?/,
+    /\b\d+\s*번\s*(?:후보)?/,
+    /(?:첫|두|세|네|다섯|여섯)\s*번째/,
+  ].some((pattern) => pattern.test(normalized));
 }
 
 function isPlanningDecisionMessage({ text, message, session }) {
