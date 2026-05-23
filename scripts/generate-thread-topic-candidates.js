@@ -134,6 +134,47 @@ function buildTopic(row, pillarKey, pillars) {
   return base.length > 8 ? `요즘 사람들이 반응하는 ${row.keyword || '마케팅'} 방식` : label;
 }
 
+function inferResearchNeed(row, pillarKey) {
+  const text = `${row.firstLines} ${row.painPoint} ${row.keyword}`.toLowerCase();
+  const hasSpecificSignal = /(발표|공개|업데이트|파트너십|무료|도구|ai|google|gemini|capcut|claude|meta|구글|메타|클로드|캡컷)/i.test(text);
+  const hasPracticalClue = /(방법|체크|정리|10개|도구|소재|제목|리뷰|광고|사진|편집|생성|분석)/.test(text);
+  const hasOnlyVibe = /(첫 스레드|잘부탁|두근두근|스치니)/.test(text);
+
+  if (hasOnlyVibe) {
+    return {
+      level: 'high',
+      reason: '반응 신호는 있지만 내용 근거가 약함',
+      suggestedSources: ['Threads 추가 관찰', 'X 빠른 이슈'],
+    };
+  }
+  if (pillarKey === 'trend_plain' && !hasSpecificSignal) {
+    return {
+      level: 'high',
+      reason: '흐름 해석형인데 구체 발표/변화 신호가 부족함',
+      suggestedSources: ['뉴스/공식문서', 'X 빠른 이슈'],
+    };
+  }
+  if (!hasPracticalClue) {
+    return {
+      level: 'medium',
+      reason: '실행 예시를 만들 근거가 부족함',
+      suggestedSources: ['Reddit 사례', '내부 KB'],
+    };
+  }
+  if (hasSpecificSignal) {
+    return {
+      level: 'medium',
+      reason: '툴/플랫폼 이슈는 사실 확인이 필요함',
+      suggestedSources: ['공식문서/뉴스', 'X 빠른 이슈'],
+    };
+  }
+  return {
+    level: 'low',
+    reason: 'Threads 신호만으로 관찰형 초안 가능',
+    suggestedSources: ['내부 KB'],
+  };
+}
+
 function buildMarkdown({ date, auditFile, rows, pillars }) {
   const candidates = rows.filter(isRelevantRow).slice(0, 8).map((row, index) => {
     const pillarKey = inferPillar(row, pillars);
@@ -141,6 +182,7 @@ function buildMarkdown({ date, auditFile, rows, pillars }) {
     const topic = buildTopic(row, pillarKey, pillars);
     const goal = row.format.includes('자료') || row.executionFeel.includes('즉시') ? 'save' : (row.format.includes('질문') ? 'comment' : 'viewpoint');
     const ending = goal === 'save' ? 'save' : (goal === 'comment' ? 'question' : 'none');
+    const researchNeed = inferResearchNeed(row, pillarKey);
     return {
       index: index + 1,
       topic,
@@ -150,12 +192,13 @@ function buildMarkdown({ date, auditFile, rows, pillars }) {
       ending,
       sourceSignal: `${row.keyword} · ${row.format} · ${row.metrics}`,
       whyNow: row.painPoint || row.firstLines,
+      researchNeed,
       url: row.url,
     };
   });
 
   const rowsMd = candidates.map((c) => (
-    `| ${c.index} | ${escapeCell(c.topic)} | ${escapeCell(c.pillarLabel)} | ${c.goal} | ${c.ending} | ${escapeCell(c.whyNow)} | ${escapeCell(c.sourceSignal)} | ${escapeCell(c.url)} |`
+    `| ${c.index} | ${escapeCell(c.topic)} | ${escapeCell(c.pillarLabel)} | ${c.goal} | ${c.ending} | ${escapeCell(c.researchNeed.level)} | ${escapeCell(c.researchNeed.reason)} | ${escapeCell(c.whyNow)} | ${escapeCell(c.sourceSignal)} | ${escapeCell(c.url)} |`
   )).join('\n');
 
   return `# Threads 주제 후보 ${date}
@@ -164,15 +207,18 @@ function buildMarkdown({ date, auditFile, rows, pillars }) {
 
 이 문서는 Threads 수집 데이터를 바로 글로 쓰지 않고, 기브니즈 관점의 주제 후보로 한 번 변환한 기록이다. 후보는 확정 원고가 아니라 기획 회의용 중간 산출물이다.
 
-| # | 주제 후보 | 기둥 | 목표 | 마무리 | 왜 지금 | 수집 신호 | URL |
-|---|---|---|---|---|---|---|---|
-${rowsMd || '| - | 후보 없음 | - | - | - | - | - | - |'}
+| # | 주제 후보 | 기둥 | 목표 | 마무리 | 보강 | 보강 이유 | 왜 지금 | 수집 신호 | URL |
+|---|---|---|---|---|---|---|---|---|---|
+${rowsMd || '| - | 후보 없음 | - | - | - | - | - | - | - | - |'}
 
 ## 사용 규칙
 
 - 이 후보를 그대로 제목으로 복사하지 않는다.
 - 하나를 선택한 뒤 Reddit/X/뉴스/공식문서/내부 KB 중 필요한 소스로만 보강한다.
 - Threads 원문은 말투와 반응 패턴 참고용이며, 내용을 그대로 차용하지 않는다.
+- 보강이 \`high\` 인 후보는 바로 단정형 원고로 쓰지 않는다.
+- 보강이 \`medium\` 인 후보는 최소 1개 소스로 사실/사례/도구 정보를 확인한다.
+- 보강이 \`low\` 인 후보는 관찰형 또는 저장형 초안으로 바로 진행할 수 있다.
 - 글 생성 시 \`content_pillar\`, \`content_goal\`, \`ending_type\`을 다시 검토한다.
 `;
 }
