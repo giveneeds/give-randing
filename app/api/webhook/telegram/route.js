@@ -99,7 +99,7 @@ async function handleMessage(message) {
   }
 
   // 1) 진행 중 세션이 있으면 의사결정 답변으로 처리.
-  const handled = await handleDailyReportReply({ chatId, text });
+  const handled = await handleDailyReportReply({ chatId, text, message });
   if (handled) return;
 
   // 2) 진행 중 세션이 없으면 일반 LLM 자유 채팅으로 응답.
@@ -121,16 +121,20 @@ async function handleMessage(message) {
 
 // 정욱님이 1차 보고서에 자유 텍스트로 답하면 진행 중인 세션을 찾아 액션 결정.
 // 가장 최근 phase1_reported 또는 awaiting_decision 상태의 세션 1건만 처리.
-async function handleDailyReportReply({ chatId, text }) {
+async function handleDailyReportReply({ chatId, text, message }) {
   const { data: session } = await supabaseAdmin
     .from('planning_sessions')
-    .select('id, status, candidates_summary, telegram_chat_id')
+    .select('id, status, candidates_summary, telegram_chat_id, telegram_message_id_phase1')
     .eq('telegram_chat_id', chatId)
     .in('status', ['phase1_reported', 'awaiting_decision'])
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();
   if (!session) return false;
+
+  if (!isPlanningDecisionMessage({ text, message, session })) {
+    return false;
+  }
 
   // LLM 으로 사용자 의도 파싱.
   const parsed = await parseUserDecision({
@@ -207,6 +211,27 @@ async function handleDailyReportReply({ chatId, text }) {
   );
 
   return true;
+}
+
+function isPlanningDecisionMessage({ text, message, session }) {
+  const replyToMessageId = message?.reply_to_message?.message_id;
+  if (replyToMessageId && replyToMessageId === session.telegram_message_id_phase1) {
+    return true;
+  }
+
+  // 오래된 awaiting_decision 세션이 일반 대화를 가로채지 않도록,
+  // 명시적으로 후보/패스/리서치 의도가 보이는 문장만 의사결정 플로우로 보낸다.
+  const normalized = String(text || '').trim().toLowerCase();
+  if (!normalized) return false;
+
+  return [
+    /\[?\s*후보\s*\d+\s*\]?/,
+    /\b\d+\s*번\b/,
+    /^\d+$/,
+    /(?:첫|두|세|네|다섯|여섯)\s*번째/,
+    /(?:패스|스킵|취소|그만|오늘은\s*쉬)/,
+    /(?:추가\s*리서치|더\s*(?:찾아|봐|조사)|다른\s*(?:후보|주제|자료|방향))/,
+  ].some((pattern) => pattern.test(normalized));
 }
 
 async function handleCallback(cb) {
