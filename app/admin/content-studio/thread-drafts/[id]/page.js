@@ -268,9 +268,11 @@ function DecisionMetaSection({ draft }) {
   const rejected = Array.isArray(draft.rejected_candidates) ? draft.rejected_candidates : [];
   const governance = draft.governance_applied || {};
   const research = draft.research_context_used || {};
+  const generationDensity = research.generation_density_check || {};
+  const generationDecision = research.generation_decision || {};
 
   const hasAny = selectionReason || rejected.length > 0 || governance.applied_docs?.length > 0
-    || research.phase1 || research.phase2_deep;
+    || research.phase1 || research.phase2_deep || generationDensity.source_signal || generationDecision.research_sufficiency;
   if (!hasAny) return null;
 
   const phase1 = research.phase1 || {};
@@ -289,6 +291,7 @@ function DecisionMetaSection({ draft }) {
           {rejected.length > 0 && ` · 폐기 ${rejected.length}건`}
           {governance.applied_docs?.length > 0 && ` · 거버넌스 ${governance.applied_docs.length}건`}
           {(phase1.pain_points?.length || phase2.hook_patterns?.length) && ' · 리서치 반영'}
+          {generationDecision.research_sufficiency && ` · 밀도 ${generationDecision.research_sufficiency}`}
         </span>
       </button>
       {open && (
@@ -346,6 +349,62 @@ function DecisionMetaSection({ draft }) {
                   </li>
                 ))}
               </ul>
+            </div>
+          )}
+
+          {(generationDensity.source_signal || generationDecision.research_sufficiency) && (
+            <div className="md:col-span-2 border-t border-[var(--admin-border)] pt-4">
+              <div className="text-[10px] font-black uppercase tracking-widest text-violet-500 mb-2 inline-flex items-center gap-1">
+                <Sparkles size={11} /> 생성 밀도 체크
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                {generationDecision.research_sufficiency && (
+                  <div className="text-[var(--admin-text-muted)]">
+                    보강 판정:{' '}
+                    <span className="font-bold text-[var(--admin-text-main)]">{generationDecision.research_sufficiency}</span>
+                    {typeof generationDecision.grounded_example_count === 'number' && (
+                      <span className="text-zinc-400"> · 근거 연결 예시 {generationDecision.grounded_example_count}개</span>
+                    )}
+                  </div>
+                )}
+                {generationDecision.content_goal && (
+                  <div className="text-[var(--admin-text-muted)]">
+                    목표/마무리:{' '}
+                    <span className="font-bold text-[var(--admin-text-main)]">{generationDecision.content_goal}</span>
+                    {generationDecision.ending_type && <span className="text-zinc-400"> · {generationDecision.ending_type}</span>}
+                  </div>
+                )}
+                {generationDensity.source_signal && (
+                  <div className="md:col-span-2 text-[var(--admin-text-muted)]">
+                    수집 신호: <span className="text-[var(--admin-text-main)]">{generationDensity.source_signal}</span>
+                  </div>
+                )}
+                {generationDensity.giveneeds_angle && (
+                  <div className="md:col-span-2 text-[var(--admin-text-muted)]">
+                    기브니즈 관점: <span className="text-[var(--admin-text-main)]">{generationDensity.giveneeds_angle}</span>
+                  </div>
+                )}
+              </div>
+              {generationDensity.practical_examples?.length > 0 && (
+                <div className="mt-3">
+                  <div className="text-[10px] font-bold text-zinc-400 mb-1">실행 예시 근거</div>
+                  <ul className="space-y-1">
+                    {generationDensity.practical_examples.slice(0, 5).map((ex, i) => (
+                      <li key={i} className="text-xs text-[var(--admin-text-main)]">
+                        <span className="font-bold">{ex.action}</span>
+                        {ex.evidence && <span className="text-zinc-500"> — 근거: {ex.evidence}</span>}
+                        {ex.confidence && <span className="text-zinc-400"> ({ex.confidence})</span>}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {generationDensity.missing_info?.length > 0 && (
+                <div className="mt-3 text-[11px]">
+                  <span className="text-amber-700 font-bold">부족한 정보:</span>{' '}
+                  <span className="text-[var(--admin-text-main)]">{generationDensity.missing_info.join(', ')}</span>
+                </div>
+              )}
             </div>
           )}
 
