@@ -11,8 +11,8 @@ const TABS = [
 ];
 
 const STATUS_BUCKETS = [
-  { key: 'draft', label: '초안', cls: 'bg-zinc-100 text-zinc-600' },
-  { key: 'published', label: '발행됨', cls: 'bg-emerald-50 text-emerald-700' },
+  { key: 'draft', label: '초안' },
+  { key: 'published', label: '발행됨' },
 ];
 
 export default function PublishedPage() {
@@ -86,7 +86,7 @@ export default function PublishedPage() {
               onClick={() => setActiveTab(t.key)}
               className={clsx(
                 'inline-flex items-center gap-2 px-4 py-2.5 text-xs font-black uppercase tracking-widest border-b-2 -mb-px transition',
-                active ? 'border-zinc-900 text-zinc-900' : 'border-transparent text-zinc-400 hover:text-zinc-700'
+                active ? 'border-[var(--admin-text-main)] text-[var(--admin-text-main)]' : 'border-transparent text-[var(--admin-text-muted)] hover:text-[var(--admin-text-main)]'
               )}
             >
               <Icon size={13} /> {t.label}
@@ -100,7 +100,9 @@ export default function PublishedPage() {
               onClick={() => setStatusFilter(b.key)}
               className={clsx(
                 'px-3 py-1 rounded-full text-[10px] font-bold border transition',
-                statusFilter === b.key ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-white text-zinc-500 border-zinc-200 hover:bg-zinc-50'
+                statusFilter === b.key
+                  ? 'bg-[var(--admin-text-main)] text-[var(--admin-card-bg)] border-[var(--admin-text-main)]'
+                  : 'bg-[var(--admin-card-bg)] text-[var(--admin-text-muted)] border-[var(--admin-border)] hover:text-[var(--admin-text-main)]'
               )}
             >
               {b.label}
@@ -123,7 +125,7 @@ export default function PublishedPage() {
 function ThreadList({ rows, statusFilter }) {
   if (rows.length === 0) {
     return (
-      <div className="bg-white border border-[var(--admin-border)] rounded-md py-24 text-center text-zinc-400 text-sm">
+      <div className="bg-[var(--admin-card-bg)] border border-[var(--admin-border)] rounded-md py-24 text-center text-[var(--admin-text-muted)] text-sm">
         {statusFilter === 'published' ? '아직 발행된 스레드가 없습니다.' : '아직 스레드 드래프트가 없습니다. 검토함에서 [스레드 만들기]로 시작하세요.'}
       </div>
     );
@@ -134,7 +136,7 @@ function ThreadList({ rows, statusFilter }) {
         <Link
           key={d.id}
           href={`/admin/content-studio/thread-drafts/${d.id}`}
-          className="block bg-white border border-[var(--admin-border)] rounded-md p-4 shadow-sm hover:shadow-md transition space-y-2"
+          className="block bg-[var(--admin-card-bg)] border border-[var(--admin-border)] rounded-md p-4 shadow-sm hover:shadow-md transition space-y-2"
         >
           <div className="flex items-center gap-2 flex-wrap text-[10px]">
             <span className="bg-blue-50 text-blue-700 border border-blue-200 font-bold px-2 py-0.5 rounded-full">{d.format_type}</span>
@@ -144,14 +146,14 @@ function ThreadList({ rows, statusFilter }) {
                 <Sparkles size={10} /> 자동
               </span>
             )}
-            <span className="ml-auto text-zinc-400">{new Date(d.created_at).toLocaleDateString('ko-KR')}</span>
+            <span className="ml-auto text-[var(--admin-text-muted)]">{new Date(d.created_at).toLocaleDateString('ko-KR')}</span>
           </div>
-          <h3 className="font-black text-sm text-zinc-900 line-clamp-2">{d.title || '(제목 없음)'}</h3>
-          <p className="text-xs text-zinc-500 line-clamp-3">{(d.posts || [])[0]?.body || ''}</p>
+          <h3 className="font-black text-sm text-[var(--admin-text-main)] line-clamp-2">{d.title || '(제목 없음)'}</h3>
+          <p className="text-xs text-[var(--admin-text-muted)] line-clamp-3">{(d.posts || [])[0]?.body || ''}</p>
           {d.selection_reason && (
             <p className="text-[10px] text-violet-600 italic line-clamp-2 border-l-2 border-violet-200 pl-2">{d.selection_reason}</p>
           )}
-          <div className="flex items-center justify-between text-[10px] text-zinc-400 pt-1">
+          <div className="flex items-center justify-between text-[10px] text-[var(--admin-text-muted)] pt-1">
             <span>
               {(d.posts || []).length} 포스트
               {Array.isArray(d.rejected_candidates) && d.rejected_candidates.length > 0 && (
@@ -159,7 +161,7 @@ function ThreadList({ rows, statusFilter }) {
               )}
             </span>
             {d.published_url && (
-              <a href={d.published_url} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="inline-flex items-center gap-1 text-zinc-500 hover:text-zinc-900">
+              <a href={d.published_url} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="inline-flex items-center gap-1 text-[var(--admin-text-muted)] hover:text-[var(--admin-text-main)]">
                 발행본 보기 <ExternalLink size={10} />
               </a>
             )}
@@ -173,7 +175,7 @@ function ThreadList({ rows, statusFilter }) {
 function MagazineList({ rows, statusFilter }) {
   if (rows.length === 0) {
     return (
-      <div className="bg-white border border-[var(--admin-border)] rounded-md py-24 text-center text-zinc-400 text-sm">
+      <div className="bg-[var(--admin-card-bg)] border border-[var(--admin-border)] rounded-md py-24 text-center text-[var(--admin-text-muted)] text-sm">
         {statusFilter === 'published' ? '아직 발행된 매거진이 없습니다.' : '아직 매거진 드래프트가 없습니다.'}
       </div>
     );
@@ -186,9 +188,9 @@ function MagazineList({ rows, statusFilter }) {
           href={statusFilter === 'published' ? `/magazine/${m.slug}` : `/admin/magazines/editor?id=${m.id}`}
           target={statusFilter === 'published' ? '_blank' : undefined}
           rel="noreferrer"
-          className="block bg-white border border-[var(--admin-border)] rounded-md p-4 shadow-sm hover:shadow-md transition"
+          className="block bg-[var(--admin-card-bg)] border border-[var(--admin-border)] rounded-md p-4 shadow-sm hover:shadow-md transition"
         >
-          <div className="aspect-video bg-zinc-100 rounded-md mb-3 overflow-hidden">
+          <div className="aspect-video bg-zinc-100 dark:bg-slate-800 rounded-md mb-3 overflow-hidden">
             {m.thumbnail_url ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={m.thumbnail_url} alt={m.title} className="w-full h-full object-cover" />
@@ -196,9 +198,9 @@ function MagazineList({ rows, statusFilter }) {
               <div className="w-full h-full flex items-center justify-center text-zinc-300"><BookOpen size={28} /></div>
             )}
           </div>
-          <div className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-1">{m.category || 'UNCATEGORIZED'}</div>
-          <h3 className="font-black text-sm text-zinc-900 line-clamp-2 mb-2">{m.title}</h3>
-          <div className="flex items-center gap-2 text-[11px] text-zinc-500">
+          <div className="text-[10px] font-black uppercase tracking-widest text-[var(--admin-text-muted)] mb-1">{m.category || 'UNCATEGORIZED'}</div>
+          <h3 className="font-black text-sm text-[var(--admin-text-main)] line-clamp-2 mb-2">{m.title}</h3>
+          <div className="flex items-center gap-2 text-[11px] text-[var(--admin-text-muted)]">
             <Calendar size={11} /> {new Date(m.created_at).toLocaleDateString('ko-KR')}
             {m.is_featured && <span className="ml-auto px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-600 font-bold">FEATURED</span>}
           </div>

@@ -87,8 +87,8 @@ export default function AdminLayout({ children }) {
 
   if (checking || !profile) {
     return (
-      <div className="h-screen w-full flex items-center justify-center bg-white">
-        <Loader2 className="animate-spin text-zinc-900" size={28} />
+      <div className="h-screen w-full flex items-center justify-center bg-[var(--admin-bg)]">
+        <Loader2 className="animate-spin text-[var(--admin-text-main)]" size={28} />
       </div>
     );
   }
@@ -96,7 +96,7 @@ export default function AdminLayout({ children }) {
   return (
     <AdminContext.Provider value={{ handleLogout, profile }}>
       <SidebarContext.Provider value={{ open: sidebarOpen, setOpen: setSidebarOpen }}>
-        <div className="bg-zinc-50 text-zinc-900 min-h-screen" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>
+        <div className="bg-[var(--admin-bg)] text-[var(--admin-text-main)] min-h-screen" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>
           <Sidebar handleLogout={handleLogout} open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
           {sidebarOpen && (
             <div

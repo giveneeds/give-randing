@@ -13,9 +13,9 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.giveneeds.co.kr";
 
-const SITE_TITLE = "GIVENEEDS | 전략적 마케팅 파트너";
+const SITE_TITLE = "기브니즈 마케팅 대행사 | GIVENEEDS";
 const SITE_DESCRIPTION =
-  "기브니즈는 B2B 마케팅 대행사입니다. 네이버·구글·메타 광고 운영, 바이럴, 리뷰 관리, AI 마케팅까지 — 데이터 기반 전환 성과를 만드는 전략 파트너.";
+  "기브니즈는 B2B 마케팅 대행사입니다. 네이버·구글·메타 광고 운영, 네이버 플레이스·SEO, 바이럴, 리뷰 관리, AI 마케팅까지 데이터 기반 전환 성과를 만드는 전략 파트너입니다.";
 
 export const metadata = {
   metadataBase: new URL(SITE_URL),
@@ -23,6 +23,8 @@ export const metadata = {
   description: SITE_DESCRIPTION,
   keywords: [
     "마케팅 대행사",
+    "온라인 마케팅 대행사",
+    "디지털 마케팅 대행사",
     "B2B 마케팅",
     "디지털 마케팅",
     "네이버 SEO",
@@ -30,6 +32,7 @@ export const metadata = {
     "퍼포먼스 마케팅",
     "바이럴 마케팅",
     "AI 마케팅",
+    "광고 대행사",
     "기브니즈",
     "GIVENEEDS",
   ],
@@ -37,6 +40,7 @@ export const metadata = {
   creator: "GIVENEEDS",
   publisher: "GIVENEEDS",
   alternates: { canonical: "/" },
+  category: "marketing agency",
   openGraph: {
     type: "website",
     siteName: "GIVENEEDS",

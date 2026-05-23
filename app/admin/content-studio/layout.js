@@ -37,8 +37,8 @@ export default function ContentStudioLayout({ children }) {
               className={
                 'inline-flex items-center gap-2 px-4 py-2.5 text-xs font-black uppercase tracking-widest transition-colors border-b-2 -mb-px whitespace-nowrap ' +
                 (active
-                  ? 'border-zinc-900 text-zinc-900'
-                  : 'border-transparent text-zinc-400 hover:text-zinc-700')
+                  ? 'border-[var(--admin-text-main)] text-[var(--admin-text-main)]'
+                  : 'border-transparent text-[var(--admin-text-muted)] hover:text-[var(--admin-text-main)]')
               }
             >
               <Icon size={14} />
