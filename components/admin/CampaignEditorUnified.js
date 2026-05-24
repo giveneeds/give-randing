@@ -952,14 +952,23 @@ export default function CampaignEditorUnified({ campaign, sections, onSave, onCl
               </div>
             </ConfigCard>
 
-            <ConfigCard title="첨부 자료 (다운로드)" icon={<FileText size={14} />}
-              rightSlot={<span className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">로그인 유저에게 바로 다운로드</span>}
+            <ConfigCard title="리드 마그넷 자료" icon={<FileText size={14} />}
+              rightSlot={<span className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">자료별 노출 위치 토글</span>}
             >
+              <p className="text-[11px] text-zinc-500 leading-relaxed bg-blue-50 p-3 rounded-lg border border-blue-100 mb-3">
+                💡 PDF · DOCX · ZIP 등을 자유롭게 올리세요.<br />
+                자료마다 <strong>“폼 제출 후”</strong> / <strong>“페이지 하단”</strong> 토글로 노출 위치를 결정합니다.<br />
+                <span className="text-zinc-400">
+                  · 폼 제출 후만 ON → 사용자가 폼에 입력해야 카드 리스트로 다운로드 (기본 폼 모드 권장)<br />
+                  · 페이지 하단만 ON → 입력 없이 페이지 하단에 항상 노출<br />
+                  · 둘 다 ON → 양쪽 모두 노출
+                </span>
+              </p>
               <ResourcesManager
                 parentType="campaign"
                 parentId={current.id}
                 onResourceAdded={(r) => {
-                  alert(`자료 "${r.title}"이(가) 추가되었습니다. 랜딩페이지 하단 "첨부 자료" 섹션에 자동 노출됩니다.`);
+                  alert(`자료 "${r.title}"이(가) 추가되었습니다. 자료 카드의 노출 위치 토글을 확인하세요.`);
                 }}
               />
             </ConfigCard>
