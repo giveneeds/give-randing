@@ -4,7 +4,14 @@ import { requireAdmin } from '@/lib/adminAuth';
 
 export const runtime = 'nodejs';
 
-const ALLOWED_PATCH = ['title', 'description', 'is_enabled', 'sort_order'];
+const ALLOWED_PATCH = [
+  'title',
+  'description',
+  'is_enabled',
+  'sort_order',
+  'display_on_form_submit', // basic 모드 폼 제출 후 자료 카드 리스트 노출 여부
+  'display_on_page_bottom', // 라이브 페이지 하단 '첨부 자료' 섹션 노출 여부
+];
 
 /**
  * PATCH /api/campaigns/[id]/resources/[resourceId]

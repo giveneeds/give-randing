@@ -126,31 +126,18 @@ const DEFAULT_DOWNLOAD_SCREEN = {
   kakao_url: 'https://pf.kakao.com/_lutxdG',
 };
 
+/**
+ * ⚠️ 주의: 내부 컴포넌트(Row 같은 거)를 함수 안에 정의하면 매 렌더마다 새 컴포넌트가
+ *   생성되어 React 가 <input> 을 unmount/remount 한다. 한글 IME 가 조합 중인 상태에서
+ *   re-mount 되면 첫 글자(초성)만 들어가고 다음 글자가 막힌다.
+ *   → 인라인 JSX 로 펼쳐서 작성한다.
+ */
 function DownloadScreenEditor({ value, onChange }) {
   const v = { ...DEFAULT_DOWNLOAD_SCREEN, ...(value || {}) };
   const set = (key, val) => onChange({ ...v, [key]: val });
 
-  const Row = ({ label, k, placeholder, multiline }) => (
-    <div className="space-y-1">
-      <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">{label}</label>
-      {multiline ? (
-        <textarea
-          value={v[k] ?? ''}
-          onChange={(e) => set(k, e.target.value)}
-          placeholder={placeholder}
-          rows={2}
-          className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-md text-xs outline-none focus:ring-2 focus:ring-zinc-900/10 resize-none"
-        />
-      ) : (
-        <input
-          value={v[k] ?? ''}
-          onChange={(e) => set(k, e.target.value)}
-          placeholder={placeholder}
-          className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-md text-xs outline-none focus:ring-2 focus:ring-zinc-900/10"
-        />
-      )}
-    </div>
-  );
+  const inputCls = 'w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-md text-xs outline-none focus:ring-2 focus:ring-zinc-900/10';
+  const labelCls = 'text-[9px] font-black text-zinc-400 uppercase tracking-widest';
 
   return (
     <div className="space-y-3 mt-3 pt-3 border-t border-zinc-100">
@@ -158,11 +145,57 @@ function DownloadScreenEditor({ value, onChange }) {
         <p className="text-[10px] font-black uppercase tracking-[0.25em] text-zinc-700">다운로드 화면 문구</p>
         <p className="text-[10px] text-zinc-400 mt-0.5">기본 폼 제출 후 사용자가 보는 자료 카드 리스트 화면의 문구를 수정합니다. 비우면 기본값으로 표시.</p>
       </div>
-      <Row label="상단 라벨" k="badge_label" placeholder={DEFAULT_DOWNLOAD_SCREEN.badge_label} />
-      <Row label="헤드라인" k="headline" placeholder={DEFAULT_DOWNLOAD_SCREEN.headline} />
-      <Row label="설명문" k="description" placeholder={DEFAULT_DOWNLOAD_SCREEN.description} multiline />
-      <Row label="카카오 버튼 텍스트" k="kakao_cta" placeholder={DEFAULT_DOWNLOAD_SCREEN.kakao_cta} />
-      <Row label="카카오 채널 URL (또는 다른 링크)" k="kakao_url" placeholder={DEFAULT_DOWNLOAD_SCREEN.kakao_url} />
+
+      <div className="space-y-1">
+        <label className={labelCls}>상단 라벨</label>
+        <input
+          value={v.badge_label ?? ''}
+          onChange={(e) => set('badge_label', e.target.value)}
+          placeholder={DEFAULT_DOWNLOAD_SCREEN.badge_label}
+          className={inputCls}
+        />
+      </div>
+
+      <div className="space-y-1">
+        <label className={labelCls}>헤드라인</label>
+        <input
+          value={v.headline ?? ''}
+          onChange={(e) => set('headline', e.target.value)}
+          placeholder={DEFAULT_DOWNLOAD_SCREEN.headline}
+          className={inputCls}
+        />
+      </div>
+
+      <div className="space-y-1">
+        <label className={labelCls}>설명문</label>
+        <textarea
+          value={v.description ?? ''}
+          onChange={(e) => set('description', e.target.value)}
+          placeholder={DEFAULT_DOWNLOAD_SCREEN.description}
+          rows={2}
+          className={`${inputCls} resize-none`}
+        />
+      </div>
+
+      <div className="space-y-1">
+        <label className={labelCls}>카카오 버튼 텍스트</label>
+        <input
+          value={v.kakao_cta ?? ''}
+          onChange={(e) => set('kakao_cta', e.target.value)}
+          placeholder={DEFAULT_DOWNLOAD_SCREEN.kakao_cta}
+          className={inputCls}
+        />
+      </div>
+
+      <div className="space-y-1">
+        <label className={labelCls}>카카오 채널 URL (또는 다른 링크)</label>
+        <input
+          value={v.kakao_url ?? ''}
+          onChange={(e) => set('kakao_url', e.target.value)}
+          placeholder={DEFAULT_DOWNLOAD_SCREEN.kakao_url}
+          className={inputCls}
+        />
+      </div>
     </div>
   );
 }
