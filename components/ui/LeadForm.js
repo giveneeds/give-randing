@@ -14,6 +14,7 @@ import {
   User,
   Phone,
   Mail,
+  FileText,
 } from 'lucide-react';
 import { isDummyMode, supabase } from '@/lib/supabase';
 import { signInWithKakao } from '@/lib/authKakao';
@@ -36,11 +37,16 @@ export default function LeadForm({ title, subtitle, ctaLabel, campaignId, magazi
   const shouldAutoDownload = searchParams?.get('lead_dl') === '1';
 
   const [phase, setPhase] = useState(shouldAutoDownload ? 'processing' : 'idle');
-  // 'idle' → 'processing' → 'downloaded' | 'submitted' | 'no-resource' | 'error'
+  // 'idle' → 'processing' → 'downloaded' | 'submitted' | 'resource_list' | 'no-resource' | 'error'
   const [errorMessage, setErrorMessage] = useState('');
   const [downloadInfo, setDownloadInfo] = useState(null);
   // { url, fileName }
   const [kakaoLoading, setKakaoLoading] = useState(false);
+
+  // basic 모드 → 자료 카드 리스트 다운로드
+  const [downloadToken, setDownloadToken] = useState(null);
+  const [resourceList, setResourceList] = useState([]);
+  const [downloadingResourceId, setDownloadingResourceId] = useState(null);
 
   // Basic form: 어드민 설정 기반 동적 필드. 미설정이면 레거시 기본값.
   const fields = normalizeBasicFormFields(basicFormFields);
@@ -249,6 +255,7 @@ export default function LeadForm({ title, subtitle, ctaLabel, campaignId, magazi
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error || '리드 등록에 실패했습니다.');
       }
+      const resBody = await res.json().catch(() => ({}));
       metaLead({
         content_name: payload.lead_type,
         content_category: category,
@@ -260,6 +267,25 @@ export default function LeadForm({ title, subtitle, ctaLabel, campaignId, magazi
       const cleared = { agree: false };
       fields.forEach((f) => { cleared[f.id] = ''; });
       setBasicValues(cleared);
+
+      // 캠페인 폼 + 활성 자료 존재 시 → 자료 카드 리스트로 전환
+      if (resBody.download_token && campaignId) {
+        try {
+          const rRes = await fetch(`/api/campaigns/${campaignId}/resources`);
+          const rData = await rRes.json();
+          const list = (rData.resources || []).filter(
+            (r) => r.is_enabled !== false && r.display_on_form_submit !== false
+          );
+          if (list.length > 0) {
+            setDownloadToken(resBody.download_token);
+            setResourceList(list);
+            setPhase('resource_list');
+            return;
+          }
+        } catch (rErr) {
+          console.warn('자료 리스트 로딩 실패 — submitted 흐름으로 폴백', rErr);
+        }
+      }
       setPhase('submitted');
     } catch (err) {
       setErrorMessage(err.message || '제출 중 오류가 발생했습니다.');
@@ -267,6 +293,32 @@ export default function LeadForm({ title, subtitle, ctaLabel, campaignId, magazi
     } finally {
       setBasicSubmitting(false);
     }
+  };
+
+  // basic 모드 — 1회용 토큰으로 자료 카드 개별 다운로드
+  const downloadByToken = async (resource) => {
+    if (!downloadToken || !campaignId) return;
+    setDownloadingResourceId(resource.id);
+    try {
+      const dlRes = await fetch(
+        `/api/campaigns/${campaignId}/resources/${resource.id}/download?token=${encodeURIComponent(downloadToken)}`,
+        { method: 'POST', headers: { 'Content-Type': 'application/json' } }
+      );
+      const dlData = await dlRes.json();
+      if (!dlRes.ok) throw new Error(dlData.error || '다운로드 URL 발급 실패');
+      triggerBrowserDownload(dlData.url, resource.file_name);
+    } catch (err) {
+      setErrorMessage(err.message || '다운로드 처리 중 오류가 발생했습니다.');
+    } finally {
+      setDownloadingResourceId(null);
+    }
+  };
+
+  const formatBytes = (bytes) => {
+    if (!bytes && bytes !== 0) return '';
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
   };
 
   const handleRedownload = async () => {
@@ -348,6 +400,78 @@ export default function LeadForm({ title, subtitle, ctaLabel, campaignId, magazi
                 카카오 채널 친구추가
               </a>
             </div>
+          </motion.div>
+        )}
+
+        {phase === 'resource_list' && (
+          <motion.div
+            key="resource_list"
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="relative z-10 w-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-2xl rounded-2xl sm:rounded-[40px] border border-zinc-200/60 dark:border-white/5 shadow-[0_20px_50px_rgba(0,0,0,0.1)] p-6 sm:p-10"
+          >
+            <div className="flex items-center gap-2 mb-3">
+              <CheckCircle2 size={18} className="text-emerald-500" />
+              <span className="text-[10px] sm:text-xs font-black tracking-[0.25em] text-emerald-600 uppercase">
+                신청 완료
+              </span>
+            </div>
+            <h3 className="text-xl sm:text-2xl font-black tracking-tighter mb-2 text-zinc-900 dark:text-white break-keep">
+              자료를 다운로드하세요
+            </h3>
+            <p className="text-zinc-500 dark:text-zinc-400 text-xs sm:text-sm leading-relaxed mb-5 sm:mb-7 break-keep">
+              원하는 자료를 골라서 다운로드할 수 있어요. 다운로드 링크는 15분간 유효합니다.
+            </p>
+
+            <ul className="space-y-2 sm:space-y-3 mb-5">
+              {resourceList.map((r) => (
+                <li
+                  key={r.id}
+                  className="flex items-center gap-3 p-3 sm:p-4 bg-white dark:bg-zinc-800/40 border border-zinc-200 dark:border-white/5 rounded-xl"
+                >
+                  <div className="shrink-0 w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                    <FileText size={16} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-zinc-900 dark:text-white truncate" title={r.title}>
+                      {r.title}
+                    </p>
+                    <p className="text-[10px] sm:text-xs text-zinc-400 truncate">
+                      {r.file_name} · {formatBytes(r.file_size)}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => downloadByToken(r)}
+                    disabled={downloadingResourceId === r.id}
+                    className="shrink-0 inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-full text-[11px] sm:text-xs font-black uppercase tracking-widest disabled:opacity-50"
+                  >
+                    {downloadingResourceId === r.id ? (
+                      <Loader2 size={12} className="animate-spin" />
+                    ) : (
+                      <Download size={12} />
+                    )}
+                    다운로드
+                  </button>
+                </li>
+              ))}
+            </ul>
+
+            {errorMessage && (
+              <p className="text-xs text-rose-500 mb-3 flex items-center gap-1.5">
+                <AlertCircle size={12} /> {errorMessage}
+              </p>
+            )}
+
+            <a
+              href={KAKAO_CHANNEL_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex w-full items-center justify-center gap-2 px-5 py-3 bg-[#FEE500] text-[#191919] rounded-full font-bold text-xs sm:text-sm hover:scale-[1.02] transition-transform"
+            >
+              <MessageCircle size={14} fill="currentColor" />
+              카카오 채널 친구추가하고 새 자료 받기
+            </a>
           </motion.div>
         )}
 

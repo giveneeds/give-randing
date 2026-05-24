@@ -61,12 +61,13 @@ export default function AdminCampaigns() {
     }
   };
 
-  const handleCreate = () => {
-    setCurrentCampaign({
-      id: `cp-${Date.now()}`,
-      slug: '',
+  const handleCreate = async () => {
+    // 신규 캠페인은 즉시 서버에 임시저장 → 서버 UUID 발급받음.
+    // 이렇게 해야 ResourcesManager(isPersistedId 검사) 가 자료 첨부 UI 를 즉시 활성화한다.
+    const draft = {
+      slug: `draft-${Date.now()}`, // 사용자가 저장 시 실제 slug 입력
       title: '새 캠페인',
-      is_active: true,
+      is_active: false,
       status: 'draft',
       hero_type: 'B',
       show_particle: true,
@@ -78,12 +79,31 @@ export default function AdminCampaigns() {
         description: '',
         particle_text: 'GIVENEEDS\nSTRATEGIC\nMARKETING\nPARTNER',
         cta_label: '지금 신청하기',
-        file_name: ''
+        file_name: '',
+        lead_form_mode: 'kakao',
       },
       tracking_scripts: { pixel_id: '', ga_id: '' },
       selected_sections: []
-    });
-    setIsEditing(true);
+    };
+
+    try {
+      const res = await fetch('/api/campaigns', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(draft)
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || `신규 캠페인 생성 실패 (${res.status})`);
+      }
+      const { campaign } = await res.json();
+      setCampaigns(prev => [campaign, ...prev]);
+      setCurrentCampaign(campaign);
+      setIsEditing(true);
+    } catch (e) {
+      console.error('Failed to bootstrap new campaign:', e);
+      alert('새 캠페인 초기화에 실패했습니다: ' + e.message);
+    }
   };
 
   if (loading) return (

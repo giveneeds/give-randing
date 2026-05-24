@@ -96,6 +96,8 @@ export async function POST(request) {
       return NextResponse.json({ error: '필수 정보가 누락되었습니다.' }, { status: 400 });
     }
 
+    let createdLeadId = null;
+
     // 2. Database Insert
     if (!isDummyMode) {
       const insertData = {
@@ -140,6 +142,7 @@ export async function POST(request) {
         .single();
 
       if (error) throw error;
+      createdLeadId = leadRow?.id || null;
 
       // ID 스티칭: 익명 세션/이벤트를 이 리드에 소급 연결
       if (anonymous_id && leadRow?.id) {
@@ -157,7 +160,42 @@ export async function POST(request) {
     await sendKakaoWebhook({ name, phone, email, company_name, budget, message, lead_type, source_page })
       .catch(err => console.error('Kakao webhook failed:', err));
 
-    return NextResponse.json({ success: true, message: '리드가 성공적으로 등록되었습니다.' });
+    // 3. 캠페인 basic 폼 + 활성 자료 보유 시 1회용 다운로드 토큰 발급
+    let download_token = null;
+    if (!isDummyMode && createdLeadId && campaign_id && lead_type !== 'campaign_kakao_oauth') {
+      try {
+        const { count: activeResourceCount } = await supabase
+          .from('content_resources')
+          .select('id', { count: 'exact', head: true })
+          .eq('campaign_id', campaign_id)
+          .eq('is_enabled', true)
+          .neq('display_on_form_submit', false);
+
+        if ((activeResourceCount || 0) > 0) {
+          const { data: tokenRow, error: tokenErr } = await supabase
+            .from('lead_download_tokens')
+            .insert({
+              lead_id: createdLeadId,
+              campaign_id,
+            })
+            .select('token')
+            .single();
+          if (tokenErr) {
+            console.warn('download token issue failed:', tokenErr.message);
+          } else {
+            download_token = tokenRow?.token || null;
+          }
+        }
+      } catch (tokenIssueErr) {
+        console.warn('download token issue skipped:', tokenIssueErr?.message);
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: '리드가 성공적으로 등록되었습니다.',
+      ...(download_token ? { download_token } : {}),
+    });
   } catch (error) {
     console.error('Lead Capture Error:', error);
     return NextResponse.json({ error: `서버 오류: ${error.message || '알 수 없는 오류'}` }, { status: 500 });

@@ -157,17 +157,21 @@ export default function CampaignLandingPage() {
           ))}
         </div>
 
-        {/* 2-1. 캠페인 첨부 자료 */}
-        {resources.length > 0 && (
-          <section className="px-4 md:px-12 max-w-screen-md mx-auto mt-16 md:mt-24">
-            <ResourceDownloads
-              parentType="campaign"
-              parentId={campaign.id}
-              slug={campaign.slug}
-              resources={resources}
-            />
-          </section>
-        )}
+        {/* 2-1. 캠페인 첨부 자료 (페이지 하단 노출 ON 자료만) */}
+        {(() => {
+          const bottomResources = resources.filter((r) => r.display_on_page_bottom !== false);
+          if (bottomResources.length === 0) return null;
+          return (
+            <section className="px-4 md:px-12 max-w-screen-md mx-auto mt-16 md:mt-24">
+              <ResourceDownloads
+                parentType="campaign"
+                parentId={campaign.id}
+                slug={campaign.slug}
+                resources={bottomResources}
+              />
+            </section>
+          );
+        })()}
 
         {/* 3. 🛡️ 롤백 요청 사항: 아티클(매거진) 강제 노출 */}
         <section className={`${campaign.show_ai_block ? 'pt-16 md:pt-32' : 'py-16 md:py-32'} border-t border-zinc-100 mt-16 md:mt-32 px-4 md:px-12 max-w-7xl mx-auto`}>

@@ -92,7 +92,7 @@ export async function POST(request) {
   }
 }
 
-// PUT: 캠페인 수정 (Upsert)
+// PUT: 캠페인 수정 (명시적 update — slug 충돌로 다른 캠페인 덮어쓰는 사고 방지)
 export async function PUT(request) {
   if (isDummyMode) {
     const body = await request.json();
@@ -109,14 +109,43 @@ export async function PUT(request) {
 
   try {
     const body = await request.json();
-    
-    // We expect body to contain id if updating, but if it's an upsert on slug, need to handle
-    const { error } = await db
+
+    if (!body.id) {
+      return NextResponse.json(
+        { error: '캠페인 id가 누락되었습니다. 새 캠페인은 POST 로 생성하세요.' },
+        { status: 400 }
+      );
+    }
+
+    // 사전검사: 같은 slug 가 다른 캠페인에 이미 존재하면 거부
+    if (body.slug) {
+      const { data: slugConflict, error: selErr } = await db
+        .from('campaigns')
+        .select('id')
+        .eq('slug', body.slug)
+        .neq('id', body.id)
+        .maybeSingle();
+      if (selErr) throw selErr;
+      if (slugConflict) {
+        return NextResponse.json(
+          { error: `동일 slug "${body.slug}" 가 이미 다른 캠페인에 사용 중입니다. 다른 slug 를 입력해 주세요.` },
+          { status: 409 }
+        );
+      }
+    }
+
+    const updatePayload = { ...body, updated_at: new Date().toISOString() };
+    delete updatePayload.id; // WHERE 절에서만 사용
+
+    const { data, error } = await db
       .from('campaigns')
-      .upsert({ ...body, updated_at: new Date().toISOString() }, { onConflict: 'slug' });
+      .update(updatePayload)
+      .eq('id', body.id)
+      .select()
+      .single();
 
     if (error) throw error;
-    return NextResponse.json({ success: true, campaign: body });
+    return NextResponse.json({ success: true, campaign: data });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

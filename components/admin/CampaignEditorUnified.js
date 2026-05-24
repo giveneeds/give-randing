@@ -1,5 +1,5 @@
 'use client';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import {
   X, BarChart3, CheckCircle2, Save, Eye, Sparkles,
   ClipboardList, Zap, Layout, Monitor, Smartphone, MessageSquare, MessageCircle,
@@ -430,12 +430,17 @@ export default function CampaignEditorUnified({ campaign, sections, onSave, onCl
   });
 
   const [previewMode, setPreviewMode] = useState('desktop');
+  const [previewPhase, setPreviewPhase] = useState('idle'); // 'idle' | 'resource_list'
   const [activeInsight, setActiveInsight] = useState('preview');
   const [expandedSectionId, setExpandedSectionId] = useState(null);
   const [dragState, setDragState] = useState({ type: null, index: null, overIndex: null });
   const [library, setLibrary] = useState({ blocks: [] });
   const [localSections, setLocalSections] = useState(sections);
   const [isLibraryLoading, setIsLibraryLoading] = useState(false);
+
+  // iframe 모바일 미리보기 — viewport 격리
+  const previewIframeRef = useRef(null);
+  const [iframeReady, setIframeReady] = useState(false);
 
   useEffect(() => {
     async function loadLibrary() {
@@ -452,6 +457,49 @@ export default function CampaignEditorUnified({ campaign, sections, onSave, onCl
   useEffect(() => {
     setLocalSections(sections);
   }, [sections]);
+
+  // iframe ready 시그널 수신
+  useEffect(() => {
+    function onMessage(event) {
+      const data = event?.data;
+      if (data?.type === 'campaign:preview:ready') {
+        setIframeReady(true);
+      }
+    }
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, []);
+
+  // 모바일 iframe 으로 state 동기화 (디바운스)
+  const liveSectionsForPreview = useMemo(() => {
+    return (current.selected_sections || []).map((id) => {
+      const base = localSections.find((s) => s.id === id);
+      if (!base) return null;
+      return { ...base, ...(current.section_overrides?.[id] || {}) };
+    }).filter(Boolean);
+  }, [current.selected_sections, current.section_overrides, localSections]);
+
+  useEffect(() => {
+    if (previewMode !== 'mobile') return;
+    if (!iframeReady) return;
+    const target = previewIframeRef.current?.contentWindow;
+    if (!target) return;
+    const handle = setTimeout(() => {
+      try {
+        target.postMessage({
+          type: 'campaign:preview',
+          payload: {
+            campaign: current,
+            sections: liveSectionsForPreview,
+            forcePhase: previewPhase === 'idle' ? undefined : previewPhase,
+          },
+        }, '*');
+      } catch (e) {
+        console.warn('preview postMessage failed:', e);
+      }
+    }, 200);
+    return () => clearTimeout(handle);
+  }, [previewMode, iframeReady, current, liveSectionsForPreview, previewPhase]);
 
   // ── helpers (Using functional updates for stability)
   const set = (patch) => setCurrent(p => ({ ...p, ...patch }));
@@ -956,7 +1004,31 @@ export default function CampaignEditorUnified({ campaign, sections, onSave, onCl
                     previewMode === 'mobile' ? 'bg-zinc-900 text-white' : 'text-zinc-400 hover:bg-zinc-100'
                   )}><Smartphone size={12} /> Mobile</button>
                 </div>
-                <div className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">Real-time</div>
+                <div className="flex items-center gap-2">
+                  {previewMode === 'mobile' && (
+                    <div className="flex gap-1 p-0.5 bg-zinc-100 rounded-md">
+                      <button
+                        onClick={() => setPreviewPhase('idle')}
+                        className={clsx('px-2 py-1 rounded text-[9px] font-black uppercase tracking-widest transition-all',
+                          previewPhase === 'idle' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-400 hover:text-zinc-700'
+                        )}
+                        title="폼 입력 화면"
+                      >
+                        폼 보기
+                      </button>
+                      <button
+                        onClick={() => setPreviewPhase('resource_list')}
+                        className={clsx('px-2 py-1 rounded text-[9px] font-black uppercase tracking-widest transition-all',
+                          previewPhase === 'resource_list' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-400 hover:text-zinc-700'
+                        )}
+                        title="제출 후 자료 카드 리스트 화면"
+                      >
+                        다운로드 화면
+                      </button>
+                    </div>
+                  )}
+                  <div className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">Real-time</div>
+                </div>
               </div>
 
               <div className={clsx('flex-1 overflow-y-auto scr p-4', previewMode === 'mobile' ? 'bg-zinc-200 flex justify-center' : 'bg-zinc-100')}>
@@ -967,11 +1039,49 @@ export default function CampaignEditorUnified({ campaign, sections, onSave, onCl
                 )}
 
                 {previewMode === 'mobile' && (
-                  <div className="relative" style={{ width: '390px', minHeight: '840px', background: 'white', borderRadius: '40px', overflow: 'hidden', border: '8px solid #18181b', boxShadow: '0 12px 40px rgba(0,0,0,0.25)', flexShrink: 0 }}>
-                    <div style={{ position: 'absolute', top: 10, left: '50%', transform: 'translateX(-50%)', width: 80, height: 20, background: '#18181b', borderRadius: 20, zIndex: 10 }} />
-                    <div style={{ paddingTop: 40, overflowX: 'hidden', overflowY: 'auto', height: '100%', width: '100%', maxWidth: '374px' }}>
-                      <PreviewContent current={current} liveSections={liveSections} particleWords={particleWords} isMobile />
-                    </div>
+                  <div
+                    className="relative"
+                    style={{
+                      width: '390px',
+                      height: '760px',
+                      background: '#000',
+                      borderRadius: '40px',
+                      overflow: 'hidden',
+                      border: '8px solid #18181b',
+                      boxShadow: '0 12px 40px rgba(0,0,0,0.25)',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: 10,
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        width: 80,
+                        height: 20,
+                        background: '#18181b',
+                        borderRadius: 20,
+                        zIndex: 10,
+                      }}
+                    />
+                    {/* iframe 격리 — viewport 가 실제로 모바일 폭이 되어 md:/lg: 클래스가 모바일 분기로 빠진다 */}
+                    <iframe
+                      ref={previewIframeRef}
+                      title="Campaign Mobile Preview"
+                      src="/admin/campaigns/preview"
+                      onLoad={() => setIframeReady(false)}
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        width: '100%',
+                        height: '100%',
+                        border: 0,
+                        background: '#fff',
+                        paddingTop: 32,
+                        boxSizing: 'border-box',
+                      }}
+                    />
                   </div>
                 )}
               </div>

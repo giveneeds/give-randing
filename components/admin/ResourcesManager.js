@@ -275,6 +275,37 @@ export default function ResourcesManager({
                 </div>
               </div>
 
+              {/* 노출 위치 토글 (캠페인 전용) */}
+              {effectiveParentType === 'campaign' && (
+                <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-zinc-100">
+                  <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mr-1">노출 위치</span>
+                  <button
+                    onClick={() => patchResource(r.id, { display_on_form_submit: !(r.display_on_form_submit !== false) })}
+                    className={clsx(
+                      'flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest transition',
+                      r.display_on_form_submit !== false
+                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                        : 'bg-zinc-50 text-zinc-400 border border-zinc-200'
+                    )}
+                    title="폼 제출 후 자료 카드 리스트로 노출"
+                  >
+                    {r.display_on_form_submit !== false ? '✓' : '×'} 폼 제출 후
+                  </button>
+                  <button
+                    onClick={() => patchResource(r.id, { display_on_page_bottom: !(r.display_on_page_bottom !== false) })}
+                    className={clsx(
+                      'flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest transition',
+                      r.display_on_page_bottom !== false
+                        ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                        : 'bg-zinc-50 text-zinc-400 border border-zinc-200'
+                    )}
+                    title="페이지 하단 '첨부 자료' 섹션에 항상 노출"
+                  >
+                    {r.display_on_page_bottom !== false ? '✓' : '×'} 페이지 하단
+                  </button>
+                </div>
+              )}
+
               <div className="flex items-center justify-between mt-2 pt-2 border-t border-zinc-100">
                 <button
                   onClick={() => toggleEnabled(r)}
