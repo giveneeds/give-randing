@@ -32,6 +32,15 @@ const FIELD_ICONS = { name: User, phone: Phone, email: Mail };
  * @param {'kakao'|'basic'} formMode - 'kakao' (기본): 카카오 OAuth 로그인 흐름 / 'basic': 이름+전화번호 입력 폼.
  *                                     캠페인의 hero_content.lead_form_mode 로 결정됨.
  */
+// resource_list phase 의 5개 문구 기본값 — 어드민에서 비워두면 이 값 사용
+const DEFAULT_DOWNLOAD_SCREEN = {
+  badge_label: '신청 완료',
+  headline: '자료를 다운로드하세요',
+  description: '원하는 자료를 골라서 다운로드할 수 있어요. 다운로드 링크는 15분간 유효합니다.',
+  kakao_cta: '카카오 채널 친구추가하고 새 자료 받기',
+  kakao_url: KAKAO_CHANNEL_URL,
+};
+
 export default function LeadForm({
   title,
   subtitle,
@@ -41,10 +50,20 @@ export default function LeadForm({
   category = 'organic',
   formMode = 'kakao',
   basicFormFields,
+  // 어드민에서 캠페인별 다운로드 화면 문구 커스터마이즈 (옵셔널)
+  downloadScreen,
   // 어드민 미리보기에서 phase 를 외부 제어하기 위한 옵션 props (라이브에선 미사용)
   preview = false,
   forcePhase,
 }) {
+  // 다운로드 화면 문구 — 빈 필드는 기본값으로 폴백
+  const ds = {
+    badge_label: downloadScreen?.badge_label?.trim() || DEFAULT_DOWNLOAD_SCREEN.badge_label,
+    headline: downloadScreen?.headline?.trim() || DEFAULT_DOWNLOAD_SCREEN.headline,
+    description: downloadScreen?.description?.trim() || DEFAULT_DOWNLOAD_SCREEN.description,
+    kakao_cta: downloadScreen?.kakao_cta?.trim() || DEFAULT_DOWNLOAD_SCREEN.kakao_cta,
+    kakao_url: downloadScreen?.kakao_url?.trim() || DEFAULT_DOWNLOAD_SCREEN.kakao_url,
+  };
   const searchParams = useSearchParams();
   // preview 모드에선 URL 의 ?lead_dl=1 무시 (어드민 쿼리에서 오발 방지)
   const shouldAutoDownload = !preview && searchParams?.get('lead_dl') === '1';
@@ -442,14 +461,14 @@ export default function LeadForm({
             <div className="flex items-center gap-2 mb-3">
               <CheckCircle2 size={18} className="text-emerald-500" />
               <span className="text-[10px] sm:text-xs font-black tracking-[0.25em] text-emerald-600 uppercase">
-                신청 완료
+                {ds.badge_label}
               </span>
             </div>
             <h3 className="text-xl sm:text-2xl font-black tracking-tighter mb-2 text-zinc-900 dark:text-white break-keep">
-              자료를 다운로드하세요
+              {ds.headline}
             </h3>
-            <p className="text-zinc-500 dark:text-zinc-400 text-xs sm:text-sm leading-relaxed mb-5 sm:mb-7 break-keep">
-              원하는 자료를 골라서 다운로드할 수 있어요. 다운로드 링크는 15분간 유효합니다.
+            <p className="text-zinc-500 dark:text-zinc-400 text-xs sm:text-sm leading-relaxed mb-5 sm:mb-7 break-keep whitespace-pre-line">
+              {ds.description}
             </p>
 
             <ul className="space-y-2 sm:space-y-3 mb-5">
@@ -492,13 +511,13 @@ export default function LeadForm({
             )}
 
             <a
-              href={KAKAO_CHANNEL_URL}
+              href={ds.kakao_url}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex w-full items-center justify-center gap-2 px-5 py-3 bg-[#FEE500] text-[#191919] rounded-full font-bold text-xs sm:text-sm hover:scale-[1.02] transition-transform"
             >
               <MessageCircle size={14} fill="currentColor" />
-              카카오 채널 친구추가하고 새 자료 받기
+              {ds.kakao_cta}
             </a>
           </motion.div>
         )}

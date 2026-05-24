@@ -114,6 +114,59 @@ function DraggableItem({ index, type, dragState, onDragStart, onDragOver, onDrop
   );
 }
 
+// ─────────────────────────────────────────────
+// 📥 Download Screen Editor (basic 모드 폼 제출 후 자료 카드 리스트 화면 문구 설정)
+// ─────────────────────────────────────────────
+
+const DEFAULT_DOWNLOAD_SCREEN = {
+  badge_label: '신청 완료',
+  headline: '자료를 다운로드하세요',
+  description: '원하는 자료를 골라서 다운로드할 수 있어요. 다운로드 링크는 15분간 유효합니다.',
+  kakao_cta: '카카오 채널 친구추가하고 새 자료 받기',
+  kakao_url: 'https://pf.kakao.com/_lutxdG',
+};
+
+function DownloadScreenEditor({ value, onChange }) {
+  const v = { ...DEFAULT_DOWNLOAD_SCREEN, ...(value || {}) };
+  const set = (key, val) => onChange({ ...v, [key]: val });
+
+  const Row = ({ label, k, placeholder, multiline }) => (
+    <div className="space-y-1">
+      <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">{label}</label>
+      {multiline ? (
+        <textarea
+          value={v[k] ?? ''}
+          onChange={(e) => set(k, e.target.value)}
+          placeholder={placeholder}
+          rows={2}
+          className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-md text-xs outline-none focus:ring-2 focus:ring-zinc-900/10 resize-none"
+        />
+      ) : (
+        <input
+          value={v[k] ?? ''}
+          onChange={(e) => set(k, e.target.value)}
+          placeholder={placeholder}
+          className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-md text-xs outline-none focus:ring-2 focus:ring-zinc-900/10"
+        />
+      )}
+    </div>
+  );
+
+  return (
+    <div className="space-y-3 mt-3 pt-3 border-t border-zinc-100">
+      <div>
+        <p className="text-[10px] font-black uppercase tracking-[0.25em] text-zinc-700">다운로드 화면 문구</p>
+        <p className="text-[10px] text-zinc-400 mt-0.5">기본 폼 제출 후 사용자가 보는 자료 카드 리스트 화면의 문구를 수정합니다. 비우면 기본값으로 표시.</p>
+      </div>
+      <Row label="상단 라벨" k="badge_label" placeholder={DEFAULT_DOWNLOAD_SCREEN.badge_label} />
+      <Row label="헤드라인" k="headline" placeholder={DEFAULT_DOWNLOAD_SCREEN.headline} />
+      <Row label="설명문" k="description" placeholder={DEFAULT_DOWNLOAD_SCREEN.description} multiline />
+      <Row label="카카오 버튼 텍스트" k="kakao_cta" placeholder={DEFAULT_DOWNLOAD_SCREEN.kakao_cta} />
+      <Row label="카카오 채널 URL (또는 다른 링크)" k="kakao_url" placeholder={DEFAULT_DOWNLOAD_SCREEN.kakao_url} />
+    </div>
+  );
+}
+
 function BasicFormFieldsEditor({ value, onChange }) {
   // value: 캠페인.hero_content.basic_form_fields 의 raw 배열
   const fields = Array.isArray(value) && value.length > 0
@@ -783,12 +836,16 @@ export default function CampaignEditorUnified({ campaign, sections, onSave, onCl
                                 )}
                                 {formMode === 'basic' && (
                                   <div className="pt-2 border-t border-zinc-100 space-y-3">
-                                    <p className="text-[10px] text-zinc-500 leading-relaxed bg-zinc-50 p-2.5 rounded-lg border border-zinc-200">
-                                      💡 기본 폼은 첨부 파일을 제공하지 않습니다. 신청 데이터는 <code className="bg-white px-1 py-0.5 rounded text-zinc-700 text-[10px]">/admin/leads</code> 에서 확인하세요.
+                                    <p className="text-[10px] text-zinc-500 leading-relaxed bg-blue-50 p-2.5 rounded-lg border border-blue-100">
+                                      💡 기본 폼은 사용자가 정보를 입력하면 등록된 자료를 다운로드 카드로 보여줍니다. 자료는 아래 <strong>리드 마그넷 자료</strong> 카드에서 관리하세요.
                                     </p>
                                     <BasicFormFieldsEditor
                                       value={current.hero_content?.basic_form_fields}
                                       onChange={(next) => setHero({ basic_form_fields: next })}
+                                    />
+                                    <DownloadScreenEditor
+                                      value={current.hero_content?.download_screen}
+                                      onChange={(next) => setHero({ download_screen: next })}
                                     />
                                   </div>
                                 )}

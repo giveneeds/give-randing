@@ -135,6 +135,7 @@ export default function CampaignLandingPage() {
                         category="campaign"
                         formMode={campaign.hero_content.lead_form_mode || 'kakao'}
                         basicFormFields={campaign.hero_content.basic_form_fields}
+                        downloadScreen={campaign.hero_content.download_screen}
                       />
                     </div>
                   </div>

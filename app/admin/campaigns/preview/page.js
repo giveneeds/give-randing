@@ -71,12 +71,13 @@ export default function CampaignPreviewPage() {
     || ''
   ).split('\n').filter(Boolean);
 
-  // LeadForm 컴포넌트 키 — leadFields/모드 변경 시 강제 리마운트로 즉시 갱신
+  // LeadForm 컴포넌트 키 — leadFields/모드/다운로드화면 문구 변경 시 강제 리마운트로 즉시 갱신
   const leadFormKey = JSON.stringify({
     mode: campaign.hero_content?.lead_form_mode || 'kakao',
     fields: campaign.hero_content?.basic_form_fields || null,
     cta: campaign.hero_content?.cta_label || '',
     file: campaign.hero_content?.file_name || '',
+    ds: campaign.hero_content?.download_screen || null,
   });
 
   return (
@@ -115,6 +116,7 @@ export default function CampaignPreviewPage() {
                 category="campaign"
                 formMode={campaign.hero_content?.lead_form_mode || 'kakao'}
                 basicFormFields={campaign.hero_content?.basic_form_fields}
+                downloadScreen={campaign.hero_content?.download_screen}
                 forcePhase={forcePhase}
                 preview
               />
