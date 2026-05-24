@@ -35,9 +35,9 @@ agent_sources
   -> runCollection()
   -> enrichItem()
   -> agent_items / agent_ai_logs
-  -> composeDailyReport() + Reddit/X 보강 후보
+  -> composeDailyReport() + Reddit/X 해외 주제 후보
   -> Telegram 자유 텍스트 선택
-  -> runDeepResearch() / runSupplementalResearch() / runToneResearch()
+  -> runDeepResearch() / runSupplementalResearch() / runToneResearch or Threads audit
   -> convertItemToThreadDraft()
   -> 7개 thread_drafts 저장 + 품질 검수 기록
   -> Admin 보관함 human review
@@ -101,9 +101,10 @@ Reddit meta 예시:
 - 점수가 낮아도 댓글이 많으면 페인포인트가 강한 글일 수 있으므로, 댓글 가중치를 기본적으로 추천 점수보다 높게 둔다.
 - 수집 결과는 곧바로 발행하지 않고, 기브니즈 지식베이스와 한국 플레이스/광고/콘텐츠 맥락에 맞게 재해석한다.
 
-X/Reddit 검색 보강:
-- 뉴스 후보가 많아질 때도 1차 텔레그램 제안에는 Reddit 후보 1개, X 후보 1개를 별도 소셜 보강 후보로 넣는다.
-- 이 후보들은 "그 자체로 발행할 뉴스"라기보다 실제 반응, 농담, 불만, 질문, 말투를 얻는 샘플이다.
+X/Reddit 해외 주제 발굴:
+- 뉴스 후보가 많아질 때도 1차 텔레그램 제안에는 Reddit 후보 1개, X 후보 1개를 해외 주제 후보로 추가 시도한다.
+- 이 후보들은 "말투 샘플"이 아니라 해외 마케팅/AI 커뮤니티와 실무자들이 이미 올려둔 주제, 도구 활용, 이슈, 논쟁, 캠페인 사례를 찾는 소스다.
+- 좋은 후보는 "해외에서는 이런 식으로 쓰고 있다", "요즘 이 이슈가 올라온다", "한국어로 보기 좋게 정리하면 쓸모 있다"는 식으로 기브니즈 관점에서 재해석할 수 있어야 한다.
 - source type은 `reddit_search`, `x_search`로 저장한다.
 
 중간 산출물:

@@ -35,7 +35,7 @@ flowchart TB
     HN[해커뉴스]
     REDDIT[레딧]
     X[X / Twitter 검색]
-    TAVILY[(Tavily 웹 검색<br/>1·2·2.5·3차 리서치)]
+    TAVILY[(Tavily 웹 검색<br/>1·해외 주제·2·2.5차 리서치)]
     PERP[(Perplexity Sonar<br/>optional)]
     LLM{{LLM<br/>Claude · OpenAI}}
     TG[[정욱님 텔레그램<br/>자유 텍스트 양방향]]
@@ -43,10 +43,10 @@ flowchart TB
 
   subgraph CRON[매일 크론 1회 · 자동 작업 루프]
     direction TB
-    C1[1단계 — 새 자료 수집] --> C2[2단계 — LLM 1차 보고<br/>composeDailyReport<br/>Reddit/X 보강 후보 포함]
+    C1[1단계 — 새 자료 수집] --> C2[2단계 — LLM 1차 보고<br/>composeDailyReport<br/>Reddit/X 해외 주제 후보 포함]
     C2 --> C3[3단계 — 정욱님 응답 대기]
     C3 --> C4[4단계 — 응답 의도 파싱<br/>parseUserDecision]
-    C4 --> C5[5단계 — 채택 자료 리서치 계층<br/>SNS 반응 + 추가 자료 + 말투]
+    C4 --> C5[5단계 — 채택 자료 리서치 계층<br/>해외/소셜 맥락 + 추가 자료 + 말투 조정]
     C5 --> C6[6단계 — 7개 후보 생성 + 품질 검수<br/>convertItemToThreadDraft]
     C6 --> C7[7단계 — 보관함 정리 + 마무리 보고<br/>finishPlanningSession]
   end
@@ -163,12 +163,12 @@ flowchart TB
 
 ### 2.3 리서치 계층은 채택된 자료에만
 
-**결정**: 2차 SNS 반응 리서치(`runDeepResearch.js`), 2.5차 추가 자료 리서치(`runSupplementalResearch.js`), 3차 말투 리서치(`runToneResearch.js`)는 모든 자료가 아니라 **정욱님이 채택한 자료에만** 돌림.
+**결정**: 2차 해외/소셜 맥락 리서치(`runDeepResearch.js`), 2.5차 추가 자료 리서치(`runSupplementalResearch.js`), 3차 말투 조정(`runToneResearch.js` 또는 기존 Threads 감사 데이터)은 모든 자료가 아니라 **정욱님이 채택한 자료에만** 돌림.
 
 **왜 그렇게 했나**:
 - 모든 자료에 깊이 리서치를 돌리면 비용이 매일 N배 늘어남(자료 건수만큼).
 - 채택 후에 돌리면 정확히 발행될 자료에만 깊이가 들어감 → 비용 대비 효과 최적.
-- 2차 결과(`hook_patterns`, `audience_reactions`, `adapted_angles`), 2.5차 결과(`evidence_points`, `content_additions`, `missing_context`), 3차 결과(`voice_patterns`, `phrases_to_borrow`, `phrases_to_avoid`)가 초안 생성기에 추가 맥락으로 주입됨.
+- 2차 결과(`hook_patterns`, `audience_reactions`, `adapted_angles`), 2.5차 결과(`evidence_points`, `content_additions`, `missing_context`), 3차 결과(`voice_patterns`, `phrases_to_borrow`, `phrases_to_avoid`)가 초안 생성기에 추가 맥락으로 주입됨. 단, 1차 Reddit/X의 목적은 말투가 아니라 해외 마케팅/AI 주제 발굴임.
 - `PERPLEXITY_API_KEY`가 있으면 2.5차 보강에서 Perplexity Sonar를 추가로 사용하고, 없어도 Tavily 결과만으로 계속 진행함.
 
 **커밋 근거**: `943865d` (`runDeepResearch` 도입 + `convertItemToThreadDraft`의 `extraContext` 옵션).
@@ -243,20 +243,20 @@ sequenceDiagram
   autonumber
   participant 크론 as 매일 크론 1회
   participant 수집 as 수집 + enrich
-  participant 1차 as composeDailyReport<br/>1차 보고 + 소셜 보강
+  participant 1차 as composeDailyReport<br/>1차 보고 + 해외 주제 후보
   participant TG as 텔레그램<br/>(정욱님)
   participant 웹훅 as webhook/telegram<br/>자유 텍스트 수신
   participant 결정 as parseUserDecision<br/>LLM 의도 파싱
-  participant 2차 as runDeepResearch<br/>SNS 반응
+  participant 2차 as runDeepResearch<br/>해외/소셜 맥락
   participant 보강 as runSupplementalResearch<br/>추가 자료
-  participant 말투 as runToneResearch<br/>말투/VOC
+  participant 말투 as runToneResearch<br/>말투 조정<br/>(Threads 감사 우선)
   participant 초안 as convertItemToThreadDraft<br/>7개 후보 + 품질 검수
   participant 마무리 as finishPlanningSession<br/>보관함 + 마무리 보고
 
   크론->>수집: 새 자료 수집
   수집-->>수집: agent_items 적재
   수집->>1차: planning_session 생성
-  1차->>TG: "정욱님, 오늘 모은 자료 N건..."<br/>후보 메타 + Reddit/X 보강 후보
+  1차->>TG: "정욱님, 오늘 모은 자료 N건..."<br/>후보 메타 + Reddit/X 해외 주제 후보
   Note over TG: planning_sessions 에<br/>message_id 저장 (응답 매칭용)
 
   TG->>웹훅: 정욱님 자유 텍스트 응답
@@ -264,7 +264,7 @@ sequenceDiagram
   Note over 결정: action: select / request_research /<br/>cancel / ambiguous
 
   alt select (채택)
-    결정->>2차: 채택된 자료로 SNS 반응 리서치
+    결정->>2차: 채택된 자료로 해외/소셜 맥락 리서치
     2차->>보강: 후킹/반응 기반으로 보강 포인트 전달
     보강->>말투: 근거/사례 + 부족 맥락 전달
     말투->>초안: hook_patterns + evidence + voice_patterns 주입
@@ -282,10 +282,10 @@ sequenceDiagram
 ### 7단계 한 줄씩
 
 1. **수집** — 활성 매체에서 새 자료 긁어옴. 매체별 1건 cap + 사전 중복 체크. `agent_items` 적재.
-2. **1차 자연어 보고** — `composeDailyReport.js`가 그날 모은 자료를 "정욱님, …" 톤 자연어로 요약 + 추천. Reddit/X 보강 후보를 각각 1개씩 추가 시도. `planning_sessions` 행 생성.
+2. **1차 자연어 보고** — `composeDailyReport.js`가 그날 모은 자료를 "정욱님, …" 톤 자연어로 요약 + 추천. Reddit/X 해외 주제 후보를 각각 1개씩 추가 시도. `planning_sessions` 행 생성.
 3. **응답 대기** — 텔레그램에서 정욱님 자유 텍스트 응답을 기다림. message_id로 세션 매칭.
 4. **응답 의도 파싱** — `parseUserDecision.js`가 LLM으로 응답을 4개 행동으로 분류 (select / request_research / cancel / ambiguous).
-5. **리서치 계층** — 채택된 자료에만 `runDeepResearch.js`가 SNS 반응을, `runSupplementalResearch.js`가 추가 근거를, `runToneResearch.js`가 실제 말투/VOC를 추출.
+5. **리서치 계층** — 채택된 자료에만 `runDeepResearch.js`가 해외/소셜 맥락을, `runSupplementalResearch.js`가 추가 근거를, `runToneResearch.js` 또는 기존 Threads 감사 데이터가 한국어 말투 감각을 보강.
 6. **스레드 후보 생성** — `convertItemToThreadDraft.js`가 brief + 리서치 계층 + KB(페르소나·플레이스 마케팅·거버넌스·후킹 패턴·인기글 감사)를 모두 LLM 프롬프트에 넣어 7개 후보를 생성하고 품질 검수 에이전트를 통과시킴. `thread_drafts` 7개 행 생성.
 7. **보관함 정리 + 마무리 보고** — `finishPlanningSession.js`가 폐기 후보 + 거버넌스 적용 메타 + 리서치 사용 내역을 메타 컬럼에 채우고, 텔레그램으로 "후보 7개 담겼습니다. 점수는 참고용입니다" 마무리 보고.
 
@@ -421,13 +421,13 @@ stateDiagram-v2
 
 ### 4.5 ④ 스레드 초안 생성 (자동 워크플로우 6단계)
 
-**무엇을 하는 곳인가**: 채택된 한 장의 카드를 → 7개 스레드 후보로 변환. 여기서 KB와 리서치 계층이 본격적으로 주입됩니다. 페르소나의 말투, 금지 표현, 후킹 패턴, 인기글 구조, 추가 근거, 소셜 VOC가 함께 들어가서 비교 가능한 후보 묶음이 만들어집니다.
+**무엇을 하는 곳인가**: 채택된 한 장의 카드를 → 7개 스레드 후보로 변환. 여기서 KB와 리서치 계층이 본격적으로 주입됩니다. 해외 마케팅/AI 맥락, 페르소나의 말투, 금지 표현, 후킹 패턴, 인기글 구조, 추가 근거, 한국 Threads 말투 감각이 함께 들어가서 비교 가능한 후보 묶음이 만들어집니다.
 
 ```mermaid
 flowchart LR
   A[검토함 또는 자동 워크플로우<br/>채택 시점] --> B[POST /items/:id/to-thread]
   B --> C[convertItemToThreadDraft]
-  C --> D[자료 로드<br/>분류·1차 리서치·번역문<br/>2차 SNS 반응·2.5차 근거·3차 말투]
+  C --> D[자료 로드<br/>분류·1차 리서치·번역문<br/>2차 해외/소셜 맥락·2.5차 근거·3차 말투]
   C --> E[buildKnowledgeContext<br/>지식베이스 주입기]
   E --> KB1[페르소나 정의<br/>content-personas.md]
   E --> KB2[플레이스 마케팅 KB<br/>place-marketing-knowledge-base.md]

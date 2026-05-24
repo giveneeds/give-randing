@@ -1,7 +1,7 @@
 flowchart LR
   A[검토함 또는<br/>자동 워크플로우 채택 시점] --> B[POST /items/:id/to-thread]
   B --> C[convertItemToThreadDraft]
-  C --> D[자료 로드<br/>분류·1차 리서치·번역문<br/>2차 SNS 반응·2.5차 근거·3차 말투]
+  C --> D[자료 로드<br/>분류·1차 리서치·번역문<br/>2차 해외/소셜 맥락·2.5차 근거·3차 말투]
   C --> E[buildKnowledgeContext<br/>지식베이스 주입기]
   E --> KB1[페르소나 정의<br/>content-personas.md]
   E --> KB2[플레이스 마케팅 KB<br/>place-marketing-knowledge-base.md]

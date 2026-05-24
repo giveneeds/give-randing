@@ -18,7 +18,7 @@
 | `docs/content-logic/threads/07-hook-psychology.md` | 후킹 심리 패턴 |
 | `docs/content-logic/threads/08-generation-rules.md` | 초안 생성 단계, 텔레그램/저장 계약 |
 | `docs/content-logic/threads/09-logic-circuit.md` | 전기회로도식 작동 구조 |
-| `docs/content-logic/threads/10-research-layers.md` | 1차/2차/2.5차/3차 리서치와 품질 검수 |
+| `docs/content-logic/threads/10-research-layers.md` | 해외 주제 발굴, 1차/2차/2.5차/3차 리서치와 품질 검수 |
 
 ## Mandatory Loading Rule
 
@@ -26,8 +26,8 @@
 
 ## Core Decision Order
 
-1. 1차 수집에서 뉴스/웹 후보와 Reddit/X 소셜 보강 후보를 함께 만든다.
-2. 사용자가 주제를 고르면 2차 SNS 반응 리서치, 2.5차 추가 자료 리서치, 3차 말투 리서치를 실행한다.
+1. 1차 수집에서 뉴스/웹 후보와 Reddit/X 해외 주제 후보를 함께 만든다.
+2. 사용자가 주제를 고르면 2차 해외/소셜 맥락 리서치, 2.5차 추가 자료 리서치, 3차 한국 Threads 말투 조정을 실행한다.
 3. `content_pillar` 후보 2~3개로 글의 역할 범위를 잡는다.
 4. `content_treatment`로 소재를 푸는 문법을 정한다.
 5. `fomo_mechanism`과 `fomo_expression`으로 FOMO를 어디에 어떻게 녹일지 정한다.

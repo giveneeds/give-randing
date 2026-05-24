@@ -4,16 +4,16 @@
 
 ```mermaid
 flowchart TD
-  A["1차 수집: 뉴스/웹/소셜 자료"] --> A1["Reddit 후보 1개 + X 후보 1개 보강"]
-  A1 --> B["주제 후보 점수화\n소셜 보강 후보 포함"]
+  A["1차 수집: 뉴스/웹 자료"] --> A1["Reddit/X 해외 주제 발굴\nAI·마케팅·도구·이슈"]
+  A1 --> B["주제 후보 점수화\n해외 주제 후보 포함"]
   B --> C{"사용자 주제 선택"}
   C -- "1개 선택" --> D["선택 주제 1개"]
   C -- "여러 개 선택" --> E["주제별 병렬 가지 생성"]
   E --> D
 
-  D --> R1["2차 리서치\nReddit/X/Threads 반응"]
+  D --> R1["2차 리서치\n해외/소셜 맥락·후킹 포인트"]
   R1 --> R2["2.5차 추가 자료 리서치\n근거/사례/빠진 맥락\nPerplexity optional"]
-  R2 --> R3["3차 말투 리서치\nVOC/질문/피해야 할 표현"]
+  R2 --> R3["3차 말투 조정\nThreads 감사 데이터 우선\n필요 시 추가 검색"]
 
   R3 --> F["기둥 후보 2~3개 점수화\npillar_candidates"]
   F --> G["7개 글 후보 설계\n기둥 후보 안에서 비중복 배치"]
@@ -43,9 +43,9 @@ flowchart TD
 | 신호 | 켜지는 스위치 | 결과 |
 |---|---|---|
 | 주제 후보를 여러 개 선택함 | topic branch | 각 주제별로 별도 7개 후보 묶음을 생성 |
-| 1차 후보가 뉴스에 쏠림 | social supplement | Reddit 후보 1개와 X 후보 1개를 추가 제안 |
+| 1차 후보가 뉴스에 쏠림 | overseas topic scout | Reddit 후보 1개와 X 후보 1개를 해외 주제 후보로 추가 제안 |
 | 주제 1개가 확정됨 | `pillar_candidates` | 기둥 2~3개를 점수화하고 설계 범위를 잡음 |
-| 사용자가 주제를 확정함 | research layers | 2차 SNS 반응, 2.5차 근거, 3차 말투 리서치를 순서대로 실행 |
+| 사용자가 주제를 확정함 | research layers | 2차 해외/소셜 맥락, 2.5차 근거, 3차 한국 Threads 말투 조정을 순서대로 실행 |
 | 기사/이슈는 있는데 실전 팁 근거가 약함 | `content_treatment=news_commentary` | 억지 팁 없이 코멘터리/관점형으로 처리 |
 | 놓치면 손해, 나중 후회, 룰 변화, 격차가 보임 | `fomo_intensity`, `fomo_mechanism`, `fomo_expression` | FOMO를 yes/no가 아니라 강도와 위치로 녹임 |
 | 독자가 모를 새 개념, 기술명, 행사명, 약어가 있음 | `explanation_style=conversational_explainer` | 문답지가 아니라 자연스러운 설명문으로 쉽게 풂 |

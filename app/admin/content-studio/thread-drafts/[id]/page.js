@@ -346,6 +346,7 @@ function DecisionMetaSection({ draft }) {
   const generationDecision = research.generation_decision || {};
   const variantReview = research.variant_review || {};
   const variants = Array.isArray(variantReview.variants) ? variantReview.variants : [];
+  const qualityReview = variantReview.quality_review || {};
   const activeVariantId = variantReview.saved_variant_id || variantReview.recommended_variant_id || variantReview.selected_variant_id;
   const selectedVariant = variants.find((v) => v.variant_id === activeVariantId) || {};
   const manualExpansion = research.manual_cmts_qa_expansion || {};
@@ -353,6 +354,8 @@ function DecisionMetaSection({ draft }) {
     content_pillar: selectedVariant.content_pillar || generationDecision.content_pillar || manualExpansion.content_pillar,
     content_treatment: selectedVariant.content_treatment || generationDecision.content_treatment || manualExpansion.content_treatment,
     fomo_mechanism: selectedVariant.fomo_mechanism || generationDecision.fomo_mechanism || manualExpansion.fomo_mechanism || 'none',
+    fomo_intensity: selectedVariant.fomo_intensity || generationDecision.fomo_intensity,
+    fomo_expression: selectedVariant.fomo_expression || generationDecision.fomo_expression,
     format_type: selectedVariant.format_type || generationDecision.format_type || manualExpansion.format_type || draft.format_type,
     explanation_style: selectedVariant.explanation_style || generationDecision.explanation_style || manualExpansion.explanation_style,
     recommended_length: selectedVariant.recommended_length || generationDecision.recommended_length || manualExpansion.recommended_length,
@@ -408,6 +411,7 @@ function DecisionMetaSection({ draft }) {
                 <LogicPill label="기둥" value={logicLabel('content_pillar', logicSnapshot.content_pillar)} />
                 <LogicPill label="처리 방식" value={logicLabel('content_treatment', logicSnapshot.content_treatment)} tone="violet" />
                 <LogicPill label="FOMO 장치" value={logicLabel('fomo_mechanism', logicSnapshot.fomo_mechanism)} tone={logicSnapshot.fomo_mechanism && logicSnapshot.fomo_mechanism !== 'none' ? 'amber' : 'zinc'} />
+                <LogicPill label="FOMO 강도/위치" value={[logicSnapshot.fomo_intensity, logicSnapshot.fomo_expression].filter(Boolean).join(' · ') || '미기록'} tone={logicSnapshot.fomo_intensity && logicSnapshot.fomo_intensity !== 'none' ? 'amber' : 'zinc'} />
                 <LogicPill label="글 구조" value={logicLabel('format_type', logicSnapshot.format_type)} />
                 <LogicPill label="설명 방식" value={logicLabel('explanation_style', logicSnapshot.explanation_style)} tone={['dialogue', 'conversational_explainer'].includes(logicSnapshot.explanation_style) ? 'emerald' : 'zinc'} />
                 <LogicPill label="권장 포스트 수" value={logicSnapshot.recommended_length ? `${logicSnapshot.recommended_length}개` : '미기록'} />
@@ -443,6 +447,32 @@ function DecisionMetaSection({ draft }) {
                 <p className="text-xs text-[var(--admin-text-main)] leading-relaxed mb-3">
                   {variantReview.recommendation_reason || variantReview.selection_reason}
                 </p>
+              )}
+              {qualityReview.checked && (
+                <div className="rounded-md border border-[var(--admin-border)] bg-[var(--admin-bg)] p-3 mb-3">
+                  <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                    <Shield size={11} className={qualityReview.overall_pass ? 'text-emerald-500' : 'text-amber-500'} />
+                    품질 검수 에이전트
+                    <span className="ml-auto text-[10px] text-[var(--admin-text-muted)]">
+                      {qualityReview.overall_pass ? '통과' : '보완 필요'}
+                      {qualityReview.repaired ? ' · 저장 전 보강됨' : ''}
+                    </span>
+                  </div>
+                  {qualityReview.global_feedback && (
+                    <p className="text-[11px] text-[var(--admin-text-main)] leading-relaxed mt-2">
+                      {qualityReview.global_feedback}
+                    </p>
+                  )}
+                  {Array.isArray(qualityReview.variant_feedback) && qualityReview.variant_feedback.length > 0 && (
+                    <ul className="mt-2 space-y-1">
+                      {qualityReview.variant_feedback.slice(0, 3).map((f, i) => (
+                        <li key={i} className="text-[11px] text-[var(--admin-text-muted)]">
+                          후보 {f.variant_id || i + 1}: {Array.isArray(f.issues) ? f.issues.join(', ') : f.fix_direction || '검수 메모'}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
               )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {variants.map((v) => {
