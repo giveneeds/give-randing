@@ -32,9 +32,22 @@ const FIELD_ICONS = { name: User, phone: Phone, email: Mail };
  * @param {'kakao'|'basic'} formMode - 'kakao' (기본): 카카오 OAuth 로그인 흐름 / 'basic': 이름+전화번호 입력 폼.
  *                                     캠페인의 hero_content.lead_form_mode 로 결정됨.
  */
-export default function LeadForm({ title, subtitle, ctaLabel, campaignId, magazineId, category = 'organic', formMode = 'kakao', basicFormFields }) {
+export default function LeadForm({
+  title,
+  subtitle,
+  ctaLabel,
+  campaignId,
+  magazineId,
+  category = 'organic',
+  formMode = 'kakao',
+  basicFormFields,
+  // 어드민 미리보기에서 phase 를 외부 제어하기 위한 옵션 props (라이브에선 미사용)
+  preview = false,
+  forcePhase,
+}) {
   const searchParams = useSearchParams();
-  const shouldAutoDownload = searchParams?.get('lead_dl') === '1';
+  // preview 모드에선 URL 의 ?lead_dl=1 무시 (어드민 쿼리에서 오발 방지)
+  const shouldAutoDownload = !preview && searchParams?.get('lead_dl') === '1';
 
   const [phase, setPhase] = useState(shouldAutoDownload ? 'processing' : 'idle');
   // 'idle' → 'processing' → 'downloaded' | 'submitted' | 'resource_list' | 'no-resource' | 'error'
@@ -61,12 +74,25 @@ export default function LeadForm({ title, subtitle, ctaLabel, campaignId, magazi
     setBasicValues((prev) => ({ ...prev, [id]: value }));
   }
 
-  // GA4: 폼 노출 1회 발화 (idle 상태일 때만)
+  // GA4: 폼 노출 1회 발화 (idle 상태일 때만, preview 에선 발화 안 함)
   useEffect(() => {
-    if (phase === 'idle') {
+    if (phase === 'idle' && !preview) {
       ga.leadFormView({ formMode, campaignId });
     }
-  }, [phase, formMode, campaignId]);
+  }, [phase, formMode, campaignId, preview]);
+
+  // 어드민 미리보기 — forcePhase 가 들어오면 phase state 외부 제어
+  useEffect(() => {
+    if (!preview) return;
+    setPhase(forcePhase || 'idle');
+    if (forcePhase === 'resource_list') {
+      // 더미 자료 카드 2개 표시 (실제 fetch 안 함)
+      setResourceList([
+        { id: 'dummy-1', title: '전략 가이드.pdf', file_name: '전략 가이드.pdf', file_size: 1024 * 1024 * 2, file_type: 'application/pdf' },
+        { id: 'dummy-2', title: '워크북.docx', file_name: '워크북.docx', file_size: 1024 * 512, file_type: 'application/docx' },
+      ]);
+    }
+  }, [preview, forcePhase]);
 
   const triggerBrowserDownload = useCallback((url, fileName) => {
     if (typeof document === 'undefined') return;
@@ -191,6 +217,7 @@ export default function LeadForm({ title, subtitle, ctaLabel, campaignId, magazi
   }, [shouldAutoDownload, fetchAndDownload, registerLead]);
 
   const handleKakaoClick = async () => {
+    if (preview) return; // 어드민 미리보기에선 OAuth 호출 차단
     if (typeof window === 'undefined') return;
     ga.kakaoLoginStart({ campaignId, pagePath: window.location.pathname });
     setKakaoLoading(true);
@@ -204,6 +231,7 @@ export default function LeadForm({ title, subtitle, ctaLabel, campaignId, magazi
   };
 
   const handleBasicSubmit = async (e) => {
+    if (preview) { e.preventDefault(); return; } // 어드민 미리보기에선 실제 제출 차단
     e.preventDefault();
     setErrorMessage('');
 

@@ -56,7 +56,7 @@ export default function CampaignPreviewPage() {
     );
   }
 
-  const { campaign, sections = [] } = payload;
+  const { campaign, sections = [], forcePhase } = payload;
   if (!campaign) return null;
 
   const showParticle = campaign.show_particle !== undefined
@@ -99,7 +99,7 @@ export default function CampaignPreviewPage() {
                 <div className="h-px w-8 bg-zinc-200" />
                 <span className="text-[10px] md:text-xs font-bold tracking-[0.3em] text-primary uppercase">EXCLUSIVELY FOR GROWTH</span>
               </div>
-              <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-black leading-tight md:leading-snug mb-5 md:mb-8 whitespace-pre-line tracking-tighter break-keep">
+              <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-black leading-tight md:leading-snug mb-5 md:mb-8 whitespace-pre-line tracking-tighter break-keep text-zinc-900">
                 {campaign.hero_content?.headline || ''}
               </h1>
               <p className="text-base sm:text-lg md:text-2xl text-zinc-500 mb-8 md:mb-12 max-w-2xl font-medium leading-relaxed break-keep">
@@ -108,13 +108,15 @@ export default function CampaignPreviewPage() {
             </div>
             <div className="flex-1 w-full max-w-md mx-auto lg:mx-0">
               <LeadForm
-                key={leadFormKey}
+                key={leadFormKey + ':' + (forcePhase || 'idle')}
                 title={campaign.hero_content?.file_name}
                 ctaLabel={campaign.hero_content?.cta_label}
                 campaignId={campaign.id}
                 category="campaign"
                 formMode={campaign.hero_content?.lead_form_mode || 'kakao'}
                 basicFormFields={campaign.hero_content?.basic_form_fields}
+                forcePhase={forcePhase}
+                preview
               />
             </div>
           </div>
