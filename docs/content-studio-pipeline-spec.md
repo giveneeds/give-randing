@@ -34,18 +34,20 @@ flowchart TB
     GOOG[구글 뉴스]
     HN[해커뉴스]
     REDDIT[레딧]
-    TAVILY[(Tavily 웹 검색<br/>1·2차 리서치)]
+    X[X / Twitter 검색]
+    TAVILY[(Tavily 웹 검색<br/>1·2·2.5·3차 리서치)]
+    PERP[(Perplexity Sonar<br/>optional)]
     LLM{{LLM<br/>Claude · OpenAI}}
     TG[[정욱님 텔레그램<br/>자유 텍스트 양방향]]
   end
 
   subgraph CRON[매일 크론 1회 · 자동 작업 루프]
     direction TB
-    C1[1단계 — 새 자료 수집] --> C2[2단계 — LLM 1차 보고<br/>composeDailyReport]
+    C1[1단계 — 새 자료 수집] --> C2[2단계 — LLM 1차 보고<br/>composeDailyReport<br/>Reddit/X 보강 후보 포함]
     C2 --> C3[3단계 — 정욱님 응답 대기]
     C3 --> C4[4단계 — 응답 의도 파싱<br/>parseUserDecision]
-    C4 --> C5[5단계 — 채택 자료 깊이 리서치<br/>runDeepResearch]
-    C5 --> C6[6단계 — 스레드 초안 생성<br/>convertItemToThreadDraft]
+    C4 --> C5[5단계 — 채택 자료 리서치 계층<br/>SNS 반응 + 추가 자료 + 말투]
+    C5 --> C6[6단계 — 7개 후보 생성 + 품질 검수<br/>convertItemToThreadDraft]
     C6 --> C7[7단계 — 보관함 정리 + 마무리 보고<br/>finishPlanningSession]
   end
 
@@ -73,6 +75,7 @@ flowchart TB
   GOOG --> C1
   HN --> C1
   REDDIT --> C1
+  X --> C1
   C1 --> LLM
   LLM --> DBI
   C1 --> DBJ
@@ -85,6 +88,7 @@ flowchart TB
   TG -->|자유 텍스트 응답| C4
   C4 --> LLM
   C5 --> TAVILY
+  C5 --> PERP
   C6 --> LLM
   C6 -->|지식베이스 주입| KB[(docs/*.md<br/>페르소나·KB·후킹 패턴)]
   C6 --> DBD
@@ -157,14 +161,15 @@ flowchart TB
 
 **커밋 근거**: `943865d` ("자유 텍스트 답변을 LLM으로 파싱").
 
-### 2.3 깊이 리서치는 채택된 자료에만
+### 2.3 리서치 계층은 채택된 자료에만
 
-**결정**: 2차 리서치(`runDeepResearch.js` — Tavily로 Reddit/Threads/X 검색)는 모든 자료가 아니라 **정욱님이 채택한 자료에만** 돌림.
+**결정**: 2차 SNS 반응 리서치(`runDeepResearch.js`), 2.5차 추가 자료 리서치(`runSupplementalResearch.js`), 3차 말투 리서치(`runToneResearch.js`)는 모든 자료가 아니라 **정욱님이 채택한 자료에만** 돌림.
 
 **왜 그렇게 했나**:
-- 모든 자료에 2차 리서치를 돌리면 비용이 매일 N배 늘어남(자료 건수만큼).
+- 모든 자료에 깊이 리서치를 돌리면 비용이 매일 N배 늘어남(자료 건수만큼).
 - 채택 후에 돌리면 정확히 발행될 자료에만 깊이가 들어감 → 비용 대비 효과 최적.
-- 2차 결과(`hook_patterns`, `audience_reactions`, `adapted_angles`)는 초안 생성기에 추가 맥락으로 주입됨.
+- 2차 결과(`hook_patterns`, `audience_reactions`, `adapted_angles`), 2.5차 결과(`evidence_points`, `content_additions`, `missing_context`), 3차 결과(`voice_patterns`, `phrases_to_borrow`, `phrases_to_avoid`)가 초안 생성기에 추가 맥락으로 주입됨.
+- `PERPLEXITY_API_KEY`가 있으면 2.5차 보강에서 Perplexity Sonar를 추가로 사용하고, 없어도 Tavily 결과만으로 계속 진행함.
 
 **커밋 근거**: `943865d` (`runDeepResearch` 도입 + `convertItemToThreadDraft`의 `extraContext` 옵션).
 
@@ -238,18 +243,20 @@ sequenceDiagram
   autonumber
   participant 크론 as 매일 크론 1회
   participant 수집 as 수집 + enrich
-  participant 1차 as composeDailyReport<br/>1차 자연어 보고
+  participant 1차 as composeDailyReport<br/>1차 보고 + 소셜 보강
   participant TG as 텔레그램<br/>(정욱님)
   participant 웹훅 as webhook/telegram<br/>자유 텍스트 수신
   participant 결정 as parseUserDecision<br/>LLM 의도 파싱
-  participant 2차 as runDeepResearch<br/>Reddit/Threads/X 깊이 검색
-  participant 초안 as convertItemToThreadDraft<br/>스레드 초안 생성
+  participant 2차 as runDeepResearch<br/>SNS 반응
+  participant 보강 as runSupplementalResearch<br/>추가 자료
+  participant 말투 as runToneResearch<br/>말투/VOC
+  participant 초안 as convertItemToThreadDraft<br/>7개 후보 + 품질 검수
   participant 마무리 as finishPlanningSession<br/>보관함 + 마무리 보고
 
   크론->>수집: 새 자료 수집
   수집-->>수집: agent_items 적재
   수집->>1차: planning_session 생성
-  1차->>TG: "정욱님, 오늘 모은 자료 N건..."<br/>후보 메타 + 추천
+  1차->>TG: "정욱님, 오늘 모은 자료 N건..."<br/>후보 메타 + Reddit/X 보강 후보
   Note over TG: planning_sessions 에<br/>message_id 저장 (응답 매칭용)
 
   TG->>웹훅: 정욱님 자유 텍스트 응답
@@ -257,10 +264,12 @@ sequenceDiagram
   Note over 결정: action: select / request_research /<br/>cancel / ambiguous
 
   alt select (채택)
-    결정->>2차: 채택된 자료로 깊이 리서치
-    2차->>초안: hook_patterns + adapted_angles 주입
-    초안->>마무리: thread_drafts 행 생성
-    마무리->>TG: "초안 N개 보관함에 담겼습니다.<br/>이유: ... 폐기: ..."
+    결정->>2차: 채택된 자료로 SNS 반응 리서치
+    2차->>보강: 후킹/반응 기반으로 보강 포인트 전달
+    보강->>말투: 근거/사례 + 부족 맥락 전달
+    말투->>초안: hook_patterns + evidence + voice_patterns 주입
+    초안->>마무리: thread_drafts 7개 저장
+    마무리->>TG: "후보 7개 보관함에 담겼습니다.<br/>점수와 추천은 참고용입니다."
   else request_research (추가 리서치)
     결정->>2차: 키워드 보강 후 재검색
   else cancel
@@ -273,17 +282,17 @@ sequenceDiagram
 ### 7단계 한 줄씩
 
 1. **수집** — 활성 매체에서 새 자료 긁어옴. 매체별 1건 cap + 사전 중복 체크. `agent_items` 적재.
-2. **1차 자연어 보고** — `composeDailyReport.js`가 그날 모은 자료를 "정욱님, …" 톤 자연어로 요약 + 추천. `planning_sessions` 행 생성.
+2. **1차 자연어 보고** — `composeDailyReport.js`가 그날 모은 자료를 "정욱님, …" 톤 자연어로 요약 + 추천. Reddit/X 보강 후보를 각각 1개씩 추가 시도. `planning_sessions` 행 생성.
 3. **응답 대기** — 텔레그램에서 정욱님 자유 텍스트 응답을 기다림. message_id로 세션 매칭.
 4. **응답 의도 파싱** — `parseUserDecision.js`가 LLM으로 응답을 4개 행동으로 분류 (select / request_research / cancel / ambiguous).
-5. **깊이 리서치** — 채택된 자료에만 `runDeepResearch.js`가 Tavily로 Reddit/Threads/X 검색해 `hook_patterns`, `audience_reactions`, `adapted_angles` 추출.
-6. **스레드 초안 생성** — `convertItemToThreadDraft.js`가 brief + 1차 리서치 + 2차 깊이 리서치 + KB(페르소나·플레이스 마케팅·거버넌스·후킹 패턴·인기글 감사)를 모두 LLM 프롬프트에 넣어 포스트 시퀀스 2~4개 생성. `thread_drafts` 행 생성.
-7. **보관함 정리 + 마무리 보고** — `finishPlanningSession.js`가 폐기 후보 + 거버넌스 적용 메타를 메타 컬럼에 채우고, 텔레그램으로 "초안 N개 담겼습니다. 이유: ... 폐기: ..." 마무리 보고.
+5. **리서치 계층** — 채택된 자료에만 `runDeepResearch.js`가 SNS 반응을, `runSupplementalResearch.js`가 추가 근거를, `runToneResearch.js`가 실제 말투/VOC를 추출.
+6. **스레드 후보 생성** — `convertItemToThreadDraft.js`가 brief + 리서치 계층 + KB(페르소나·플레이스 마케팅·거버넌스·후킹 패턴·인기글 감사)를 모두 LLM 프롬프트에 넣어 7개 후보를 생성하고 품질 검수 에이전트를 통과시킴. `thread_drafts` 7개 행 생성.
+7. **보관함 정리 + 마무리 보고** — `finishPlanningSession.js`가 폐기 후보 + 거버넌스 적용 메타 + 리서치 사용 내역을 메타 컬럼에 채우고, 텔레그램으로 "후보 7개 담겼습니다. 점수는 참고용입니다" 마무리 보고.
 
 ### 막혔을 때 가장 자주 보는 패턴
 
 - **응답 대기에서 멈춤** → 정욱님이 텔레그램에 답을 안 했거나, 웹훅이 끊김. ⑤ 진행 탭의 "정욱님 응답 대기 중" 박스 확인.
-- **2차 리서치만 실패** → Tavily 한도 초과(무료 1000회/월). 1차 보고는 떴는데 마무리 보고가 안 오면 의심.
+- **리서치 계층만 실패** → Tavily 한도 초과(무료 1000회/월) 또는 Perplexity 키 오류. 1차 보고는 떴는데 마무리 보고가 안 오면 의심.
 - **초안 생성 실패** → LLM 키 또는 KB 파일 손상. `agent_ai_logs`에 에러 메시지 남음.
 
 ---
@@ -412,22 +421,23 @@ stateDiagram-v2
 
 ### 4.5 ④ 스레드 초안 생성 (자동 워크플로우 6단계)
 
-**무엇을 하는 곳인가**: 채택된 한 장의 카드를 → 스레드용 포스트 시퀀스로 변환. 여기서 KB가 본격적으로 주입됩니다. 페르소나의 말투, 금지 표현, 후킹 패턴, 인기글 구조 — 모두 LLM 프롬프트에 한꺼번에 들어가서 "기브니즈답고 잘 먹히는" 스레드가 만들어집니다.
+**무엇을 하는 곳인가**: 채택된 한 장의 카드를 → 7개 스레드 후보로 변환. 여기서 KB와 리서치 계층이 본격적으로 주입됩니다. 페르소나의 말투, 금지 표현, 후킹 패턴, 인기글 구조, 추가 근거, 소셜 VOC가 함께 들어가서 비교 가능한 후보 묶음이 만들어집니다.
 
 ```mermaid
 flowchart LR
   A[검토함 또는 자동 워크플로우<br/>채택 시점] --> B[POST /items/:id/to-thread]
   B --> C[convertItemToThreadDraft]
-  C --> D[자료 로드<br/>분류·1차 리서치·번역문·2차 깊이 리서치]
+  C --> D[자료 로드<br/>분류·1차 리서치·번역문<br/>2차 SNS 반응·2.5차 근거·3차 말투]
   C --> E[buildKnowledgeContext<br/>지식베이스 주입기]
   E --> KB1[페르소나 정의<br/>content-personas.md]
   E --> KB2[플레이스 마케팅 KB<br/>place-marketing-knowledge-base.md]
   E --> KB3[톤·금지 표현 거버넌스<br/>place-marketing-content-governance.md]
-  E --> KB4[스레드 후킹 패턴<br/>threads-content-pattern-harness.md]
+  E --> KB4[스레드 후킹/형식/리서치 계층<br/>threads-content-pattern-harness.md + content-logic/threads/*.md]
   E --> KB5[인기글 감사 데이터<br/>reference-data/*.md]
   C --> F{LLM 호출<br/>gpt-4o · claude-3.5}
-  F --> G[포스트 시퀀스 + 후킹 패턴<br/>+ 톤 + CTA + 해시태그]
-  G --> H[(스레드 초안 저장<br/>thread_drafts)]
+  F --> G[7개 후보 + 점수 + 추천 후보]
+  G --> Q[품질 검수 에이전트<br/>겹침·밀도·말투·분량 점검]
+  Q --> H[(스레드 후보 7개 저장<br/>thread_drafts)]
   H --> I[④ 보관함에 노출]
 ```
 
@@ -435,7 +445,7 @@ flowchart LR
 - **`content-personas.md`** — "누가 누구에게 말하는가". 빠지면 톤이 평범해짐.
 - **`place-marketing-knowledge-base.md`** — 플레이스 마케팅 도메인 지식. 빠지면 일반론으로 흘러 차별점이 없어짐.
 - **`place-marketing-content-governance.md`** — "이런 표현은 쓰지 마" 가이드. 빠지면 과장·법적 위험 표현이 들어갈 수 있음.
-- **`threads-content-pattern-harness.md`** — 후킹 도입부 템플릿. 빠지면 첫 줄이 약해서 스크롤됨.
+- **`threads-content-pattern-harness.md` + `content-logic/threads/*.md`** — 후킹, 형식, FOMO, 대화형 설명, 리서치 계층 규칙. 빠지면 첫 줄과 분량 판단이 약해짐.
 - **`reference-data/threads-popular-post-audit-*.md`** — 인기글 분해 데이터. "이런 구조가 잘 먹히더라"의 근거.
 
 **가장 깨지기 쉬운 구간인 이유**
@@ -456,7 +466,7 @@ sequenceDiagram
   participant API as PATCH /thread-drafts/:id
   participant DB as thread_drafts
 
-  U->>UI: 포스트별 텍스트 수정 (500자 한도)
+  U->>UI: 포스트별 텍스트 수정 (1000자 한도)
   U->>UI: CTA·해시태그 조정
   U->>UI: 의사결정 근거 펼침 카드 확인
   UI->>API: { posts, status, published_url }
@@ -505,7 +515,7 @@ flowchart TD
 | `agent_sources.active`                       | 다음 수집의 매체 집합                            | 中    |
 | `docs/content-personas.md`                   | 모든 신규 초안의 톤·페르소나                     | 高    |
 | `docs/place-marketing-knowledge-base.md`     | 플레이스 토픽 초안 맥락                          | 高    |
-| `docs/threads-content-pattern-harness.md`    | 모든 스레드 후킹 패턴                            | 高    |
+| `docs/threads-content-pattern-harness.md` + `docs/content-logic/threads/*.md` | 모든 스레드 후킹·형식·분량·대화형 설명·리서치 계층 판단 | 高 |
 | `docs/place-marketing-content-governance.md` | 금지 표현·톤 규칙                                | 高    |
 | `lib/contentTaxonomy.js` 페르소나 enum       | 시스템 전체 페르소나 라벨 일관성                  | 高    |
 | `lib/agent/convertItemToThreadDraft.js` 모델| 스레드 톤·비용·지연                              | 中    |
@@ -529,13 +539,14 @@ flowchart TD
 |-------------|-----------------------------------|---------------------------|-------------------------------------|
 | LLM         | OpenAI / Anthropic                | `OPENAI_API_KEY` · `ANTHROPIC_API_KEY` | enrich, 초안 변환, 1차 보고, 의도 파싱 전면 중단 |
 | 웹 검색     | Tavily                            | `TAVILY_API_KEY`          | ② 리서치 + 자동 워크플로우 2차 깊이 리서치만 실패 |
+| 웹 근거 보강 | Perplexity Sonar                  | `PERPLEXITY_API_KEY`      | 2.5차 보강 일부만 생략, 기본 Tavily 리서치는 계속 |
 | 매체        | 네이버 / 구글 / 해커뉴스 / 레딧    | 없음 (공개 RSS/HTML)      | 해당 매체만 0건 반환                 |
 | 메신저      | Telegram Bot                      | `TELEGRAM_BOT_TOKEN`      | /notify + 1차·마무리 보고 실패       |
 | DB          | Supabase                          | `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | 전 단계 정지 |
 
 ### 문제 해결 순서
 1. **모든 게 안 돈다** → Supabase 또는 LLM 키 의심. ⑤ 진행 탭의 최근 잡 에러 메시지부터.
-2. **자동 워크플로우 1차 보고는 왔는데 마무리 보고가 안 옴** → 정욱님 응답이 없거나, 2차 깊이 리서치 단계에서 Tavily 한도 초과.
+2. **자동 워크플로우 1차 보고는 왔는데 마무리 보고가 안 옴** → 정욱님 응답이 없거나, 리서치 계층에서 Tavily 한도 초과/LLM 오류.
 3. **검토함은 차는데 텔레그램만 안 옴** → `TELEGRAM_BOT_TOKEN` 또는 수신자가 봇을 차단.
 4. **한 매체만 0건** → 그 매체 자체 문제. 시간 두고 자동 복구되는 경우가 대부분.
 

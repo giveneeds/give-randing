@@ -7,6 +7,9 @@ import {
   ChevronDown, ChevronRight, Sparkles, Shield, FileText, Search,
 } from 'lucide-react';
 
+const THREAD_POST_MAX_CHARS = 1000;
+const THREAD_POST_WARNING_CHARS = 850;
+
 export default function ThreadDraftEditorPage({ params }) {
   const { id } = use(params);
   const [draft, setDraft] = useState(null);
@@ -173,7 +176,9 @@ export default function ThreadDraftEditorPage({ params }) {
             <div className="flex items-center justify-between mb-2">
               <span className="text-[10px] font-black uppercase tracking-widest text-[var(--admin-text-muted)]">포스트 {i + 1} / {draft.posts.length}</span>
               <div className="flex items-center gap-2">
-                <span className={`text-[10px] font-mono ${(p.body || '').length > 480 ? 'text-red-500 font-bold' : 'text-[var(--admin-text-muted)]'}`}>{(p.body || '').length} / 500</span>
+                <span className={`text-[10px] font-mono ${(p.body || '').length > THREAD_POST_MAX_CHARS ? 'text-red-500 font-bold' : (p.body || '').length > THREAD_POST_WARNING_CHARS ? 'text-amber-600 font-bold' : 'text-[var(--admin-text-muted)]'}`}>
+                  {(p.body || '').length} / {THREAD_POST_MAX_CHARS}
+                </span>
                 <button onClick={() => copyPost(i)} className="text-[var(--admin-text-muted)] hover:text-[var(--admin-text-main)]" title="이 포스트 복사">
                   <Copy size={12} />
                 </button>
@@ -259,6 +264,75 @@ export default function ThreadDraftEditorPage({ params }) {
   );
 }
 
+const LOGIC_LABELS = {
+  content_pillar: {
+    cost_before_spend: '광고비 쓰기 전에 먼저 봐야 할 것',
+    do_today: '오늘 바로 해볼 수 있는 마케팅',
+    current_observation: '요즘 되는 방식에 대한 관찰',
+    trend_plain: '요즘 마케팅 흐름 쉽게 풀기',
+    content_showcase: '우리 업체를 더 잘 보여주는 콘텐츠 만들기',
+  },
+  content_treatment: {
+    news_commentary: '뉴스 코멘터리',
+    practical_tip: '실행 팁',
+    checklist: '체크리스트',
+    explainer: '쉽게 풀기',
+    case_note: '사례 메모',
+    opinion: '관점/의견',
+    fomo_reframe: 'FOMO 재구성',
+  },
+  fomo_mechanism: {
+    quiet_gap: '조용한 격차',
+    delayed_regret: '나중 후회',
+    rule_changed: '룰 변경',
+    insider_move: '잘하는 쪽의 움직임',
+    cost_leak: '비용 누수',
+    authority_signal: '권위 신호',
+    missed_timing: '타이밍 상실',
+    wrong_problem: '문제 오인',
+    comparison_gap: '비교 격차',
+    none: '미사용',
+  },
+  format_type: {
+    single_post: '단일 포스트',
+    short_thread: '짧은 스레드',
+    resource_thread: '자료형 스레드',
+  },
+  explanation_style: {
+    scene: '장면형',
+    qa: '문답형(이전)',
+    dialogue: '대화형',
+    conversational_explainer: '대화형 설명',
+    checklist: '체크리스트형',
+    case_breakdown: '사례 분해형',
+    resource_list: '자료 모음형',
+    opinion_note: '관점 메모',
+    comparison: '비교형',
+  },
+};
+
+function logicLabel(type, value) {
+  if (!value) return '미기록';
+  return LOGIC_LABELS[type]?.[value] || value;
+}
+
+function LogicPill({ label, value, tone = 'zinc' }) {
+  const toneClass = tone === 'violet'
+    ? 'border-violet-200 bg-violet-50 text-violet-700'
+    : tone === 'emerald'
+      ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+      : tone === 'amber'
+        ? 'border-amber-200 bg-amber-50 text-amber-700'
+        : 'border-[var(--admin-border)] bg-[var(--admin-bg)] text-[var(--admin-text-main)]';
+
+  return (
+    <div className={`rounded-md border px-3 py-2 ${toneClass}`}>
+      <div className="text-[9px] font-black uppercase tracking-widest opacity-60">{label}</div>
+      <div className="text-xs font-bold mt-1">{value}</div>
+    </div>
+  );
+}
+
 // 의사결정 메타 펼침 — 자동 워크플로우가 채운 selection_reason / rejected_candidates /
 // governance_applied / research_context_used 를 한 카드에서 펼치게.
 // 사용자가 "왜 이거고 왜 다른 건 폐기됐는지" 5초 안에 판단할 수 있게.
@@ -272,10 +346,24 @@ function DecisionMetaSection({ draft }) {
   const generationDecision = research.generation_decision || {};
   const variantReview = research.variant_review || {};
   const variants = Array.isArray(variantReview.variants) ? variantReview.variants : [];
+  const activeVariantId = variantReview.saved_variant_id || variantReview.recommended_variant_id || variantReview.selected_variant_id;
+  const selectedVariant = variants.find((v) => v.variant_id === activeVariantId) || {};
+  const manualExpansion = research.manual_cmts_qa_expansion || {};
+  const logicSnapshot = {
+    content_pillar: selectedVariant.content_pillar || generationDecision.content_pillar || manualExpansion.content_pillar,
+    content_treatment: selectedVariant.content_treatment || generationDecision.content_treatment || manualExpansion.content_treatment,
+    fomo_mechanism: selectedVariant.fomo_mechanism || generationDecision.fomo_mechanism || manualExpansion.fomo_mechanism || 'none',
+    format_type: selectedVariant.format_type || generationDecision.format_type || manualExpansion.format_type || draft.format_type,
+    explanation_style: selectedVariant.explanation_style || generationDecision.explanation_style || manualExpansion.explanation_style,
+    recommended_length: selectedVariant.recommended_length || generationDecision.recommended_length || manualExpansion.recommended_length,
+  };
+  const formatDecision = selectedVariant.format_decision || generationDecision.format_decision || manualExpansion.format_decision || {};
+  const hasFormatDecision = Boolean(formatDecision.post_count_reason || formatDecision.split_roles || formatDecision.why_not_shorter || formatDecision.why_not_longer);
+  const hasLogicSnapshot = Object.values(logicSnapshot).some(Boolean) || hasFormatDecision;
 
   const hasAny = selectionReason || rejected.length > 0 || governance.applied_docs?.length > 0
     || research.phase1 || research.phase2_deep || generationDensity.source_signal || generationDecision.research_sufficiency
-    || variants.length > 0;
+    || variants.length > 0 || hasLogicSnapshot;
   if (!hasAny) return null;
 
   const phase1 = research.phase1 || {};
@@ -308,27 +396,66 @@ function DecisionMetaSection({ draft }) {
             </div>
           )}
 
+          {hasLogicSnapshot && (
+            <div className="md:col-span-2 border-t border-[var(--admin-border)] pt-4">
+              <div className="text-[10px] font-black uppercase tracking-widest text-violet-500 mb-2 inline-flex items-center gap-1">
+                <Sparkles size={11} /> 글 로직 회로
+              </div>
+              <p className="text-[11px] text-[var(--admin-text-muted)] leading-relaxed mb-3">
+                FOMO는 감정 압력, 설명 방식은 이해 방식, 단일/스레드/자료형은 분할 구조입니다. 서로 배타 선택이 아니라 같은 글 안에서 함께 켜질 수 있습니다.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                <LogicPill label="기둥" value={logicLabel('content_pillar', logicSnapshot.content_pillar)} />
+                <LogicPill label="처리 방식" value={logicLabel('content_treatment', logicSnapshot.content_treatment)} tone="violet" />
+                <LogicPill label="FOMO 장치" value={logicLabel('fomo_mechanism', logicSnapshot.fomo_mechanism)} tone={logicSnapshot.fomo_mechanism && logicSnapshot.fomo_mechanism !== 'none' ? 'amber' : 'zinc'} />
+                <LogicPill label="글 구조" value={logicLabel('format_type', logicSnapshot.format_type)} />
+                <LogicPill label="설명 방식" value={logicLabel('explanation_style', logicSnapshot.explanation_style)} tone={['dialogue', 'conversational_explainer'].includes(logicSnapshot.explanation_style) ? 'emerald' : 'zinc'} />
+                <LogicPill label="권장 포스트 수" value={logicSnapshot.recommended_length ? `${logicSnapshot.recommended_length}개` : '미기록'} />
+              </div>
+              {hasFormatDecision && (
+                <div className="mt-3 rounded-md border border-[var(--admin-border)] bg-[var(--admin-bg)] p-3">
+                  <div className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2">분량/분할 판단</div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-[11px] leading-relaxed">
+                    {formatDecision.post_count_reason && (
+                      <div><span className="font-bold text-[var(--admin-text-main)]">포스트 수:</span> <span className="text-[var(--admin-text-muted)]">{formatDecision.post_count_reason}</span></div>
+                    )}
+                    {formatDecision.split_roles && (
+                      <div><span className="font-bold text-[var(--admin-text-main)]">각 글 역할:</span> <span className="text-[var(--admin-text-muted)]">{formatDecision.split_roles}</span></div>
+                    )}
+                    {formatDecision.why_not_shorter && (
+                      <div><span className="font-bold text-[var(--admin-text-main)]">짧게 안 쓴 이유:</span> <span className="text-[var(--admin-text-muted)]">{formatDecision.why_not_shorter}</span></div>
+                    )}
+                    {formatDecision.why_not_longer && (
+                      <div><span className="font-bold text-[var(--admin-text-main)]">더 늘리지 않은 이유:</span> <span className="text-[var(--admin-text-muted)]">{formatDecision.why_not_longer}</span></div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {variants.length > 0 && (
             <div className="md:col-span-2 border-t border-[var(--admin-border)] pt-4">
               <div className="text-[10px] font-black uppercase tracking-widest text-violet-500 mb-2 inline-flex items-center gap-1">
                 <Sparkles size={11} /> 7개 후보 자동 심사
               </div>
-              {variantReview.selection_reason && (
+              {(variantReview.recommendation_reason || variantReview.selection_reason) && (
                 <p className="text-xs text-[var(--admin-text-main)] leading-relaxed mb-3">
-                  {variantReview.selection_reason}
+                  {variantReview.recommendation_reason || variantReview.selection_reason}
                 </p>
               )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {variants.map((v) => {
-                  const selected = v.variant_id === variantReview.selected_variant_id;
+                  const isCurrentDraft = v.variant_id === variantReview.saved_variant_id;
+                  const recommended = v.variant_id === (variantReview.recommended_variant_id || variantReview.selected_variant_id);
                   return (
                     <div
                       key={v.variant_id}
-                      className={`rounded-md border p-3 ${selected ? 'border-violet-300 bg-violet-50/60' : 'border-[var(--admin-border)] bg-[var(--admin-bg)]'}`}
+                      className={`rounded-md border p-3 ${isCurrentDraft ? 'border-emerald-300 bg-emerald-50/60' : recommended ? 'border-violet-300 bg-violet-50/60' : 'border-[var(--admin-border)] bg-[var(--admin-bg)]'}`}
                     >
                       <div className="flex items-center gap-2 mb-1">
-                        <span className={`text-[10px] font-black ${selected ? 'text-violet-700' : 'text-zinc-400'}`}>
-                          후보 {v.variant_id}{selected ? ' · 선택' : ''}
+                        <span className={`text-[10px] font-black ${isCurrentDraft ? 'text-emerald-700' : recommended ? 'text-violet-700' : 'text-zinc-400'}`}>
+                          후보 {v.variant_id}{isCurrentDraft ? ' · 현재 드래프트' : recommended ? ' · 추천' : ''}
                         </span>
                         {typeof v.scores?.overall === 'number' && (
                           <span className="ml-auto text-[10px] font-bold text-[var(--admin-text-main)]">
@@ -340,7 +467,7 @@ function DecisionMetaSection({ draft }) {
                         {v.title || v.angle || '(제목 없음)'}
                       </div>
                       <div className="text-[10px] text-zinc-400 mt-1">
-                        {[v.content_pillar, v.content_treatment, v.format_type].filter(Boolean).join(' · ')}
+                        {[v.content_pillar, v.content_treatment, v.fomo_mechanism, v.explanation_style, v.format_type].filter(Boolean).join(' · ')}
                       </div>
                       {v.score_reason && (
                         <div className="text-[11px] text-[var(--admin-text-muted)] mt-1.5 line-clamp-2">

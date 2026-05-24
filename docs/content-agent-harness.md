@@ -35,18 +35,20 @@ agent_sources
   -> runCollection()
   -> enrichItem()
   -> agent_items / agent_ai_logs
-  -> sendItemCards()
-  -> Telegram approval card
-  -> convertItemToMagazineDraft()
-  -> magazines(status=draft) / content_resources(is_enabled=false)
-  -> Admin editor human review
+  -> composeDailyReport() + Reddit/X 보강 후보
+  -> Telegram 자유 텍스트 선택
+  -> runDeepResearch() / runSupplementalResearch() / runToneResearch()
+  -> convertItemToThreadDraft()
+  -> 7개 thread_drafts 저장 + 품질 검수 기록
+  -> Admin 보관함 human review
   -> publish manually
 ```
 
 2026-05-19 운영 우선순위:
 - 매거진 draft 자동 생성은 구현되어 있지만, 오늘의 1차 실험 채널은 Threads다.
 - Threads는 단일글과 연결글의 구조가 다르므로 별도 패턴 하네스를 둔다.
-- 참조 문서: `docs/threads-content-pattern-harness.md`
+- 참조 문서: `docs/threads-content-pattern-harness.md`와 `docs/content-logic/threads/*.md`
+- 리서치 흐름은 `docs/content-logic/threads/10-research-layers.md`를 기준으로 본다.
 
 ## 단계별 역할
 
@@ -59,7 +61,7 @@ agent_sources
 
 입력:
 - `agent_sources`
-- 현재 소스 타입: `naver_news`, `google_news`, `hackernews`, `reddit`
+- 현재 소스 타입: `naver_news`, `google_news`, `hackernews`, `reddit`, `reddit_search`, `x_search`
 
 Reddit source identifier 예시:
 - `smallbusiness`: `r/smallbusiness` 최신 글
@@ -98,6 +100,11 @@ Reddit meta 예시:
 - 레딧은 한국 자영업자에게 그대로 보여줄 출처가 아니라, 해외 소상공인/마케터가 이미 겪는 고민과 해결 실험을 찾는 시장 신호 수집원이다.
 - 점수가 낮아도 댓글이 많으면 페인포인트가 강한 글일 수 있으므로, 댓글 가중치를 기본적으로 추천 점수보다 높게 둔다.
 - 수집 결과는 곧바로 발행하지 않고, 기브니즈 지식베이스와 한국 플레이스/광고/콘텐츠 맥락에 맞게 재해석한다.
+
+X/Reddit 검색 보강:
+- 뉴스 후보가 많아질 때도 1차 텔레그램 제안에는 Reddit 후보 1개, X 후보 1개를 별도 소셜 보강 후보로 넣는다.
+- 이 후보들은 "그 자체로 발행할 뉴스"라기보다 실제 반응, 농담, 불만, 질문, 말투를 얻는 샘플이다.
+- source type은 `reddit_search`, `x_search`로 저장한다.
 
 중간 산출물:
 - `agent_jobs`
@@ -184,21 +191,22 @@ Reddit meta 예시:
 ### 4. 생성
 
 구현:
-- `lib/agent/convertItemToDraft.js`
+- `lib/agent/convertItemToThreadDraft.js`
+- `lib/agent/finishPlanningSession.js`
 - `app/api/webhook/telegram/route.js`
 
 트리거:
-- 텔레그램 카드에서 승인 버튼 클릭
+- 텔레그램 1차 보고에서 자유 텍스트로 후보 선택
 
 중간 산출물:
-- `magazines.status = draft`
-- `magazines.content_html`
-- `content_resources.is_enabled = false`
+- `thread_drafts.status = draft`
+- `thread_drafts.posts`
+- `thread_drafts.research_context_used.variant_review`
 
 완료 기준:
-- 승인된 item이 draft로 변환된다.
-- 실패 시 `agent_items.status`는 `approved`로 유지된다.
-- draft URL이 텔레그램 메시지에 표시된다.
+- 선택된 item이 7개 후보 드래프트로 변환된다.
+- 후보별 기둥, treatment, FOMO, 설명 방식, 분량 판단, 품질 검수 기록이 남는다.
+- 대표 draft URL과 후보별 URL이 텔레그램 메시지에 표시된다.
 
 개선 예정:
 - draft 생성 결과의 품질 평가 로그를 남긴다.

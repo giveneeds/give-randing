@@ -55,6 +55,21 @@ function readDoc(rel, max = 4000) {
     return '';
   }
 }
+
+function readDocDirectory(relDir, max = 2800) {
+  try {
+    return fs.readdirSync(path.join(DOCS_DIR, relDir))
+      .filter((filename) => /^\d{2}-.+\.md$/.test(filename))
+      .sort()
+      .map((filename) => ({
+        filename: `${relDir}/${filename}`,
+        content: readDoc(`${relDir}/${filename}`, max),
+      }))
+      .filter((doc) => doc.content);
+  } catch {
+    return [];
+  }
+}
 function readLatestAudit(max = 4000) {
   try {
     const dir = path.join(DOCS_DIR, 'reference-data');
@@ -78,7 +93,10 @@ function buildKBBlock({ topicCluster, persona }) {
     if (gov) blocks.push(`[채널별 표현 거버넌스]\n${gov}`);
   }
   const harness = readDoc('threads-content-pattern-harness.md');
-  if (harness) blocks.push(`[스레드 콘텐츠 형식 가이드]\n${harness}`);
+  if (harness) blocks.push(`[스레드 콘텐츠 형식 가이드: index]\n${harness}`);
+  readDocDirectory('content-logic/threads').forEach((doc) => {
+    blocks.push(`[스레드 콘텐츠 형식 가이드: ${doc.filename}]\n${doc.content}`);
+  });
   const audit = readLatestAudit();
   if (audit) blocks.push(`[Threads 인기 게시글 관찰 기록]\n${audit}`);
   if (persona && persona !== 'unknown') {
