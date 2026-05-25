@@ -185,12 +185,13 @@ flowchart TB
 
 ### 2.5 페르소나는 SSOT로 박혀 있다
 
-**결정**: 페르소나·토픽 클러스터 정의는 `lib/contentTaxonomy.js`에 단일 진실원천(SSOT)으로 박힘. `VALID_PERSONAS`, `CLUSTERS_BY_PERSONA`, `PLACE_RELATED_CLUSTERS` 셋. LLM 프롬프트도, KB 로더도 모두 여기서 읽어 감.
+**결정**: 페르소나·토픽 클러스터 정의는 `lib/contentTaxonomy.js`에 단일 진실원천(SSOT)으로 박힘. `VALID_PERSONAS`, `CLUSTERS_BY_PERSONA`, `PLACE_RELATED_CLUSTERS` 셋. LLM 프롬프트도, KB 로더도, 어드민 주제 UI/API도 모두 여기와 같은 범위를 따라야 함.
 
 **왜 그렇게 했나**:
 - 페르소나 이름·클러스터가 여러 파일에 흩어지면 "음식점인가 요식업인가" 같은 라벨 불일치가 결과물에 드러남.
 - SSOT 하나만 고치면 시스템 전체가 일관되게 따라옴.
-- 현재 페르소나 v1: **요식업 사장님 / 병의원 원장님**. 둘 다 플레이스 마케팅 핵심 고객.
+- 현재 페르소나 v1: **요식업 사장님 / 병의원 원장님 / 브랜드 운영자 / 마케터 / 작은 브랜드 운영자 / 일반 독자 / general / unknown**.
+- 요식업·병의원은 플레이스 마케팅 핵심 고객이고, 브랜드 운영자·마케터·일반 독자는 해외 AI/마케팅 이슈와 뉴스 코멘터리형 콘텐츠를 자연스럽게 받는 확장 타겟.
 
 **커밋 근거**: `9e54b36` (`lib/contentTaxonomy.js` SSOT 신설 + `docs/content-personas.md` v1).
 
@@ -311,7 +312,7 @@ sequenceDiagram
   participant API as POST /api/admin/content-studio/themes
   participant DB as content_themes
 
-  U->>UI: 페르소나(restaurant_owner 등) + 토픽 + collection_source_ids 입력
+  U->>UI: 페르소나(restaurant_owner/marketer 등) + 토픽 + collection_source_ids 입력
   UI->>API: { name, target_persona, target_topic_cluster, source_ids, active, sort_order }
   API->>DB: 저장
   DB-->>UI: 저장된 주제
@@ -319,7 +320,7 @@ sequenceDiagram
 ```
 
 **영향 관계**
-- **페르소나를 바꾸면** → 그 다음에 만들어지는 모든 콘텐츠의 말투·관점·예시가 통째로 바뀝니다. `restaurant_owner`를 `clinic_owner`로 바꾸면 "사장님" 대신 "원장님"이 됩니다.
+- **페르소나를 바꾸면** → 그 다음에 만들어지는 모든 콘텐츠의 말투·관점·예시가 통째로 바뀝니다. `restaurant_owner`를 `clinic_owner`로 바꾸면 "사장님" 대신 "원장님"이 되고, `marketer`/`brand_operator`로 바꾸면 업종 팁보다 도구·캠페인·브랜드 해석 중심으로 이동합니다.
 - **`collection_source_ids`를 조정하면** → 다음 수집이 가져올 매체 묶음이 즉시 바뀝니다.
 - **`active=false`로 끄면** → 리서치도 수집도 그 주제는 건너뜁니다. 임시 보관용으로 유용.
 
@@ -576,12 +577,12 @@ flowchart TD
 ```
 
 ### KB 수정 후 회귀 시험 절차
-1. 검토함에서 "다양한 페르소나가 섞인" 카드 3개 골라두기 (요식업·병의원·일반 각 1).
+1. 검토함에서 "다양한 페르소나가 섞인" 카드 5개 골라두기 (요식업·병의원·브랜드 운영자·마케터·일반 독자 각 1).
 2. KB 수정 전 — 각 카드를 한 번씩 to-thread 돌려 결과 보관.
-3. KB 수정 후 — 같은 3개 카드 다시 to-thread.
+3. KB 수정 후 — 같은 5개 카드 다시 to-thread.
 4. 두 결과 나란히 비교 → 의도한 변화만 일어났는지 확인.
 
-이 절차 없이 KB만 바꾸면 "요식업 카드 결과는 좋아졌는데 병의원 카드 톤이 어색해진 걸 며칠 모르고 지나가는" 사고가 납니다.
+이 절차 없이 KB만 바꾸면 "요식업 카드 결과는 좋아졌는데 브랜드/마케터 카드가 다시 억지 자영업자 팁으로 닫히는" 사고가 납니다.
 
 ---
 

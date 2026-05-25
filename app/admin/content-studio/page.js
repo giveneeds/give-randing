@@ -27,6 +27,17 @@ const STATUS_LABEL = {
   sent: { label: '매거진으로 보냄', cls: 'bg-violet-50 text-violet-600' },
 };
 
+const PERSONA_LABEL = {
+  restaurant_owner: '요식업',
+  clinic_owner: '병의원',
+  brand_operator: '브랜드 운영자',
+  marketer: '마케터',
+  small_brand_owner: '작은 브랜드',
+  general_reader: '일반 독자',
+  general: '일반',
+  unknown: '미상',
+};
+
 export default function ContentStudioReviewPage() {
   const [rows, setRows] = useState([]);
   const [total, setTotal] = useState(0);
@@ -431,7 +442,7 @@ function ItemCard({ item, busy, onPatch, onNotify, onMakeThread }) {
           <div className="flex items-center gap-1.5 flex-wrap text-[10px] pt-1">
             <Tag size={10} className="text-zinc-300" />
             {persona && persona !== 'unknown' && (
-              <span className="px-1.5 py-0.5 rounded-full bg-indigo-50 text-indigo-600 font-bold">{persona}</span>
+              <span className="px-1.5 py-0.5 rounded-full bg-indigo-50 text-indigo-600 font-bold">{PERSONA_LABEL[persona] || persona}</span>
             )}
             {topic && topic !== 'unclassified' && (
               <span className="px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-600 font-bold">{topic}</span>

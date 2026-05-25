@@ -7,8 +7,23 @@ import { clsx } from 'clsx';
 const PERSONA_LABEL = {
   restaurant_owner: '요식업',
   clinic_owner: '병의원',
+  brand_operator: '브랜드 운영자',
+  marketer: '마케터',
+  small_brand_owner: '작은 브랜드',
+  general_reader: '일반 독자',
   general: '일반',
+  unknown: '미상',
 };
+
+const PERSONA_OPTIONS = [
+  { value: 'general', label: '일반 / 공통' },
+  { value: 'restaurant_owner', label: '요식업 사장님' },
+  { value: 'clinic_owner', label: '병의원 원장님' },
+  { value: 'brand_operator', label: '브랜드 운영자' },
+  { value: 'marketer', label: '마케터 / 콘텐츠 실무자' },
+  { value: 'small_brand_owner', label: '작은 브랜드 / 소상공인' },
+  { value: 'general_reader', label: '일반 독자 / 관찰형' },
+];
 
 export default function ThemesPage() {
   const [rows, setRows] = useState([]);
@@ -300,9 +315,9 @@ function ThemeModal({ mode, initial, onSave, onClose }) {
                 onChange={(e) => setPersona(e.target.value)}
                 className="mt-1 w-full px-3 py-2 border border-zinc-200 rounded-md text-sm outline-none"
               >
-                <option value="general">일반 (둘 다)</option>
-                <option value="restaurant_owner">요식업</option>
-                <option value="clinic_owner">병의원</option>
+                {PERSONA_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
               </select>
             </div>
             <div>
