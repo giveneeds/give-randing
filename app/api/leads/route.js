@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase, isDummyMode } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 const BUDGET_LABELS = {
   under_100: '100만원 이하',
@@ -161,33 +162,40 @@ export async function POST(request) {
       .catch(err => console.error('Kakao webhook failed:', err));
 
     // 3. 캠페인 basic 폼 + 활성 자료 보유 시 1회용 다운로드 토큰 발급
+    //    ⚠️ lead_download_tokens 는 RLS 활성화 + 정책 미정의 — service role(admin) 필수
+    //    content_resources 카운트도 일관성을 위해 admin 으로 통일
     let download_token = null;
     if (!isDummyMode && createdLeadId && campaign_id && lead_type !== 'campaign_kakao_oauth') {
-      try {
-        const { count: activeResourceCount } = await supabase
-          .from('content_resources')
-          .select('id', { count: 'exact', head: true })
-          .eq('campaign_id', campaign_id)
-          .eq('is_enabled', true)
-          .neq('display_on_form_submit', false);
-
-        if ((activeResourceCount || 0) > 0) {
-          const { data: tokenRow, error: tokenErr } = await supabase
-            .from('lead_download_tokens')
-            .insert({
-              lead_id: createdLeadId,
-              campaign_id,
-            })
-            .select('token')
-            .single();
-          if (tokenErr) {
-            console.warn('download token issue failed:', tokenErr.message);
-          } else {
-            download_token = tokenRow?.token || null;
+      if (!supabaseAdmin) {
+        console.warn('[leads] download token skipped: supabaseAdmin (service role) 미설정');
+      } else {
+        try {
+          const { count: activeResourceCount, error: countErr } = await supabaseAdmin
+            .from('content_resources')
+            .select('id', { count: 'exact', head: true })
+            .eq('campaign_id', campaign_id)
+            .eq('is_enabled', true)
+            .neq('display_on_form_submit', false);
+          if (countErr) {
+            console.warn('[leads] active resource count failed:', countErr.message);
+          } else if ((activeResourceCount || 0) > 0) {
+            const { data: tokenRow, error: tokenErr } = await supabaseAdmin
+              .from('lead_download_tokens')
+              .insert({
+                lead_id: createdLeadId,
+                campaign_id,
+              })
+              .select('token')
+              .single();
+            if (tokenErr) {
+              console.warn('[leads] download token insert failed:', tokenErr.message);
+            } else {
+              download_token = tokenRow?.token || null;
+            }
           }
+        } catch (tokenIssueErr) {
+          console.warn('[leads] download token issue skipped:', tokenIssueErr?.message);
         }
-      } catch (tokenIssueErr) {
-        console.warn('download token issue skipped:', tokenIssueErr?.message);
       }
     }
 
