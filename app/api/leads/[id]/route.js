@@ -6,14 +6,38 @@ export async function GET(request, { params }) {
     if (isDummyMode) return NextResponse.json({ lead: null });
 
     const { id } = await params;
+    // 1) 리드 본체 — join 없이 안전하게 fetch
     const { data, error } = await supabase
       .from('leads')
-      .select('*, campaign:campaigns(id, slug, title), magazine:magazines(id, slug, title)')
+      .select('*')
       .eq('id', id)
       .single();
 
     if (error) return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
-    return NextResponse.json({ lead: data });
+
+    // 2) 캠페인/매거진은 외래키 join 안 쓰고 별도 fetch — 한쪽이 실패해도 본체 반환
+    let campaign = null;
+    let magazine = null;
+
+    if (data?.campaign_id) {
+      const { data: cRow } = await supabase
+        .from('campaigns')
+        .select('id, slug, title')
+        .eq('id', data.campaign_id)
+        .maybeSingle();
+      campaign = cRow || null;
+    }
+
+    if (data?.magazine_id) {
+      const { data: mRow } = await supabase
+        .from('magazines')
+        .select('id, slug, title')
+        .eq('id', data.magazine_id)
+        .maybeSingle();
+      magazine = mRow || null;
+    }
+
+    return NextResponse.json({ lead: { ...data, campaign, magazine } });
   } catch (e) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
