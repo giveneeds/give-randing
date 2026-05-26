@@ -8,7 +8,7 @@ export async function GET(request, { params }) {
     const { id } = await params;
     const { data, error } = await supabase
       .from('leads')
-      .select('*')
+      .select('*, campaign:campaigns(id, slug, title), magazine:magazines(id, slug, title)')
       .eq('id', id)
       .single();
 

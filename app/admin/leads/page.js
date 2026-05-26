@@ -10,13 +10,14 @@ import {
 import { prettyReferrer } from '@/lib/leadInflow';
 
 const LEAD_TYPE_CONFIG = {
-  consultation:          { label: '문의하기', color: 'bg-violet-50 text-violet-600 border-violet-200' },
+  consultation:          { label: '메인 문의', color: 'bg-violet-50 text-violet-600 border-violet-200' },
+  contact_form:          { label: '메인 문의', color: 'bg-violet-50 text-violet-600 border-violet-200' },
   campaign:              { label: '캠페인 LP', color: 'bg-blue-50 text-blue-600 border-blue-200' },
-  campaign_kakao_oauth:  { label: 'LP · 카카오', color: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
-  campaign_basic_form:   { label: 'LP · 기본 폼', color: 'bg-blue-50 text-blue-600 border-blue-200' },
-  magazine:              { label: '매거진 가입', color: 'bg-emerald-50 text-emerald-600 border-emerald-200' },
+  campaign_kakao_oauth:  { label: '캠페인 · 카카오', color: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
+  campaign_basic_form:   { label: '캠페인 · 기본폼', color: 'bg-blue-50 text-blue-600 border-blue-200' },
+  magazine:              { label: '매거진', color: 'bg-emerald-50 text-emerald-600 border-emerald-200' },
   magazine_kakao_oauth:  { label: '매거진 · 카카오', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  magazine_basic_form:   { label: '매거진 · 기본 폼', color: 'bg-emerald-50 text-emerald-600 border-emerald-200' },
+  magazine_basic_form:   { label: '매거진 · 기본폼', color: 'bg-emerald-50 text-emerald-600 border-emerald-200' },
   organic:               { label: '기타 유입', color: 'bg-zinc-50 text-zinc-500 border-zinc-200' },
 };
 
@@ -282,6 +283,12 @@ export default function AdminLeads() {
                   <div className="mt-2 space-y-1">
                     {lead.phone && <div className="flex items-center gap-1.5 text-xs text-zinc-600"><Phone size={11} className="text-zinc-400 flex-shrink-0"/><span className="truncate">{lead.phone}</span></div>}
                     {lead.email && <div className="flex items-center gap-1.5 text-xs text-zinc-500"><Mail size={11} className="text-zinc-400 flex-shrink-0"/><span className="truncate">{lead.email}</span></div>}
+                    {lead.message && (
+                      <div className="flex items-start gap-1.5 text-xs text-zinc-600 mt-1.5 pt-1.5 border-t border-zinc-100">
+                        <MessageSquare size={11} className="text-zinc-400 flex-shrink-0 mt-0.5"/>
+                        <span className="line-clamp-2 break-words leading-snug">{lead.message}</span>
+                      </div>
+                    )}
                   </div>
                   <div className="mt-3 flex items-center justify-between gap-2">
                     <div className="flex items-center gap-1 text-[10px] text-zinc-400 font-medium">

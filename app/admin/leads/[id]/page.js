@@ -20,10 +20,18 @@ const PIPELINE_CONFIG = {
 };
 
 const LEAD_TYPE_CONFIG = {
-  consultation: { label: '문의하기', color: 'bg-violet-50 text-violet-600' },
-  campaign:     { label: '캠페인 LP', color: 'bg-blue-50 text-blue-600' },
-  magazine:     { label: '매거진', color: 'bg-emerald-50 text-emerald-600' },
-  organic:      { label: '기타 유입', color: 'bg-zinc-50 text-zinc-500' },
+  // 일반 문의 (메인 사이트 /contact)
+  consultation:           { label: '메인 문의', color: 'bg-violet-50 text-violet-600' },
+  contact_form:           { label: '메인 문의', color: 'bg-violet-50 text-violet-600' },
+  // 캠페인 LP
+  campaign:               { label: '캠페인 LP', color: 'bg-blue-50 text-blue-600' },
+  campaign_basic_form:    { label: '캠페인 · 기본폼', color: 'bg-blue-50 text-blue-600' },
+  campaign_kakao_oauth:   { label: '캠페인 · 카카오', color: 'bg-yellow-50 text-yellow-700' },
+  // 매거진
+  magazine:               { label: '매거진', color: 'bg-emerald-50 text-emerald-600' },
+  magazine_kakao_oauth:   { label: '매거진 · 카카오', color: 'bg-emerald-50 text-emerald-700' },
+  // 기타
+  organic:                { label: '기타 유입', color: 'bg-zinc-50 text-zinc-500' },
 };
 
 const CHANNEL_LABELS = {
@@ -315,6 +323,109 @@ export default function LeadDetailPage() {
               )}
             </div>
           </div>
+
+          {/* 출처 — 어느 폼에서 왔는지 한눈에 */}
+          <div className="bg-white rounded-xl border border-zinc-200 shadow-sm p-5 space-y-3">
+            <h3 className="text-[11px] font-black text-zinc-900 uppercase tracking-widest flex items-center gap-1.5">
+              <Compass size={12} /> 출처
+            </h3>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${leadType.color}`}>
+                {leadType.label}
+              </span>
+              {lead?.lead_type && lead.lead_type !== leadType.label && (
+                <span className="text-[10px] font-mono text-zinc-400">{lead.lead_type}</span>
+              )}
+            </div>
+
+            {/* 캠페인 LP 에서 온 경우 */}
+            {lead?.campaign?.title && (
+              <InflowRow label="캠페인">
+                <a
+                  href={`/landing/${lead.campaign.slug}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 text-blue-600 hover:underline truncate"
+                  title={lead.campaign.title}
+                >
+                  <span className="truncate font-bold">{lead.campaign.title}</span>
+                  <ExternalLink size={10} className="flex-shrink-0" />
+                </a>
+              </InflowRow>
+            )}
+
+            {/* 매거진에서 온 경우 */}
+            {lead?.magazine?.title && (
+              <InflowRow label="매거진">
+                <a
+                  href={`/magazine/${lead.magazine.slug}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 text-emerald-600 hover:underline truncate"
+                  title={lead.magazine.title}
+                >
+                  <span className="truncate font-bold">{lead.magazine.title}</span>
+                  <ExternalLink size={10} className="flex-shrink-0" />
+                </a>
+              </InflowRow>
+            )}
+
+            {/* 제출 페이지 — 캠페인/매거진 어디에도 안 잡히면 fallback */}
+            {!lead?.campaign?.title && !lead?.magazine?.title && lead?.source_page && (
+              <InflowRow label="제출 페이지">
+                <span className="font-mono text-[11px] text-zinc-700 truncate" title={lead.source_page}>
+                  {lead.source_page}
+                </span>
+              </InflowRow>
+            )}
+
+            {lead?.inquiry_type && lead.inquiry_type !== 'general' && (
+              <InflowRow label="문의 유형">{lead.inquiry_type}</InflowRow>
+            )}
+
+            {lead?.budget && (
+              <InflowRow label="예산">{lead.budget}</InflowRow>
+            )}
+
+            {lead?.category && (
+              <InflowRow label="카테고리">{lead.category}</InflowRow>
+            )}
+          </div>
+
+          {/* 문의 내용 (상세 메시지 + 사용자 정의 동적 필드) */}
+          {(lead?.message || (lead?.lead_data && Object.keys(lead.lead_data).length > 0)) && (
+            <div className="bg-white rounded-xl border border-zinc-200 shadow-sm p-5 space-y-3">
+              <h3 className="text-[11px] font-black text-zinc-900 uppercase tracking-widest flex items-center gap-1.5">
+                <MessageSquare size={12} /> 문의 내용
+              </h3>
+
+              {lead?.message && (
+                <div className="space-y-1.5">
+                  <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">상세 메시지</p>
+                  <p className="text-sm text-zinc-700 leading-relaxed whitespace-pre-wrap break-words bg-zinc-50 rounded-lg p-3 border border-zinc-100">
+                    {lead.message}
+                  </p>
+                </div>
+              )}
+
+              {lead?.lead_data && typeof lead.lead_data === 'object' && Object.keys(lead.lead_data).length > 0 && (
+                <div className="space-y-1.5">
+                  <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">추가 입력 필드</p>
+                  <dl className="grid grid-cols-1 gap-1.5 text-xs">
+                    {Object.entries(lead.lead_data).map(([k, v]) => (
+                      <div key={k} className="flex gap-3 py-1.5 border-b border-zinc-100 last:border-0">
+                        <dt className="font-bold text-zinc-500 min-w-[110px] truncate">{k}</dt>
+                        <dd className="flex-1 text-zinc-800 break-words whitespace-pre-wrap">
+                          {typeof v === 'object' ? JSON.stringify(v, null, 2) : String(v ?? '')}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* 유입 정보 (J1) */}
           <div className="bg-white rounded-xl border border-zinc-200 shadow-sm p-5 space-y-3">
