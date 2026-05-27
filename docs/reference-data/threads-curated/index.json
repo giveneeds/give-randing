@@ -1,0 +1,47 @@
+[
+  {
+    "id": "ref-20260526-auto-gongbang-crm",
+    "file": "case-breakdown.md",
+    "title": "운영 CRM 제작 과정 공유",
+    "author": "auto.gongbang",
+    "source_url": "docs/reference-data/threads-reference-detail-2026-05-26-auto-gongbang-candidates.json",
+    "pillars": ["do_today", "content_showcase"],
+    "treatments": ["case_note", "practical_tip", "explainer"],
+    "patterns": ["case_breakdown", "proof_story", "save_value"],
+    "fomo": ["quiet_gap", "comparison_gap"],
+    "topics": ["automation", "CRM", "operations", "AI", "workflow"],
+    "keywords": ["자동화", "CRM", "운영", "도구", "시스템", "AI", "업무"],
+    "priority": 90,
+    "notes": "기능 설명을 운영 장면으로 바꾸는 사례형 기준"
+  },
+  {
+    "id": "ref-20260526-gptaku-fomo",
+    "file": "fomo-patterns.md",
+    "title": "FOMO를 일으키는 방식",
+    "author": "gptaku_ai",
+    "source_url": "docs/reference-data/threads-reference-detail-2026-05-26-gptaku-candidates.json",
+    "pillars": ["current_observation", "trend_plain"],
+    "treatments": ["fomo_reframe", "opinion", "explainer"],
+    "patterns": ["fomo_reframe", "resource_promise", "pattern_repetition"],
+    "fomo": ["rule_changed", "comparison_gap", "authority_signal", "missed_timing"],
+    "topics": ["FOMO", "AI", "소비자 심리", "트렌드", "마케팅"],
+    "keywords": ["FOMO", "불안", "뒤처", "격차", "AI", "패러다임", "놓치"],
+    "priority": 100,
+    "notes": "표면 행동과 실제 감정을 분리하는 패턴형 기준"
+  },
+  {
+    "id": "ref-20260526-choi-openai",
+    "file": "info-thread-structure.md",
+    "title": "AI/자동화/업무 방식 관련 정보형 스레드",
+    "author": "choi.openai",
+    "source_url": "docs/reference-data/threads-detail-manual-choi-openai-DYuVvqtj8Av.json",
+    "pillars": ["trend_plain", "do_today"],
+    "treatments": ["explainer", "news_commentary", "case_note"],
+    "patterns": ["curiosity_gap", "authority_signal", "concept_explainer"],
+    "fomo": ["rule_changed", "authority_signal", "missed_timing"],
+    "topics": ["AI", "automation", "industry shift", "tool", "workflow"],
+    "keywords": ["AI", "자동화", "업무", "도구", "산업", "변화", "개념"],
+    "priority": 95,
+    "notes": "새 개념을 쉬운 흐름으로 풀어내는 정보형 기준"
+  }
+]

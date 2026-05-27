@@ -91,7 +91,7 @@ flowchart TB
   C5 --> TAVILY
   C5 --> PERP
   C6 --> LLM
-  C6 -->|지식베이스 주입| KB[(docs/*.md<br/>페르소나·KB·Threads 발행 레퍼런스)]
+  C6 -->|지식베이스 주입| KB[(docs/*.md<br/>페르소나·KB·선택된 Threads 발행 레퍼런스)]
   C6 --> DBD
   C7 -->|마무리 보고| TG
   C7 --> DBP
@@ -449,6 +449,7 @@ flowchart LR
 - **`place-marketing-content-governance.md`** — "이런 표현은 쓰지 마" 가이드. 빠지면 과장·법적 위험 표현이 들어갈 수 있음.
 - **`threads-content-pattern-harness.md` + `content-logic/threads/*.md`** — 후킹, 형식, FOMO, 대화형 설명, 리서치 계층 규칙. 빠지면 첫 줄과 분량 판단이 약해짐.
 - **`reference-data/threads-popular-post-audit-*.md`** — 인기글 분해 데이터. "이런 구조가 잘 먹히더라"의 근거.
+- **`reference-data/threads-curated/index.json` + `threads-curated/*.md`** — 잘 쓴 발행물의 관찰 카드. loader가 현재 주제와 맞는 카드만 골라 프롬프트에 넣는다.
 
 **가장 깨지기 쉬운 구간인 이유**
 - `docs/*.md` 어느 한 파일이 바뀌면 → 그 직후 만드는 모든 스레드 결과가 달라집니다. 코드 수정 없이 결과물이 변함. KB 파일은 "글로벌 설정"처럼 다뤄야 함.

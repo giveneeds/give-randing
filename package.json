@@ -11,6 +11,7 @@
     "threads:benchmark": "node scripts/analyze-threads-benchmark.js",
     "threads:reference-benchmark": "node scripts/collect-threads-reference-benchmark.js",
     "threads:reference-search": "node scripts/collect-threads-references-search.js",
+    "threads:curated:check": "node scripts/validate-threads-curated-references.js",
     "threads:topics": "node scripts/generate-thread-topic-candidates.js",
     "threads:topics:legacy": "node scripts/generate-thread-topic-candidates.js --legacy-topic-output"
   },

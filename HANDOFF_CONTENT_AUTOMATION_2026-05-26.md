@@ -449,3 +449,32 @@ Claude Code에서 `/인수인계` 명령을 사용할 수 있도록 `.claude/com
 - Apify quota hard limit로 reference benchmark 표본 확장은 아직 제한됨.
 - 실제 production cron -> Telegram -> 후보 선택 -> draft 생성 end-to-end는 커밋 후 별도 테스트 필요.
 - 평균 1300자 수준 달성은 강화된 gate 이후 새 생성물로 재검증해야 함.
+
+## 12. Threads 레퍼런스 파일 구조 개편 - 2026-05-27
+
+사용자 결정:
+
+- 잘 쓴 Threads 글을 Supabase DB에 바로 저장하지 않는다.
+- 단일 md 파일에 계속 누적하지 않는다.
+- 정해진 파일 구조와 규칙으로 자동 분리하고, loader가 필요한 레퍼런스만 선택해 프롬프트에 넣는다.
+
+구현 방향:
+
+- `docs/reference-data/threads-curated/index.json`
+- `docs/reference-data/threads-curated/*.md`
+- `lib/knowledge/loader.js`에서 `index.json`을 점수화해 관련 카드만 주입
+- `scripts/validate-threads-curated-references.js`로 index/card 정합성 검사
+- `npm run threads:curated:check`
+
+주간 갱신:
+
+- `.github/workflows/weekly-threads-audit.yml`는 기존 `threads:audit`, `threads:topics` 외에 `threads:reference-search`, `threads:reference-benchmark`, `threads:curated:check`를 실행한다.
+- 이 워크플로우는 시장 Threads 발행물을 주간으로 갱신한다.
+- 단, curated md 관찰 카드는 아직 자동 생성하지 않는다. 사람이 확인한 좋은 글만 카드로 추가한다.
+
+다음 에이전트가 이어서 할 일:
+
+- 새 레퍼런스가 생기면 원문/상세 json은 `docs/reference-data`에 두고, 관찰 카드는 `threads-curated/*.md`에 추가한다.
+- 같은 id를 `index.json`에 등록하고 `npm run threads:curated:check`를 돌린다.
+- 레퍼런스가 50개를 넘으면 `maxReferences`와 token budget을 재조정한다.
+- 레퍼런스가 100개를 넘고 선택 품질이 떨어지면 DB/벡터 검색 전환을 검토한다.
