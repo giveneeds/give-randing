@@ -42,7 +42,20 @@ next-env.d.ts
 
 # local scratch: 일회성 탐색/설정 스크립트, 백업, 개인 IDE 설정
 /scripts/legacy/
+/backups/
 *.code-workspace
+
+# content automation verification scratch
+/docs/reference-data/goal-workflow-*.json
+/docs/reference-data/threads-reference-search-debug-*.json
+/docs/reference-data/threads-reference-raw-*.json
+/docs/reference-data/threads-reference-detail-*.json
+/docs/reference-data/threads-user-*.json
+/docs/reference-data/threads-benchmark-*-candidates-reference.*
+/docs/reference-data/threads-benchmark-*-manual-*.*
+/docs/reference-data/threads-detail-manual-*.json
+/docs/reference-data/threads-popular-post-audit-*-manual-*.*
+/docs/reference-data/threads-popular-post-audit-*-apify-detail.json
 
 # tools/content-mvp: 자체 node_modules + 실행 산출물 격리
 /tools/content-mvp/node_modules
@@ -50,7 +63,9 @@ next-env.d.ts
 /tools/content-mvp/data/processed
 
 # Claude Code 로컬 작업 상태 (스케줄 락 등) — 공유 X
-.claude/
+.claude/*
+!.claude/commands/
+!.claude/commands/*.md
 
 # OMC (oh-my-claudecode) 로컬 에이전트 상태/플랜/로그 — 공유 X
 .omc/

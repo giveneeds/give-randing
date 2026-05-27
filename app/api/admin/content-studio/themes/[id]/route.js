@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { requireAdmin } from '@/lib/adminAuth';
-import { VALID_PERSONAS_SET } from '@/lib/contentTaxonomy';
+import { normalizePersona } from '@/lib/contentTaxonomy';
 
 export const runtime = 'nodejs';
 
@@ -18,7 +18,8 @@ export async function PATCH(request, { params }) {
   const update = {};
   if (typeof body.name === 'string') update.name = body.name;
   if (typeof body.description === 'string') update.description = body.description;
-  if (VALID_PERSONAS_SET.has(body.target_persona) && body.target_persona !== 'unknown') update.target_persona = body.target_persona;
+  const normalizedPersona = normalizePersona(body.target_persona);
+  if (normalizedPersona !== 'unknown') update.target_persona = normalizedPersona;
   if (typeof body.target_topic_cluster === 'string' || body.target_topic_cluster === null) update.target_topic_cluster = body.target_topic_cluster;
   if (Array.isArray(body.research_keywords)) update.research_keywords = body.research_keywords.filter((x) => typeof x === 'string' && x.trim());
   if (Array.isArray(body.collection_source_ids)) update.collection_source_ids = body.collection_source_ids;

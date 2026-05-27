@@ -8,7 +8,11 @@
     "start": "next start",
     "lint": "eslint",
     "threads:audit": "node scripts/collect-threads-audit-apify.js",
-    "threads:topics": "node scripts/generate-thread-topic-candidates.js"
+    "threads:benchmark": "node scripts/analyze-threads-benchmark.js",
+    "threads:reference-benchmark": "node scripts/collect-threads-reference-benchmark.js",
+    "threads:reference-search": "node scripts/collect-threads-references-search.js",
+    "threads:topics": "node scripts/generate-thread-topic-candidates.js",
+    "threads:topics:legacy": "node scripts/generate-thread-topic-candidates.js --legacy-topic-output"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",

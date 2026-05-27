@@ -25,13 +25,13 @@ export default function ResearchPage() {
     try {
       const res = await fetch('/api/admin/content-studio/themes', { headers: await authHeaders() });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || '주제 조회 실패');
+      if (!res.ok) throw new Error(data.error || '전략 레인 조회 실패');
       setThemes(data.rows || []);
       if ((data.rows || []).length > 0 && !selectedThemeId) {
         setSelectedThemeId(data.rows[0].id);
       }
     } catch (e) {
-      alert('주제 조회 실패: ' + e.message);
+      alert('전략 레인 조회 실패: ' + e.message);
     } finally {
       setLoadingThemes(false);
     }
@@ -77,11 +77,11 @@ export default function ResearchPage() {
   return (
     <div className="space-y-5">
       <p className="text-xs text-zinc-500">
-        주제별 키워드로 SNS·뉴스를 검색해 현재 사장님들의 페인포인트와 바이럴 후킹 패턴을 정리합니다. 이 결과는 콘텐츠 생성 시 자동으로 참조됩니다.
+        전략 레인별 키워드로 수집된 리서치 로그입니다. 주제 후보는 에이전트가 따로 제안하고, 이 화면은 고급 확인용으로만 사용합니다.
       </p>
 
       <div className="bg-white border border-[var(--admin-border)] rounded-md p-4 flex items-center gap-3 flex-wrap">
-        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">주제 선택</span>
+        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">전략 레인 선택</span>
         {loadingThemes ? (
           <Loader2 size={14} className="animate-spin text-zinc-400" />
         ) : (
@@ -90,7 +90,7 @@ export default function ResearchPage() {
             onChange={(e) => setSelectedThemeId(e.target.value)}
             className="px-3 py-2 border border-zinc-200 rounded-md text-sm outline-none"
           >
-            {themes.length === 0 && <option value="">먼저 &quot;주제&quot; 탭에서 주제를 만들어 주세요</option>}
+            {themes.length === 0 && <option value="">먼저 &quot;전략 레인&quot;에서 기준을 만들어 주세요</option>}
             {themes.map((t) => (
               <option key={t.id} value={t.id}>{t.name}</option>
             ))}
@@ -110,7 +110,7 @@ export default function ResearchPage() {
         <div className="flex items-center justify-center py-16 text-zinc-400"><Loader2 size={18} className="animate-spin" /></div>
       ) : snapshots.length === 0 ? (
         <div className="bg-white border border-[var(--admin-border)] rounded-md py-16 text-center text-zinc-400 text-sm">
-          이 주제는 아직 리서치 기록이 없습니다. &quot;지금 리서치 실행&quot;으로 시작해 보세요.
+          이 전략 레인은 아직 리서치 기록이 없습니다. &quot;지금 리서치 실행&quot;으로 시작해 보세요.
         </div>
       ) : (
         <div className="space-y-3">
@@ -150,7 +150,7 @@ function SnapshotCard({ snap, expanded, onToggle }) {
           {pp.length > 0 && (
             <div>
               <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2 flex items-center gap-1">
-                <AlertTriangle size={11} className="text-amber-500" /> 사장님 페인포인트
+                <AlertTriangle size={11} className="text-amber-500" /> 독자 페인포인트
               </div>
               <ul className="space-y-1">
                 {pp.map((p, i) => <li key={i} className="text-xs text-zinc-700">• {p}</li>)}

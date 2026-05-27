@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { requireAdmin } from '@/lib/adminAuth';
-import { VALID_PERSONAS_SET } from '@/lib/contentTaxonomy';
+import { normalizePersona } from '@/lib/contentTaxonomy';
 
 export const runtime = 'nodejs';
 
@@ -68,7 +68,7 @@ export async function POST(request) {
   const insert = {
     name: body.name,
     description: typeof body.description === 'string' ? body.description : null,
-    target_persona: VALID_PERSONAS_SET.has(body.target_persona) && body.target_persona !== 'unknown' ? body.target_persona : 'general',
+    target_persona: normalizePersona(body.target_persona) !== 'unknown' ? normalizePersona(body.target_persona) : 'general',
     target_topic_cluster: typeof body.target_topic_cluster === 'string' ? body.target_topic_cluster : null,
     research_keywords: Array.isArray(body.research_keywords) ? body.research_keywords.filter((x) => typeof x === 'string' && x.trim()) : [],
     collection_source_ids: Array.isArray(body.collection_source_ids) ? body.collection_source_ids : [],

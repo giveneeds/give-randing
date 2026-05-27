@@ -190,8 +190,8 @@ flowchart TB
 **왜 그렇게 했나**:
 - 페르소나 이름·클러스터가 여러 파일에 흩어지면 "음식점인가 요식업인가" 같은 라벨 불일치가 결과물에 드러남.
 - SSOT 하나만 고치면 시스템 전체가 일관되게 따라옴.
-- 현재 페르소나 v1: **요식업 사장님 / 병의원 원장님 / 브랜드 운영자 / 마케터 / 작은 브랜드 운영자 / 일반 독자 / general / unknown**.
-- 요식업·병의원은 플레이스 마케팅 핵심 고객이고, 브랜드 운영자·마케터·일반 독자는 해외 AI/마케팅 이슈와 뉴스 코멘터리형 콘텐츠를 자연스럽게 받는 확장 타겟.
+- 현재 페르소나 v2: **general / unknown**.
+- 요식업·병의원·마케터·브랜드 운영자는 별도 페르소나가 아니라 글 안에서 필요한 예시/맥락으로만 사용한다. 기본 타겟은 "마케팅을 직접 판단해야 하는 작은 사업자/브랜드 운영자"다.
 
 **커밋 근거**: `9e54b36` (`lib/contentTaxonomy.js` SSOT 신설 + `docs/content-personas.md` v1).
 
@@ -312,7 +312,7 @@ sequenceDiagram
   participant API as POST /api/admin/content-studio/themes
   participant DB as content_themes
 
-  U->>UI: 페르소나(restaurant_owner/marketer 등) + 토픽 + collection_source_ids 입력
+  U->>UI: 타겟 맥락(general/general) + 토픽 + collection_source_ids 입력
   UI->>API: { name, target_persona, target_topic_cluster, source_ids, active, sort_order }
   API->>DB: 저장
   DB-->>UI: 저장된 주제
@@ -320,7 +320,7 @@ sequenceDiagram
 ```
 
 **영향 관계**
-- **페르소나를 바꾸면** → 그 다음에 만들어지는 모든 콘텐츠의 말투·관점·예시가 통째로 바뀝니다. `restaurant_owner`를 `clinic_owner`로 바꾸면 "사장님" 대신 "원장님"이 되고, `marketer`/`brand_operator`로 바꾸면 업종 팁보다 도구·캠페인·브랜드 해석 중심으로 이동합니다.
+- **페르소나를 바꾸면** → 글의 독자 범위가 바뀝니다. 기본은 `general`이고, 실무 팁으로 좁히면 어색한 뉴스/소비자 반응 소재만 `general`로 둡니다. 업종 호칭은 페르소나가 아니라 원문 맥락으로 결정합니다.
 - **`collection_source_ids`를 조정하면** → 다음 수집이 가져올 매체 묶음이 즉시 바뀝니다.
 - **`active=false`로 끄면** → 리서치도 수집도 그 주제는 건너뜁니다. 임시 보관용으로 유용.
 

@@ -1,10 +1,14 @@
 #!/usr/bin/env node
 /*
- * Threads audit 문서를 바로 글로 쓰지 않고, 먼저 기둥별 주제 후보로 변환한다.
+ * LEGACY: Threads audit 문서를 기둥별 주제 후보로 변환한다.
+ *
+ * 현재 운영 플로우에서 Threads/Apify는 주제 발굴용이 아니라 주차별 말투·후킹
+ * 코퍼스로만 사용한다. 이 스크립트는 과거 산출물 비교가 필요할 때만
+ * --legacy-topic-output 플래그로 수동 실행한다.
  *
  * 사용:
- * - node scripts/generate-thread-topic-candidates.js
- * - node scripts/generate-thread-topic-candidates.js --audit docs/reference-data/file.md
+ * - node scripts/generate-thread-topic-candidates.js --legacy-topic-output
+ * - node scripts/generate-thread-topic-candidates.js --legacy-topic-output --audit docs/reference-data/file.md
  */
 
 const fs = require('fs');
@@ -20,6 +24,7 @@ function parseArgs(argv) {
     pillars: DEFAULT_PILLARS,
     outDir: path.join(ROOT, 'docs', 'topic-candidates'),
     date: todayKst(),
+    legacyTopicOutput: false,
   };
   for (let i = 2; i < argv.length; i += 1) {
     const arg = argv[i];
@@ -27,6 +32,7 @@ function parseArgs(argv) {
     else if (arg === '--pillars') args.pillars = path.resolve(argv[++i]);
     else if (arg === '--out-dir') args.outDir = path.resolve(argv[++i]);
     else if (arg === '--date') args.date = argv[++i];
+    else if (arg === '--legacy-topic-output') args.legacyTopicOutput = true;
   }
   return args;
 }
@@ -229,6 +235,14 @@ function escapeCell(value) {
 
 function main() {
   const args = parseArgs(process.argv);
+  if (!args.legacyTopicOutput) {
+    console.log(JSON.stringify({
+      skipped: true,
+      reason: 'Threads audit는 현재 주제 발굴용이 아니라 주차별 말투·후킹 코퍼스로만 사용합니다.',
+      how_to_run_legacy: 'node scripts/generate-thread-topic-candidates.js --legacy-topic-output',
+    }, null, 2));
+    return;
+  }
   const auditFile = args.audit || latestAuditFile();
   const audit = fs.readFileSync(auditFile, 'utf8');
   const pillars = readJson(args.pillars);

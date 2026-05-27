@@ -3,8 +3,8 @@ import { useState, useEffect, useCallback, use } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import {
-  Loader2, ChevronLeft, ExternalLink, MessageSquare, CheckCircle2, XCircle,
-  Sparkles, Clock, Hash, FileText,
+  Loader2, ChevronLeft, ExternalLink, MessageSquare, XCircle,
+  Sparkles, Clock, Hash, FileText, GitBranch, ShieldCheck,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -65,7 +65,7 @@ export default function JobHubPage({ params }) {
 
       {data.sessions.length === 0 ? (
         <p className="text-sm text-[var(--admin-text-muted)] py-12 text-center">
-          이 job 에 채택된 후보가 없습니다. 텔레그램에서 "후보 N" 답변 후 다시 확인해 주세요.
+          이 job 에 채택된 후보가 없습니다. 텔레그램에서 &quot;후보 N&quot; 답변 후 다시 확인해 주세요.
         </p>
       ) : (
         <div className="space-y-6">
@@ -109,6 +109,11 @@ export default function JobHubPage({ params }) {
 function SessionCard({ session, index }) {
   const drafts = session.drafts || [];
   const published = drafts.filter((d) => d.status === 'published');
+  const candidate = session.selected_candidate || {};
+  const pillarLabel = candidate.selected_content_pillar_label || candidate.selected_content_pillar || null;
+  const pillarReason = candidate.content_pillar_reason || null;
+  const writingDirection = candidate.writing_direction || null;
+  const sourceSummary = candidate.research_source_summary || session.item_source || null;
   return (
     <section className="rounded-xl border border-[var(--admin-border)] bg-[var(--admin-card-bg)] overflow-hidden">
       <header className="px-5 py-4 border-b border-[var(--admin-border)] bg-[var(--admin-bg)]">
@@ -123,7 +128,7 @@ function SessionCard({ session, index }) {
             {session.user_decision_raw && (
               <p className="mt-1 text-xs text-[var(--admin-text-muted)]">
                 <MessageSquare className="inline w-3 h-3 mr-1" />
-                정욱님 답변: "{session.user_decision_raw}"
+                정욱님 답변: &quot;{session.user_decision_raw}&quot;
               </p>
             )}
           </div>
@@ -135,6 +140,21 @@ function SessionCard({ session, index }) {
           </div>
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-[var(--admin-text-muted)]">
+          {pillarLabel && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-violet-200 bg-violet-50 px-2 py-0.5 font-bold text-violet-700">
+              <GitBranch className="w-3 h-3" /> 기둥: {pillarLabel}
+            </span>
+          )}
+          {typeof candidate.content_pillar_fit_score === 'number' && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-zinc-200 bg-white px-2 py-0.5">
+              적합도 {candidate.content_pillar_fit_score}/5
+            </span>
+          )}
+          {sourceSummary && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-zinc-200 bg-white px-2 py-0.5">
+              출처 역할: {sourceSummary}
+            </span>
+          )}
           {session.item_post_url && (
             <a href={session.item_post_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 hover:underline">
               <ExternalLink className="w-3 h-3" /> 원본 자료
@@ -144,6 +164,13 @@ function SessionCard({ session, index }) {
             <span className="inline-flex items-center gap-1"><Clock className="w-3 h-3" /> 완성 {new Date(session.completed_at).toLocaleString('ko-KR')}</span>
           )}
         </div>
+        {(pillarReason || writingDirection || candidate.target_fit_summary) && (
+          <div className="mt-3 rounded-md border border-[var(--admin-border)] bg-white/70 p-3 text-xs leading-relaxed text-[var(--admin-text-muted)]">
+            {pillarReason && <p><b className="text-[var(--admin-text-main)]">기둥 선택 이유</b> · {pillarReason}</p>}
+            {candidate.target_fit_summary && <p className="mt-1"><b className="text-[var(--admin-text-main)]">타겟 적합도</b> · {candidate.target_fit_summary}</p>}
+            {writingDirection && <p className="mt-1"><b className="text-[var(--admin-text-main)]">작성 방향</b> · {writingDirection}</p>}
+          </div>
+        )}
       </header>
 
       <div className="px-5 py-4">
@@ -166,6 +193,15 @@ function SessionCard({ session, index }) {
 function DraftCard({ draft, variantIndex }) {
   const firstPost = Array.isArray(draft.posts) ? draft.posts[0] : null;
   const preview = firstPost?.body?.slice(0, 100) || '';
+  const variantReview = draft.research_context_used?.variant_review || {};
+  const generationDecision = draft.research_context_used?.generation_decision || {};
+  const variantMeta = Array.isArray(variantReview.variants)
+    ? variantReview.variants.find((v) => v.variant_id === variantReview.saved_variant_id)
+    : null;
+  const score = variantMeta?.scores?.overall || variantReview.selected_scores?.overall || null;
+  const pillar = generationDecision.content_pillar || variantMeta?.content_pillar || null;
+  const treatment = generationDecision.content_treatment || variantMeta?.content_treatment || null;
+  const fomo = generationDecision.fomo_mechanism || variantMeta?.fomo_mechanism || null;
   return (
     <Link
       href={`/admin/content-studio/thread-drafts/${draft.id}`}
@@ -184,6 +220,18 @@ function DraftCard({ draft, variantIndex }) {
         <DraftStatusBadge status={draft.status} />
       </div>
       <div className="font-bold text-sm leading-snug line-clamp-2">{draft.title || '(제목 없음)'}</div>
+      {(score || pillar || treatment) && (
+        <div className="mt-2 flex flex-wrap gap-1 text-[10px]">
+          {score && (
+            <span className="inline-flex items-center gap-1 rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 font-bold text-emerald-700">
+              <ShieldCheck className="w-2.5 h-2.5" /> {score}/5
+            </span>
+          )}
+          {pillar && <span className="rounded border border-violet-200 bg-violet-50 px-1.5 py-0.5 text-violet-700">{pillar}</span>}
+          {treatment && <span className="rounded border border-zinc-200 bg-zinc-50 px-1.5 py-0.5 text-zinc-600">{treatment}</span>}
+          {fomo && fomo !== 'none' && <span className="rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-amber-700">FOMO {fomo}</span>}
+        </div>
+      )}
       {preview && (
         <p className="mt-2 text-xs text-[var(--admin-text-muted)] line-clamp-3">{preview}…</p>
       )}

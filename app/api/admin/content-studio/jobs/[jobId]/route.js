@@ -36,7 +36,7 @@ export async function GET(request, { params }) {
   if (sessionIds.length > 0) {
     const { data: d } = await supabaseAdmin
       .from('thread_drafts')
-      .select('id, agent_item_id, planning_session_id, title, posts, status, hook_pattern, tone_pattern, format_type, engagement_drivers, published_at, published_url, generator_prompt_version, created_at')
+      .select('id, agent_item_id, planning_session_id, title, posts, status, hook_pattern, tone_pattern, format_type, engagement_drivers, research_context_used, published_at, published_url, generator_prompt_version, created_at')
       .in('planning_session_id', sessionIds)
       .order('created_at', { ascending: true });
     drafts = d || [];
@@ -65,6 +65,7 @@ export async function GET(request, { params }) {
     const item = s.selected_item_id ? itemsById[s.selected_item_id] : null;
     return {
       ...s,
+      selected_candidate: s.selected_item_id ? (s.candidates_summary || {})[s.selected_item_id] || null : null,
       item_title: item?.normalized?.title || null,
       item_source: item?.source || null,
       item_post_url: item?.post_url || null,

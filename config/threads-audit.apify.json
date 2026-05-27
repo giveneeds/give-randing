@@ -17,9 +17,19 @@
     "minViews": 5000,
     "minShareOrRepost": 40
   },
+  "detailEnrichment": {
+    "enabled": true,
+    "actorId": "trantus/threads-post-scraper",
+    "maxItems": 8,
+    "input": {
+      "raw": false
+    }
+  },
   "output": {
     "maxItems": 50,
     "maxKeywords": 3,
-    "auditDir": "docs/reference-data"
+    "auditDir": "docs/reference-data",
+    "maxFullTextChars": 1200,
+    "writeDetailJson": true
   }
 }

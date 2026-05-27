@@ -1,0 +1,185 @@
+{
+  "date": "2026-05-26",
+  "source_detail_file": "docs/reference-data/threads-popular-post-audit-2026-05-26-apify-detail.json",
+  "verification": {
+    "detail_follow_verified": true,
+    "raw_same_author_continuation_verified": true,
+    "structured_info_thread_verified": false,
+    "verdict": "상세 actor는 댓글/같은 작성자 댓글을 수집했지만, 이번 표본에서는 정보형 1/n 연속글 수집이 확정되지 않았다.",
+    "limitation": "이미지 카드형 게시물은 OCR이 없으면 카드 안 정보를 품질 기준으로 쓸 수 없다."
+  },
+  "sample_counts": {
+    "total": 5,
+    "usable_text_structure": 0,
+    "weak_text_reference": 3,
+    "limited_without_ocr": 2
+  },
+  "observed_benchmark": {
+    "root_chars_p50": 157,
+    "root_chars_p75": 163,
+    "usable_total_chars_p50": null,
+    "usable_total_chars_p75": null,
+    "usable_observed_post_count_p50": null,
+    "hook_types": {
+      "statement": 1,
+      "comment_dm_resource": 1,
+      "question": 2,
+      "numbered_list": 1
+    },
+    "engagement_patterns": {
+      "mixed": 2,
+      "comment_or_dm_conversion": 1,
+      "comment_pattern": 2
+    },
+    "fomo_devices": {}
+  },
+  "generation_quality_gate": {
+    "editorial_min_single_post_chars": 500,
+    "info_or_explainer_min_total_chars": 1200,
+    "info_or_explainer_max_total_chars": 5000,
+    "require_rewrite_when": [
+      "정보형/해설형인데 정보 단위가 3개 미만이다.",
+      "이미지 카드형 레퍼런스를 따라가면서 텍스트 설명을 비워둔다.",
+      "첫 포스트만 강하고 후속 설명에서 기준/예시/맥락이 빠진다.",
+      "레퍼런스보다 짧은 것이 아니라, 독자가 이해할 재료 자체가 부족하다."
+    ],
+    "caution": "이번 benchmark는 실제 Threads 구조를 참고하되, OCR 없는 이미지 카드 텍스트는 기준에서 제외한다."
+  },
+  "items": [
+    {
+      "index": 1,
+      "author": "aiprompttreasure",
+      "url": "https://www.threads.com/@aiprompttreasure/post/DYrc7EwiLRD",
+      "keyword": "AI 마케팅",
+      "media_count": 17,
+      "root_text_chars": 149,
+      "comments_count": 13,
+      "same_author_continuations_raw": 0,
+      "same_author_continuations_meaningful": 0,
+      "continuation_char_counts": [],
+      "observed_post_count": 1,
+      "total_text_chars": 149,
+      "hook_type": "statement",
+      "fomo_devices": [],
+      "engagement_pattern": "mixed",
+      "image_card_dependent": true,
+      "benchmark_use": "limited_without_ocr",
+      "root_text_preview": "2026 AI Tools You Can’t Miss: 1. Video Creation 2. Image Generation 3. Avatar Creation 4. Audio Generation 5. Copywriting 6. Presentations Designs...",
+      "meaningful_continuation_previews": [],
+      "metrics": {
+        "likes": 0,
+        "replies": 0,
+        "views": 0,
+        "shareOrRepost": 0
+      }
+    },
+    {
+      "index": 2,
+      "author": "ai.woojoo",
+      "url": "https://www.threads.com/@ai.woojoo/post/DYWcp06Eb_p",
+      "keyword": "AI 마케팅",
+      "media_count": 8,
+      "root_text_chars": 350,
+      "comments_count": 27,
+      "same_author_continuations_raw": 0,
+      "same_author_continuations_meaningful": 0,
+      "continuation_char_counts": [],
+      "observed_post_count": 1,
+      "total_text_chars": 350,
+      "hook_type": "comment_dm_resource",
+      "fomo_devices": [],
+      "engagement_pattern": "comment_or_dm_conversion",
+      "image_card_dependent": true,
+      "benchmark_use": "limited_without_ocr",
+      "root_text_preview": "Claude를 제대로 쓰는 사람은 프롬프트가 아니라 '스킬'을 씁니다. ━━━━━━━━━━━━━━━━ 스킬(Skill)은 검증된 워크플로우를 통째로 Claude에 얹는 기능입니다. 즉흥 프롬프트로는 못 가는 곳까지 한 번에 데려다 줍니다. 이번 글에 정리한 분야: 디자인 · 콘텐츠 · 글쓰기 리서치 · 마케팅 · 개발 자",
+      "meaningful_continuation_previews": [],
+      "metrics": {
+        "likes": 0,
+        "replies": 0,
+        "views": 0,
+        "shareOrRepost": 0
+      }
+    },
+    {
+      "index": 3,
+      "author": "bandi_tiger",
+      "url": "https://www.threads.com/@bandi_tiger/post/DYeqtjqknrh",
+      "keyword": "AI 마케팅",
+      "media_count": 0,
+      "root_text_chars": 163,
+      "comments_count": 43,
+      "same_author_continuations_raw": 19,
+      "same_author_continuations_meaningful": 0,
+      "continuation_char_counts": [],
+      "observed_post_count": 1,
+      "total_text_chars": 163,
+      "hook_type": "question",
+      "fomo_devices": [],
+      "engagement_pattern": "comment_pattern",
+      "image_card_dependent": false,
+      "benchmark_use": "weak_text_reference",
+      "root_text_preview": "두근두근 설레는 첫 스레드야 스치니들(스친님들...?) 잘부탁해🤗 일반사무직 퇴사하고 적지않은 나이에 AI마케팅 배우는 사람인데, 실습겸 스레드 처음 써봐. 이게 뭐라고 한글자 한글자 쓰는게 떨려서 30분을 고민했어.ㅋㅋㅋ 나도 스하리1000프로젝트 하고싶은데... 껴줄사람! 이얏호! 🚀",
+      "meaningful_continuation_previews": [],
+      "metrics": {
+        "likes": 0,
+        "replies": 0,
+        "views": 0,
+        "shareOrRepost": 0
+      }
+    },
+    {
+      "index": 4,
+      "author": "billy___ssam",
+      "url": "https://www.threads.com/@billy___ssam/post/DYiuyGcGfjg",
+      "keyword": "AI 마케팅",
+      "media_count": 0,
+      "root_text_chars": 157,
+      "comments_count": 14,
+      "same_author_continuations_raw": 0,
+      "same_author_continuations_meaningful": 0,
+      "continuation_char_counts": [],
+      "observed_post_count": 1,
+      "total_text_chars": 157,
+      "hook_type": "numbered_list",
+      "fomo_devices": [],
+      "engagement_pattern": "mixed",
+      "image_card_dependent": false,
+      "benchmark_use": "weak_text_reference",
+      "root_text_preview": "26년 최고의 '무기'를 장착하세요. 1. 바이브 코딩(Vibe Coding) 2. AI 활용 툴 최소 2개 이상 3. 영상&디자인 중급 기술 4. 영향력 있는 개인 SNS 1개 5. 심리학, 인문학, 마케팅 중 1개 27년도에 분명 달라질 수 있는 5가지의 무기를 장착해 보세요.",
+      "meaningful_continuation_previews": [],
+      "metrics": {
+        "likes": 0,
+        "replies": 0,
+        "views": 0,
+        "shareOrRepost": 0
+      }
+    },
+    {
+      "index": 5,
+      "author": "riha.dev",
+      "url": "https://www.threads.com/@riha.dev/post/DYcgYgKIFGI",
+      "keyword": "AI 마케팅",
+      "media_count": 0,
+      "root_text_chars": 55,
+      "comments_count": 30,
+      "same_author_continuations_raw": 13,
+      "same_author_continuations_meaningful": 0,
+      "continuation_char_counts": [],
+      "observed_post_count": 1,
+      "total_text_chars": 55,
+      "hook_type": "question",
+      "fomo_devices": [],
+      "engagement_pattern": "comment_pattern",
+      "image_card_dependent": false,
+      "benchmark_use": "weak_text_reference",
+      "root_text_preview": "개발, AI, 마케팅 관심있어. 사실 관심 있는거 많은데 나랑 친구 할래? 스하리=꼭 반하리 간다!",
+      "meaningful_continuation_previews": [],
+      "metrics": {
+        "likes": 0,
+        "replies": 0,
+        "views": 0,
+        "shareOrRepost": 0
+      }
+    }
+  ]
+}

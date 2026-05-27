@@ -1,16 +1,16 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Target, Search, Inbox, CheckCircle2, Activity } from 'lucide-react';
+import { GitBranch, Search, Inbox, CheckCircle2, Activity } from 'lucide-react';
 
-// 콘텐츠 스튜디오는 5단계 흐름.
-// 주제 정의 → 시장 리서치 → 검토함(자동 모은 자료) → 발행(매거진으로 흘려보낸 결과) → 진행(자동화 상태).
+// 콘텐츠 스튜디오는 운영 화면을 검토함 중심으로 두고,
+// 기둥/리서치 설정은 고급 관리 영역으로 낮춘다.
 const TABS = [
-  { href: '/admin/content-studio/themes', label: '주제', icon: Target },
-  { href: '/admin/content-studio/research', label: '리서치', icon: Search },
   { href: '/admin/content-studio', label: '검토함', icon: Inbox, exact: true },
   { href: '/admin/content-studio/published', label: '발행', icon: CheckCircle2 },
   { href: '/admin/content-studio/activity', label: '진행', icon: Activity },
+  { href: '/admin/content-studio/pillars', label: '기둥', icon: GitBranch, advanced: true },
+  { href: '/admin/content-studio/research', label: '리서치 로그', icon: Search, advanced: true },
 ];
 
 export default function ContentStudioLayout({ children }) {
@@ -22,7 +22,7 @@ export default function ContentStudioLayout({ children }) {
           콘텐츠 스튜디오
         </h1>
         <p className="text-[var(--admin-text-muted)] text-sm mt-1">
-          주제를 정하고 자료를 모아 매거진으로 발행하기까지의 흐름을 한 곳에서 관리합니다.
+          에이전트가 주제와 기둥을 제안하고, 텔레그램 승인 뒤 생성된 글 묶음을 한 곳에서 관리합니다.
         </p>
       </div>
 
@@ -38,7 +38,7 @@ export default function ContentStudioLayout({ children }) {
                 'inline-flex items-center gap-2 px-4 py-2.5 text-xs font-black uppercase tracking-widest transition-colors border-b-2 -mb-px whitespace-nowrap ' +
                 (active
                   ? 'border-[var(--admin-text-main)] text-[var(--admin-text-main)]'
-                  : 'border-transparent text-[var(--admin-text-muted)] hover:text-[var(--admin-text-main)]')
+                  : `border-transparent text-[var(--admin-text-muted)] ${t.advanced ? 'opacity-70' : ''} hover:text-[var(--admin-text-main)]`)
               }
             >
               <Icon size={14} />

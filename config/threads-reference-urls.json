@@ -1,0 +1,89 @@
+{
+  "actorId": "trantus/threads-post-scraper",
+  "input": {
+    "raw": false
+  },
+  "references": [
+    {
+      "url": "https://www.threads.com/@choi.openai/post/DYuVvqtj8Av",
+      "label": "구글 I/O 이후 AI 업계 핵심 사례 17가지",
+      "author": "choi.openai",
+      "reference_type": "info_thread",
+      "topic": "AI trend digest",
+      "source": "user_verified",
+      "notes": "1/부터 17/까지 이어지는 정보형 연속 포스트 수집 검증에 성공한 기준 표본"
+    },
+    {
+      "url": "https://www.threads.com/@auto.gongbang/post/DYw5qg4kyjz",
+      "label": "1인 창업 운영 CRM 구축 관점 정리",
+      "author": "auto.gongbang",
+      "reference_type": "case_thread",
+      "topic": "automation / CRM / operations",
+      "source": "profile_discovery",
+      "notes": "루트 글 이후 1/ 자동화, 2/ 데이터 연동 등 사례 설명이 이어지는 운영 자동화형 기준 표본"
+    },
+    {
+      "url": "https://www.threads.com/@choi.openai/post/DYydx8_DHxH",
+      "label": "구글 딥마인드 CEO의 AI 신약 개발 변화 관점",
+      "author": "choi.openai",
+      "reference_type": "insight_thread",
+      "topic": "AI / science / industry shift",
+      "source": "profile_discovery_extended",
+      "notes": "루트 해설과 작성자 후속 설명이 함께 잡히는 AI 산업 변화형 기준 표본"
+    },
+    {
+      "url": "https://www.threads.com/@choi.openai/post/DYtzEZaApyT",
+      "label": "얀 르쿤의 LLM 안전성 비판 해설",
+      "author": "choi.openai",
+      "reference_type": "insight_thread",
+      "topic": "AI safety / LLM limitation",
+      "source": "profile_discovery_extended",
+      "notes": "논점 제시 후 후속 설명으로 개념을 보강하는 해설형 기준 표본"
+    },
+    {
+      "url": "https://www.threads.com/@choi.openai/post/DYyDd1FHw30",
+      "label": "앤트로픽 창업자의 AI 변화 속도 경고",
+      "author": "choi.openai",
+      "reference_type": "insight_thread",
+      "topic": "AI impact / industry acceleration",
+      "source": "profile_discovery_extended",
+      "notes": "권위자 발언을 바탕으로 산업 변화의 크기와 속도를 설명하는 기준 표본"
+    },
+    {
+      "url": "https://www.threads.com/@choi.openai/post/DYtoxS2Aqnf",
+      "label": "오픈AI 연구원의 추론 연산 중요성 해설",
+      "author": "choi.openai",
+      "reference_type": "insight_thread",
+      "topic": "AI reasoning / inference compute",
+      "source": "profile_discovery_extended",
+      "notes": "새 개념을 루트 글과 후속 설명으로 풀어내는 기술 해설형 기준 표본"
+    },
+    {
+      "url": "https://www.threads.com/@choi.openai/post/DYtehCfDxyM",
+      "label": "구글 CEO의 AI 경쟁 구도 해설",
+      "author": "choi.openai",
+      "reference_type": "insight_thread",
+      "topic": "AI market / competitive landscape",
+      "source": "profile_discovery_extended",
+      "notes": "시장 판도와 기업별 전략 차이를 설명하는 산업 관찰형 기준 표본"
+    },
+    {
+      "label": "대기업 출신 마케팅 기획자입니다. '스레드 성장'이 멈춰있다면, 이 글을 끝까지 읽어보세요. 자, 시작합시다",
+      "author": "billy___ssam",
+      "url": "https://www.threads.com/@billy___ssam/post/DYhKGyvmXvv",
+      "reference_type": "structured_info_thread",
+      "topic": "threads_reference_structure",
+      "source": "apify_search_fallback",
+      "notes": "auto-collected 2026-05-26; root 76 chars; continuations 9; total 3131 chars"
+    },
+    {
+      "label": "얼마전 사이드 프로젝트 팀들을 위한 마케팅 팟캐스트를 열였습니다. 거의 모든 팀에서 같은 질문이 나왔어요. ",
+      "author": "hanbi.kwon",
+      "url": "https://www.threads.com/@hanbi.kwon/post/DYw1aTck0Fe",
+      "reference_type": "structured_info_thread",
+      "topic": "threads_reference_structure",
+      "source": "apify_search_fallback",
+      "notes": "auto-collected 2026-05-26; root 243 chars; continuations 4; total 996 chars"
+    }
+  ]
+}

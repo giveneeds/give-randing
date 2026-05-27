@@ -28,14 +28,15 @@ const STATUS_LABEL = {
 };
 
 const PERSONA_LABEL = {
-  restaurant_owner: '요식업',
-  clinic_owner: '병의원',
-  brand_operator: '브랜드 운영자',
-  marketer: '마케터',
-  small_brand_owner: '작은 브랜드',
-  general_reader: '일반 독자',
-  general: '일반',
+  general: '작은 사업자/브랜드 운영자',
+  general: '작은 사업자/브랜드 운영자',
   unknown: '미상',
+  restaurant_owner: '작은 사업자/브랜드 운영자',
+  clinic_owner: '작은 사업자/브랜드 운영자',
+  brand_operator: '작은 사업자/브랜드 운영자',
+  marketer: '작은 사업자/브랜드 운영자',
+  small_brand_owner: '작은 사업자/브랜드 운영자',
+  general_reader: '작은 사업자/브랜드 운영자',
 };
 
 export default function ContentStudioReviewPage() {
@@ -606,7 +607,7 @@ function BriefAndResearch({ item }) {
               <div className="text-[10px] font-black uppercase tracking-widest text-violet-400">참고한 리서치 인사이트</div>
               {painPoints.length > 0 && (
                 <div>
-                  <div className="text-[10px] font-bold text-zinc-400 mb-1">사장님 페인포인트</div>
+                  <div className="text-[10px] font-bold text-zinc-400 mb-1">운영자 페인포인트</div>
                   <ul className="space-y-0.5">
                     {painPoints.slice(0, 4).map((p, i) => (
                       <li key={i} className="text-xs text-zinc-700">⚠️ {p}</li>

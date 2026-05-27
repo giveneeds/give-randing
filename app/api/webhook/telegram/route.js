@@ -35,12 +35,13 @@ export async function POST(request) {
 
   let update;
   try { update = await request.json(); } catch { return NextResponse.json({ ok: true }); }
+  const syncFinish = request.headers.get('X-Giveneeds-Sync-Finish') === '1';
 
   try {
     if (update.callback_query) {
       await handleCallback(update.callback_query);
     } else if (update.message) {
-      await handleMessage(update.message);
+      await handleMessage(update.message, { syncFinish });
     }
   } catch (e) {
     console.error('webhook 처리 실패', e);
@@ -50,7 +51,7 @@ export async function POST(request) {
   return NextResponse.json({ ok: true });
 }
 
-async function handleMessage(message) {
+async function handleMessage(message, { syncFinish = false } = {}) {
   const chat = message.chat;
   const from = message.from;
   if (!chat || chat.type !== 'private') return; // 그룹·채널은 무시
@@ -99,11 +100,11 @@ async function handleMessage(message) {
   }
 
   // 1) 진행 중 세션이 있으면 의사결정 답변으로 처리.
-  const handled = await handleDailyReportReply({ chatId, text, message });
+  const handled = await handleDailyReportReply({ chatId, text, message, syncFinish });
   if (handled) return;
 
   // 2) 이미 완료된 보고에 "후보 4도"처럼 추가 생성을 요청하면 최근 완료 세션에서 후보를 다시 집어 처리.
-  const handledCompletedFollowup = await handleCompletedSessionFollowup({ chatId, text, message });
+  const handledCompletedFollowup = await handleCompletedSessionFollowup({ chatId, text, message, syncFinish });
   if (handledCompletedFollowup) return;
 
   // 3) 진행 중 세션이 없으면 일반 LLM 자유 채팅으로 응답.
@@ -125,7 +126,7 @@ async function handleMessage(message) {
 
 // 정욱님이 1차 보고서에 자유 텍스트로 답하면 진행 중인 세션을 찾아 액션 결정.
 // 가장 최근 phase1_reported 또는 awaiting_decision 상태의 세션 1건만 처리.
-async function handleDailyReportReply({ chatId, text, message }) {
+async function handleDailyReportReply({ chatId, text, message, syncFinish = false }) {
   const { data: session } = await supabaseAdmin
     .from('planning_sessions')
     .select('id, job_id, status, candidate_item_ids, candidates_summary, telegram_chat_id, telegram_message_id_phase1')
@@ -175,7 +176,7 @@ async function handleDailyReportReply({ chatId, text, message }) {
       chatId,
       text:
         `요청 확인했습니다 (${tgEscape(parsed.user_intent_note || '추가 리서치')}).\n` +
-        '내일 보고에 더 보강된 리서치를 반영하겠습니다. 지금 즉시 다른 후보로 진행하길 원하시면 [후보 N] 형태로 알려주세요.',
+        '다음 후보 제안 때 기둥/방향 재평가에 반영하겠습니다. 지금 즉시 특정 후보로 진행하길 원하시면 [후보 N] 형태로 알려주세요.',
     });
     return true;
   }
@@ -198,22 +199,31 @@ async function handleDailyReportReply({ chatId, text, message }) {
   // after() 로 응답 이후에도 2차 워크플로우(깊이 리서치 → 스레드 생성 → 마무리 보고) 가 끝까지 실행되도록 보장한다.
   // Vercel serverless 는 응답 후 즉시 종료가 기본이라 단순 fire-and-forget 은 잘림.
   const [primaryItemId, ...additionalItemIds] = selectedItemIds;
+  const variantCounts = distributeVariantCounts(selectedItemIds.length);
   await supabaseAdmin
     .from('planning_sessions')
     .update({
       status: 'phase2_running',
       selected_item_id: primaryItemId,
+      user_decision_parsed: {
+        ...parsed,
+        selected_item_id: primaryItemId,
+        selected_item_ids: selectedItemIds,
+        variant_count: variantCounts[0],
+        total_variant_budget: 7,
+      },
       updated_at: new Date().toISOString(),
     })
     .eq('id', session.id);
 
   const extraSessions = [];
-  for (const itemId of additionalItemIds) {
+  for (const [idx, itemId] of additionalItemIds.entries()) {
     const extraSession = await createAdditionalPlanningSession({
       baseSession: session,
       selectedItemId: itemId,
       userText: text,
       parsed,
+      variantCount: variantCounts[idx + 1],
     });
     if (extraSession?.id) extraSessions.push(extraSession);
   }
@@ -221,21 +231,24 @@ async function handleDailyReportReply({ chatId, text, message }) {
   await sendInlineMessage({
     chatId,
     text: selectedItemIds.length > 1
-      ? `OK, 선택하신 후보 ${selectedItemIds.length}개로 각각 진행합니다. 완성되면 후보별로 다시 알려드리겠습니다.`
-      : `OK, 선택하신 후보로 진행합니다. 2차 리서치 + 콘텐츠 생성 들어갈게요. 완성되면 다시 알려드리겠습니다.`,
+      ? `OK, 선택하신 후보 ${selectedItemIds.length}개로 총 7개 글 후보를 나눠 만들겠습니다. 분배: ${variantCounts.join('/')}개. 완성되면 후보별로 다시 알려드리겠습니다.`
+      : `OK, 선택하신 주제로 진행합니다. 2차 리서치 후 글 후보 7개를 만들겠습니다. 완성되면 다시 알려드리겠습니다.`,
   });
 
-  after(
-    finishSelectedSessions([
-      { sessionId: session.id, selectedItemId: primaryItemId },
-      ...extraSessions.map((s) => ({ sessionId: s.id, selectedItemId: s.selectedItemId })),
-    ])
-  );
+  const selections = [
+    { sessionId: session.id, selectedItemId: primaryItemId, variantCount: variantCounts[0] },
+    ...extraSessions.map((s) => ({ sessionId: s.id, selectedItemId: s.selectedItemId, variantCount: s.variantCount })),
+  ];
+  if (syncFinish) {
+    await finishSelectedSessions(selections);
+  } else {
+    after(finishSelectedSessions(selections));
+  }
 
   return true;
 }
 
-async function handleCompletedSessionFollowup({ chatId, text, message }) {
+async function handleCompletedSessionFollowup({ chatId, text, message, syncFinish = false }) {
   if (!isCompletedSessionCandidateFollowup(text)) return false;
 
   const { data: session } = await supabaseAdmin
@@ -257,13 +270,15 @@ async function handleCompletedSessionFollowup({ chatId, text, message }) {
   const selectedItemIds = getSelectedItemIds(parsed);
   if (parsed.action !== 'select' || selectedItemIds.length === 0) return false;
 
+  const variantCounts = distributeVariantCounts(selectedItemIds.length);
   const childSessions = [];
-  for (const itemId of selectedItemIds) {
+  for (const [idx, itemId] of selectedItemIds.entries()) {
     const childSession = await createAdditionalPlanningSession({
       baseSession: session,
       selectedItemId: itemId,
       userText: text,
       parsed,
+      variantCount: variantCounts[idx],
     });
     if (childSession?.id) childSessions.push(childSession);
   }
@@ -278,12 +293,17 @@ async function handleCompletedSessionFollowup({ chatId, text, message }) {
 
   await sendInlineMessage({
     chatId,
-    text: `확인했습니다. 완료된 보고서의 후보 ${childSessions.length}개를 추가로 생성해볼게요. 완성되면 다시 알려드리겠습니다.`,
+    text: selectedItemIds.length > 1
+      ? `확인했습니다. 완료된 보고서의 후보 ${childSessions.length}개로 총 7개 글 후보를 ${variantCounts.join('/')}개로 나눠 추가 생성해볼게요.`
+      : `확인했습니다. 완료된 보고서의 후보 1개로 글 후보 7개를 추가 생성해볼게요.`,
   });
 
-  after(
-    finishSelectedSessions(childSessions.map((s) => ({ sessionId: s.id, selectedItemId: s.selectedItemId })))
-  );
+  const selections = childSessions.map((s) => ({ sessionId: s.id, selectedItemId: s.selectedItemId, variantCount: s.variantCount }));
+  if (syncFinish) {
+    await finishSelectedSessions(selections);
+  } else {
+    after(finishSelectedSessions(selections));
+  }
 
   return true;
 }
@@ -298,12 +318,14 @@ async function finishSelectedSessions(selections) {
   }
 }
 
-async function createAdditionalPlanningSession({ baseSession, selectedItemId, userText, parsed }) {
+async function createAdditionalPlanningSession({ baseSession, selectedItemId, userText, parsed, variantCount = 7 }) {
   const now = new Date().toISOString();
   const childParsed = {
     ...parsed,
     selected_item_id: selectedItemId,
     selected_item_ids: [selectedItemId],
+    variant_count: variantCount,
+    total_variant_budget: 7,
     user_intent_note: `${parsed.user_intent_note || '사용자 추가 선택'} (추가 생성 세션)`,
   };
   const { data, error } = await supabaseAdmin
@@ -327,13 +349,20 @@ async function createAdditionalPlanningSession({ baseSession, selectedItemId, us
     console.error('[telegram webhook] 추가 planning_session 생성 실패', error);
     return null;
   }
-  return { id: data.id, selectedItemId };
+  return { id: data.id, selectedItemId, variantCount };
 }
 
 function getSelectedItemIds(parsed) {
   const ids = Array.isArray(parsed?.selected_item_ids) ? parsed.selected_item_ids : [];
   const withFallback = ids.length > 0 ? ids : [parsed?.selected_item_id].filter(Boolean);
   return [...new Set(withFallback.filter((id) => typeof id === 'string' && id))];
+}
+
+function distributeVariantCounts(selectionCount) {
+  const count = Math.max(1, Math.min(7, Number(selectionCount) || 1));
+  const base = Math.floor(7 / count);
+  const remainder = 7 % count;
+  return Array.from({ length: count }, (_, idx) => base + (idx < remainder ? 1 : 0));
 }
 
 // 진행 중 세션이 없을 때 들어온 "후보 N" 류 메시지는 가장 최근 완료 세션의 후보 메타를 재사용해 추가 생성한다.
@@ -367,7 +396,7 @@ function isPlanningDecisionMessage({ text, message, session }) {
     /^\d+$/,
     /(?:첫|두|세|네|다섯|여섯)\s*번째/,
     /(?:패스|스킵|취소|그만|오늘은\s*쉬)/,
-    /(?:추가\s*리서치|더\s*(?:찾아|봐|조사)|다른\s*(?:후보|주제|자료|방향))/,
+    /(?:추가\s*리서치|더\s*(?:찾아|봐|조사)|다른\s*(?:후보|주제|자료|방향|기둥)|기둥|전략|뉴스성|실행형|관찰형)/,
   ].some((pattern) => pattern.test(normalized));
 }
 
