@@ -43,7 +43,8 @@ flowchart TB
 
   subgraph CRON[매일 크론 1회 · 자동 작업 루프]
     direction TB
-    C1[1단계 — 새 자료 수집] --> C2[2단계 — LLM 1차 보고<br/>composeDailyReport<br/>Reddit/X 해외 주제 후보 포함]
+    C0[0단계 — Threads 발행 레퍼런스 읽기<br/>첫 글 hook · FOMO · 연속글 감각] --> C1[1단계 — 새 자료 수집]
+    C1 --> C2[2단계 — LLM 1차 보고<br/>composeDailyReport<br/>Reddit/X 해외 주제 후보 포함]
     C2 --> C3[3단계 — 정욱님 응답 대기]
     C3 --> C4[4단계 — 응답 의도 파싱<br/>parseUserDecision]
     C4 --> C5[5단계 — 채택 자료 리서치 계층<br/>해외/소셜 맥락 + 추가 자료 + 말투 조정]
@@ -90,7 +91,7 @@ flowchart TB
   C5 --> TAVILY
   C5 --> PERP
   C6 --> LLM
-  C6 -->|지식베이스 주입| KB[(docs/*.md<br/>페르소나·KB·후킹 패턴)]
+  C6 -->|지식베이스 주입| KB[(docs/*.md<br/>페르소나·KB·Threads 발행 레퍼런스)]
   C6 --> DBD
   C7 -->|마무리 보고| TG
   C7 --> DBP

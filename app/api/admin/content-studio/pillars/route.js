@@ -58,15 +58,27 @@ async function getRecentDraftDistribution() {
   const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
   const { data, error } = await supabaseAdmin
     .from('thread_drafts')
-    .select('content_pillar, created_at')
+    .select('id, research_context_used, created_at')
     .gte('created_at', since);
   if (error) return { total: 0, counts: {}, error: error.message };
   const counts = {};
   for (const row of data || []) {
-    const key = row.content_pillar || 'unknown';
+    const key = extractDraftPillar(row) || 'unknown';
     counts[key] = (counts[key] || 0) + 1;
   }
   return { total: (data || []).length, counts };
+}
+
+function extractDraftPillar(row) {
+  const ctx = row?.research_context_used && typeof row.research_context_used === 'object'
+    ? row.research_context_used
+    : {};
+  return (
+    ctx.generation_decision?.content_pillar ||
+    ctx.variant_review?.content_pillar ||
+    ctx.variant_review?.pillar ||
+    null
+  );
 }
 
 function readPillarDocsTable() {
