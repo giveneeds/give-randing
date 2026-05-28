@@ -14,6 +14,9 @@ export default function ThreadDraftEditorPage({ params }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [publishedUrl, setPublishedUrl] = useState('');
+  // 포스트를 칸칸이 나누지 않고 하나의 본문으로 편집. 빈 줄(엔터 2번)로 포스트를 구분하고,
+  // 발행/복사 시 포스트가 2개 이상이면 (1/N) 마커를 자동으로 붙인다.
+  const [bodyText, setBodyText] = useState('');
 
   const authHeaders = useCallback(async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -30,6 +33,7 @@ export default function ThreadDraftEditorPage({ params }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || '조회 실패');
       setDraft(data.row);
+      setBodyText((data.row?.posts || []).map((p) => p.body || '').join('\n\n'));
       setPublishedUrl(data.row?.published_url || '');
     } catch (e) {
       alert('드래프트 조회 실패: ' + e.message);
@@ -40,9 +44,12 @@ export default function ThreadDraftEditorPage({ params }) {
 
   useEffect(() => { load(); }, [load]);
 
-  const totalChars = useMemo(() => (
-    (draft?.posts || []).reduce((sum, post) => sum + (post.body || '').length, 0)
-  ), [draft?.posts]);
+  // 빈 줄 기준으로 포스트 분리. 본문 내 단일 줄바꿈은 보존.
+  const splitPosts = useMemo(() => (
+    bodyText.split(/\n{2,}/).map((s) => s.replace(/\s+$/, '')).filter((s) => s.trim().length > 0)
+  ), [bodyText]);
+
+  const totalChars = useMemo(() => bodyText.replace(/\n{2,}/g, '\n').length, [bodyText]);
 
   async function patchDraft(patch) {
     setSaving(true);
@@ -62,33 +69,12 @@ export default function ThreadDraftEditorPage({ params }) {
     }
   }
 
-  function updatePost(idx, body) {
-    if (!draft) return;
-    const posts = [...(draft.posts || [])];
-    posts[idx] = { ...posts[idx], body, char_count: body.length };
-    setDraft({ ...draft, posts });
-  }
-
-  function addPost() {
-    if (!draft) return;
-    const posts = [...(draft.posts || [])];
-    posts.push({ index: posts.length + 1, body: '', char_count: 0 });
-    setDraft({ ...draft, posts });
-  }
-
-  function removePost(idx) {
-    if (!draft) return;
-    const posts = (draft.posts || [])
-      .filter((_, i) => i !== idx)
-      .map((p, i) => ({ ...p, index: i + 1 }));
-    setDraft({ ...draft, posts });
-  }
-
   async function saveAll() {
     if (!draft) return;
+    const posts = splitPosts.map((body, i) => ({ index: i + 1, body, char_count: body.length }));
     await patchDraft({
       title: draft.title,
-      posts: draft.posts,
+      posts,
       cta: draft.cta,
       hashtags: draft.hashtags,
     });
@@ -96,22 +82,24 @@ export default function ThreadDraftEditorPage({ params }) {
 
   async function markPublished() {
     if (!confirm('이 스레드를 발행 완료로 표시할까요?')) return;
-    await patchDraft({ status: 'published', published_url: publishedUrl || null });
+    const posts = splitPosts.map((body, i) => ({ index: i + 1, body, char_count: body.length }));
+    await patchDraft({ posts, status: 'published', published_url: publishedUrl || null });
+  }
+
+  // 발행용 합본 텍스트. 포스트 2개 이상이면 (1/N) 마커, 1개면 마커 없이.
+  function buildPublishText() {
+    const body = splitPosts.length > 1
+      ? splitPosts.map((p, i) => `(${i + 1}/${splitPosts.length})\n${p}`).join('\n\n')
+      : (splitPosts[0] || '');
+    return body
+      + (draft?.cta ? `\n\n${draft.cta}` : '')
+      + (draft?.hashtags?.length ? `\n\n${draft.hashtags.join(' ')}` : '');
   }
 
   function copyAll() {
     if (!draft) return;
-    const text = (draft.posts || []).map((p, i) => `[${i + 1}/${(draft.posts || []).length}]\n${p.body}`).join('\n\n---\n\n')
-      + (draft.cta ? `\n\n${draft.cta}` : '')
-      + (draft.hashtags?.length ? `\n\n${draft.hashtags.join(' ')}` : '');
-    navigator.clipboard.writeText(text);
-    alert('전체 스레드 복사 완료');
-  }
-
-  function copyPost(idx) {
-    const body = (draft?.posts || [])[idx]?.body || '';
-    navigator.clipboard.writeText(body);
-    alert(`포스트 ${idx + 1} 복사됨`);
+    navigator.clipboard.writeText(buildPublishText());
+    alert('발행용 텍스트 복사 완료');
   }
 
   if (loading || !draft) {
@@ -125,7 +113,7 @@ export default function ThreadDraftEditorPage({ params }) {
           <ArrowLeft size={14} /> 발행 목록
         </Link>
         <div className="text-xs font-bold text-[var(--admin-text-muted)]">
-          총 {totalChars.toLocaleString('ko-KR')}자 · {(draft.posts || []).length}포스트
+          총 {totalChars.toLocaleString('ko-KR')}자 · {splitPosts.length}포스트
         </div>
       </div>
 
@@ -136,41 +124,35 @@ export default function ThreadDraftEditorPage({ params }) {
         className="w-full rounded-md border border-[var(--admin-border)] bg-[var(--admin-card-bg)] px-4 py-3 text-sm font-bold text-[var(--admin-text-main)] outline-none focus:border-zinc-400"
       />
 
-      <div className="space-y-3">
-        {(draft.posts || []).map((p, i) => {
-          const length = (p.body || '').length;
-          return (
-            <section key={i} className="rounded-md border border-[var(--admin-border)] bg-[var(--admin-card-bg)] p-4 shadow-sm">
-              <div className="mb-2 flex items-center justify-between gap-3">
-                <span className="text-[10px] font-black uppercase tracking-widest text-[var(--admin-text-muted)]">
-                  포스트 {i + 1} / {draft.posts.length}
-                </span>
-                <div className="flex items-center gap-2">
-                  <span className={`text-[10px] font-mono ${length > THREAD_POST_MAX_CHARS ? 'text-red-500 font-bold' : length > THREAD_POST_WARNING_CHARS ? 'text-amber-600 font-bold' : 'text-[var(--admin-text-muted)]'}`}>
-                    {length} / {THREAD_POST_MAX_CHARS}
-                  </span>
-                  <button onClick={() => copyPost(i)} className="text-[var(--admin-text-muted)] hover:text-[var(--admin-text-main)]" title="복사">
-                    <Copy size={12} />
-                  </button>
-                  <button onClick={() => removePost(i)} className="text-zinc-300 hover:text-red-500" title="삭제">
-                    <X size={14} />
-                  </button>
-                </div>
-              </div>
-              <textarea
-                value={p.body || ''}
-                onChange={(e) => updatePost(i, e.target.value)}
-                rows={7}
-                className="min-h-[160px] w-full resize-y rounded-md border border-transparent bg-[var(--admin-bg)] p-3 text-sm leading-relaxed text-[var(--admin-text-main)] outline-none focus:border-[var(--admin-border)]"
-              />
-            </section>
-          );
-        })}
-      </div>
+      <section className="rounded-md border border-[var(--admin-border)] bg-[var(--admin-card-bg)] p-4 shadow-sm">
+        <div className="mb-2 flex items-center justify-between gap-3">
+          <span className="text-[10px] font-black uppercase tracking-widest text-[var(--admin-text-muted)]">
+            본문 · {splitPosts.length}포스트 (빈 줄로 구분)
+          </span>
+          <span className="text-[10px] text-[var(--admin-text-muted)]">
+            발행 시 2개 이상이면 (1/N) 마커 자동
+          </span>
+        </div>
+        <textarea
+          value={bodyText}
+          onChange={(e) => setBodyText(e.target.value)}
+          rows={16}
+          placeholder="본문을 입력하세요. 포스트를 나누려면 빈 줄(엔터 2번)로 구분합니다."
+          className="min-h-[360px] w-full resize-y rounded-md border border-transparent bg-[var(--admin-bg)] p-3 text-sm leading-relaxed text-[var(--admin-text-main)] outline-none focus:border-[var(--admin-border)]"
+        />
+      </section>
 
-      <button onClick={addPost} className="inline-flex w-full items-center justify-center gap-2 rounded-md border-2 border-dashed border-[var(--admin-border)] py-3 text-xs font-bold text-[var(--admin-text-muted)] hover:text-[var(--admin-text-main)]">
-        <Plus size={14} /> 포스트 추가
-      </button>
+      {splitPosts.length > 0 && (
+        <section className="rounded-md border border-[var(--admin-border)] bg-[var(--admin-bg)] p-4">
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-[10px] font-black uppercase tracking-widest text-[var(--admin-text-muted)]">발행용 미리보기 (복사 그대로)</span>
+            <button onClick={copyAll} className="inline-flex items-center gap-1 text-[10px] font-bold text-[var(--admin-text-muted)] hover:text-[var(--admin-text-main)]" title="복사">
+              <Copy size={12} /> 복사
+            </button>
+          </div>
+          <pre className="whitespace-pre-wrap break-words text-xs leading-relaxed text-[var(--admin-text-main)] font-sans">{buildPublishText()}</pre>
+        </section>
+      )}
 
       <section className="rounded-md border border-[var(--admin-border)] bg-[var(--admin-card-bg)] p-4 space-y-3">
         <input
