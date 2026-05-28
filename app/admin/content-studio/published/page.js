@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
-import { Loader2, ExternalLink, BookOpen, Calendar, MessageSquare, FileText, Trash2, Sparkles } from 'lucide-react';
+import { Loader2, ExternalLink, BookOpen, Calendar, MessageSquare, FileText, Trash2, Sparkles, ChevronDown, ChevronRight, Layers } from 'lucide-react';
 import { clsx } from 'clsx';
 
 const TABS = [
@@ -130,45 +130,115 @@ function ThreadList({ rows, statusFilter }) {
       </div>
     );
   }
+
+  // 같은 묶음(planning_session_id)끼리 그룹핑. 묶음 없는 것(수동 생성 등)은 단독 그룹.
+  const groups = [];
+  const byKey = new Map();
+  for (const d of rows) {
+    const key = d.planning_session_id || `solo-${d.id}`;
+    if (!byKey.has(key)) {
+      const g = { key, items: [] };
+      byKey.set(key, g);
+      groups.push(g);
+    }
+    byKey.get(key).items.push(d);
+  }
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      {rows.map((d) => (
-        <Link
-          key={d.id}
-          href={`/admin/content-studio/thread-drafts/${d.id}`}
-          className="block bg-[var(--admin-card-bg)] border border-[var(--admin-border)] rounded-md p-4 shadow-sm hover:shadow-md transition space-y-2"
-        >
-          <div className="flex items-center gap-2 flex-wrap text-[10px]">
-            <span className="bg-blue-50 text-blue-700 border border-blue-200 font-bold px-2 py-0.5 rounded-full">{d.format_type}</span>
-            {d.theme?.name && <span className="bg-indigo-50 text-indigo-700 border border-indigo-200 font-bold px-2 py-0.5 rounded-full">📌 {d.theme.name}</span>}
-            {d.auto_generated && (
-              <span className="inline-flex items-center gap-1 bg-violet-50 text-violet-700 border border-violet-200 font-bold px-2 py-0.5 rounded-full">
-                <Sparkles size={10} /> 자동
-              </span>
-            )}
-            <span className="ml-auto text-[var(--admin-text-muted)]">{new Date(d.created_at).toLocaleDateString('ko-KR')}</span>
-          </div>
-          <h3 className="font-black text-sm text-[var(--admin-text-main)] line-clamp-2">{d.title || '(제목 없음)'}</h3>
-          <p className="text-xs text-[var(--admin-text-muted)] line-clamp-3">{(d.posts || [])[0]?.body || ''}</p>
-          {d.selection_reason && (
-            <p className="text-[10px] text-violet-600 italic line-clamp-2 border-l-2 border-violet-200 pl-2">{d.selection_reason}</p>
-          )}
-          <div className="flex items-center justify-between text-[10px] text-[var(--admin-text-muted)] pt-1">
-            <span>
-              {(d.posts || []).length} 포스트
-              {Array.isArray(d.rejected_candidates) && d.rejected_candidates.length > 0 && (
-                <span className="ml-2">· 폐기 {d.rejected_candidates.length}건</span>
-              )}
-            </span>
-            {d.published_url && (
-              <a href={d.published_url} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="inline-flex items-center gap-1 text-[var(--admin-text-muted)] hover:text-[var(--admin-text-main)]">
-                발행본 보기 <ExternalLink size={10} />
-              </a>
-            )}
-          </div>
-        </Link>
+    <div className="space-y-4">
+      {groups.map((g) => (g.items.length > 1
+        ? <ThreadGroupCard key={g.key} items={g.items} />
+        : <ThreadCard key={g.key} d={g.items[0]} />
       ))}
     </div>
+  );
+}
+
+function ThreadGroupCard({ items }) {
+  const [open, setOpen] = useState(false);
+  const lead = items[0];
+  // 대표 제목 — "후보 N · " prefix 떼고 공통 주제만.
+  const groupTitle = (lead.title || '').replace(/^\s*후보\s*\d+\s*·\s*/, '') || '(제목 없음)';
+  const published = items.filter((d) => d.status === 'published').length;
+  return (
+    <div className="bg-[var(--admin-card-bg)] border border-[var(--admin-border)] rounded-md shadow-sm overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-[var(--admin-bg)] transition"
+      >
+        {open ? <ChevronDown size={16} className="shrink-0 text-[var(--admin-text-muted)]" /> : <ChevronRight size={16} className="shrink-0 text-[var(--admin-text-muted)]" />}
+        <Layers size={15} className="shrink-0 text-violet-500" />
+        <span className="font-black text-sm text-[var(--admin-text-main)] line-clamp-1 flex-1">{groupTitle}</span>
+        <span className="shrink-0 inline-flex items-center gap-1 text-[10px] font-bold bg-violet-50 text-violet-700 border border-violet-200 px-2 py-0.5 rounded-full">
+          variant {items.length}개
+        </span>
+        {published > 0 && (
+          <span className="shrink-0 text-[10px] font-bold text-emerald-700">{published}건 발행</span>
+        )}
+        <span className="shrink-0 text-[10px] text-[var(--admin-text-muted)]">{new Date(lead.created_at).toLocaleDateString('ko-KR')}</span>
+      </button>
+      {open && (
+        <div className="border-t border-[var(--admin-border)] divide-y divide-[var(--admin-border)]">
+          {items.map((d, i) => (
+            <Link
+              key={d.id}
+              href={`/admin/content-studio/thread-drafts/${d.id}`}
+              className="flex items-start gap-3 px-4 py-3 hover:bg-[var(--admin-bg)] transition"
+            >
+              <span className="shrink-0 mt-0.5 text-[10px] font-black text-[var(--admin-text-muted)] w-8">V{i + 1}</span>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap text-[10px] mb-1">
+                  {d.hook_pattern && <span className="bg-zinc-100 text-zinc-600 px-1.5 py-0.5 rounded">{d.hook_pattern}</span>}
+                  <span className="text-[var(--admin-text-muted)]">{(d.posts || []).length}p</span>
+                  {d.status === 'published' && <span className="text-emerald-700 font-bold">발행됨</span>}
+                </div>
+                <div className="font-bold text-xs text-[var(--admin-text-main)] line-clamp-1">{d.title || '(제목 없음)'}</div>
+                <p className="text-[11px] text-[var(--admin-text-muted)] line-clamp-2 mt-0.5">{(d.posts || [])[0]?.body || ''}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ThreadCard({ d }) {
+  return (
+    <Link
+      href={`/admin/content-studio/thread-drafts/${d.id}`}
+      className="block bg-[var(--admin-card-bg)] border border-[var(--admin-border)] rounded-md p-4 shadow-sm hover:shadow-md transition space-y-2"
+    >
+      <div className="flex items-center gap-2 flex-wrap text-[10px]">
+        <span className="bg-blue-50 text-blue-700 border border-blue-200 font-bold px-2 py-0.5 rounded-full">{d.format_type}</span>
+        {d.theme?.name && <span className="bg-indigo-50 text-indigo-700 border border-indigo-200 font-bold px-2 py-0.5 rounded-full">📌 {d.theme.name}</span>}
+        {d.auto_generated && (
+          <span className="inline-flex items-center gap-1 bg-violet-50 text-violet-700 border border-violet-200 font-bold px-2 py-0.5 rounded-full">
+            <Sparkles size={10} /> 자동
+          </span>
+        )}
+        <span className="ml-auto text-[var(--admin-text-muted)]">{new Date(d.created_at).toLocaleDateString('ko-KR')}</span>
+      </div>
+      <h3 className="font-black text-sm text-[var(--admin-text-main)] line-clamp-2">{d.title || '(제목 없음)'}</h3>
+      <p className="text-xs text-[var(--admin-text-muted)] line-clamp-3">{(d.posts || [])[0]?.body || ''}</p>
+      {d.selection_reason && (
+        <p className="text-[10px] text-violet-600 italic line-clamp-2 border-l-2 border-violet-200 pl-2">{d.selection_reason}</p>
+      )}
+      <div className="flex items-center justify-between text-[10px] text-[var(--admin-text-muted)] pt-1">
+        <span>
+          {(d.posts || []).length} 포스트
+          {Array.isArray(d.rejected_candidates) && d.rejected_candidates.length > 0 && (
+            <span className="ml-2">· 폐기 {d.rejected_candidates.length}건</span>
+          )}
+        </span>
+        {d.published_url && (
+          <a href={d.published_url} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="inline-flex items-center gap-1 text-[var(--admin-text-muted)] hover:text-[var(--admin-text-main)]">
+            발행본 보기 <ExternalLink size={10} />
+          </a>
+        )}
+      </div>
+    </Link>
   );
 }
 

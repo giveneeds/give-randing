@@ -22,6 +22,8 @@
 8. `08-generation-rules.md`
 9. `09-logic-circuit.md`
 10. `10-research-layers.md`
+11. `11-reference-workflow.md`
+12. `12-content-mix-and-rhythm.md`
 
 ## Decision Model
 

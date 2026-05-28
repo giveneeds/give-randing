@@ -1,10 +1,44 @@
 {
-  "version": "2026-05-22",
+  "version": "2026-05-26",
   "defaultRotation": [
     "do_today",
     "current_observation",
     "trend_plain"
   ],
+  "defaultIntentRotation": [
+    "reach",
+    "relate",
+    "trust",
+    "convert",
+    "recycle"
+  ],
+  "engagementIntents": {
+    "reach": {
+      "label": "유입형",
+      "role": "검색·호기심으로 새 사람을 끌어온다 (정보·체크리스트·요약)",
+      "signalKeywords": ["정리", "총정리", "방법", "가지", "추천", "체크리스트", "왜"]
+    },
+    "trust": {
+      "label": "신뢰형",
+      "role": "사례·실패담·전후 비교로 신뢰를 쌓는다",
+      "signalKeywords": ["사례", "실패", "후기", "전후", "결과", "직접", "해봤"]
+    },
+    "convert": {
+      "label": "전환형",
+      "role": "자료·진단·문의 같은 다음 행동으로 잇는다",
+      "signalKeywords": ["자료", "템플릿", "진단", "상담", "다운로드", "신청"]
+    },
+    "relate": {
+      "label": "관계형",
+      "role": "질문·공감으로 댓글과 대화를 유발한다",
+      "signalKeywords": ["질문", "여러분", "어떻게", "공감", "다들", "투표"]
+    },
+    "recycle": {
+      "label": "재활용형",
+      "role": "후속편·시리즈로 이전 글을 다시 굴린다",
+      "signalKeywords": ["다음 편", "시리즈", "지난번", "이어서", "2편"]
+    }
+  },
   "pillars": {
     "cost_before_spend": {
       "label": "광고비 쓰기 전에 먼저 봐야 할 것",
