@@ -81,8 +81,12 @@ export default function ForYouPage() {
         {/* ─── Masthead ─── */}
         <section className="pt-28 pb-14 px-4 sm:px-6 md:px-12 max-w-screen-xl mx-auto">
           <div className="border-b border-zinc-200 dark:border-zinc-800 pb-8">
-            <h1 className="text-[clamp(2.5rem,8vw,6rem)] font-black leading-[0.9] tracking-tighter text-zinc-900 dark:text-zinc-100 uppercase">
-              for client
+            {/* 영문 라벨(장식) + 한국어 H1 — 검색 키워드는 H1이 담당 */}
+            <p className="text-sm font-black tracking-[0.3em] text-zinc-400 dark:text-zinc-500 uppercase mb-3">
+              For Client
+            </p>
+            <h1 className="text-[clamp(2.5rem,8vw,6rem)] font-black leading-[0.9] tracking-tighter text-zinc-900 dark:text-zinc-100">
+              광고 대행사 기브니즈<br />클라이언트 사례
             </h1>
           </div>
         </section>

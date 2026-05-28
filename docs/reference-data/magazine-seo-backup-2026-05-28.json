@@ -1,0 +1,22 @@
+{
+  "_note": "매거진 SEO 개선 작업(2026-05-28) 전 published 글 16건의 제목/excerpt/카테고리 백업. 롤백 시 이 값으로 복원.",
+  "rows": [
+    { "id": "d9e1213d-dc0a-4672-8bfa-db306016ba6c", "slug": "ai-2", "title": "AI, 마케팅 생산성 2배? 핵심은 '연결된 자동화'", "excerpt": "AI 마케팅의 본질은 업무 효율화를 넘어 한정된 인력으로 대규모 팀이 움직이는 듯한 고도화된 업무 시스템을 구축하는 데 있습니다.", "category": "" },
+    { "id": "bdf60379-7a97-4d81-ab59-224d85e9e591", "slug": "post-1778906271270", "title": "매출 올리는 광고? 업종별 최적 검색/소셜 전략 가이드", "excerpt": "마케팅 채널의 성패는 예산의 분배가 아니라, 지금 내 매장이 수요를 포착해야 하는 단계인지 혹은 수요를 창출해야 하는 단계인지에 대한 진단에서 갈립니다.", "category": "REVENUE" },
+    { "id": "f9380675-fc99-408a-a252-e17511ef64bd", "slug": "post-1778905271953", "title": "플레이스 랭킹, '인기도+관련성'으로 최상위 장악하는 법", "excerpt": "단순 리뷰 수로 플레이스 순위를 밀어 올리던 낡은 공식은 끝났으며 이제는 실제 유저의 행동 데이터와 검색 최적화가 순위를 결정합니다.", "category": "" },
+    { "id": "3088fd57-2076-4090-ac04-f76b450940d1", "slug": "b2b-channel-success-formula", "title": "단돈 2만원으로 재방문율 2배! B2B 성공 공식, 채널 활용법", "excerpt": "고객의 번호를 가지고 있다는 사실보다 중요한 것은, 보낸 메시지가 고객의 화면 위에 실제로 도달하여 읽히는가입니다.", "category": "" },
+    { "id": "d233b963-7fef-4b0c-96e5-3884a922ce39", "slug": "ai-time-saver-store-strategy", "title": "AI가 돌려준 45시간, 매장 경쟁력을 뒤집을 사장님 전략", "excerpt": "사장님의 '시간'이야말로 가장 비싼 마케팅 비용입니다.", "category": "" },
+    { "id": "4dbebe8a-33cb-465c-b73e-04b1837282ad", "slug": "small-budget-marketing-focus", "title": "예산 낭비 그만! 소자본 마케팅, 성공률 높이는 선택과 집중", "excerpt": "마케팅 성과는 예산의 규모가 아니라, 고객의 경로에 맞춘 '결정의 순서'와 단일 채널의 '임계점 돌파'에서 결정됩니다.", "category": "" },
+    { "id": "7c5f057b-0419-4b99-ac84-939f1e3afb21", "slug": "click-to-sales-7-tips", "title": "조회수 역설? 클릭 후 매출 3배 올린 7가지 비결", "excerpt": "광고는 손님을 문 앞까지만 데려올 뿐, 실제 구매를 결정짓는 것은 문 앞에 놓인 7가지 신뢰의 흔적입니다.", "category": "" },
+    { "id": "674fff52-2d70-494d-aa9a-35015a5fd964", "slug": "naver-ranking-popularity-relevance", "title": "네이버 상위 노출? '인기도'와 '관련성'에 답이 있다", "excerpt": "단순 리뷰 숫자가 아닌 실제 방문 데이터와 탄탄한 기본기가 플레이스의 순위를 결정하는 본질입니다.", "category": "" },
+    { "id": "264b8060-671b-4cc4-93c3-3c84935c2415", "slug": "high-intent-keyword-blog", "title": "고구매의도 키워드, 블로그로 잠재 고객을 사로잡다", "excerpt": "네이버 블로그 고구매의도 키워드 무료 자료 제공", "category": "REVENUE" },
+    { "id": "f33a93cd-ecd6-4fe9-976a-f5b73eb272c6", "slug": "why-shortform-not-essential", "title": "요즘 대세인 숏폼이 필요 없는 이유?", "excerpt": "내가 하는 업종은 숏폼에 어울릴까요?", "category": "ATTRACT" },
+    { "id": "0fb0f3a1-bd3b-4929-9540-d92f97708a8e", "slug": "sns-follower-10k-strategy", "title": "SNS 팔로워 1만 달성 실전 전략", "excerpt": "팔로워 0에서 1만까지, 기브니즈가 실제로 검증한 인스타그램 성장 전략을 공개합니다.", "category": "" },
+    { "id": "60c932ad-d8bf-434a-a1bb-bbc931c96262", "slug": "ai-digital-marketing-future", "title": "AI 시대, 디지털 마케팅의 미래와 변화", "excerpt": "생성형 AI가 마케팅 전략 수립부터 콘텐츠 제작까지 어떻게 바꾸고 있는지 핵심 트렌드를 분석합니다.", "category": "" },
+    { "id": "e529e558-ce55-4f88-bb52-74324416c18a", "slug": "minimal-branding-trend-2025", "title": "2025 미니멀 브랜딩 트렌드 리포트", "excerpt": "로고는 단순해지고, 색상은 줄어들고, 메시지는 압축됩니다. 올해 브랜딩 트렌드의 핵심을 분석합니다.", "category": "" },
+    { "id": "18a129d6-6112-47de-978f-9bdebef62f3a", "slug": "storytelling-content-marketing", "title": "콘텐츠 마케팅에서 스토리텔링의 힘", "excerpt": "사람들은 데이터를 기억하지 못하지만, 이야기는 기억합니다. 브랜드 스토리텔링의 실전 프레임워크를 소개합니다.", "category": "" },
+    { "id": "90fab2f5-aa5a-4cef-9eee-6ccd40cb113c", "slug": "performance-marketing-kpi", "title": "퍼포먼스 마케팅의 핵심 지표 5가지", "excerpt": "ROAS, CPA, CTR, CVR, LTV — 퍼포먼스 마케터가 반드시 추적해야 할 5가지 핵심 KPI를 정리합니다.", "category": "CASE" },
+    { "id": "b505cb94-f403-45ac-b48c-71ff47f24ff7", "slug": "naver-place-seo-guide", "title": "네이버 플레이스 상위 노출 완전 가이드", "excerpt": "오프라인 매장의 온라인 유입을 극대화하는 네이버 플레이스 최적화 전략을 단계별로 설명합니다.", "category": "CASE" },
+    { "id": "ce042596-bfa6-466e-a779-43ccb2216459", "slug": "gen-z-emotional-branding", "title": "Z세대와 소통하는 감성 브랜딩 전략", "excerpt": "Z세대가 브랜드에 기대하는 것은 제품이 아닌 가치관입니다. 감성 브랜딩의 핵심 원칙을 알아봅니다.", "category": "" }
+  ]
+}

@@ -88,6 +88,10 @@ export default function HomePage() {
 
         {/* ─── Global Sections (Content starts after cinematic phase) ─── */}
         <div className="bg-white dark:bg-zinc-950 relative z-20">
+          {/* 페이지 H1 — 히어로(GIVENEEDS)는 장식 div, 검색 키워드는 이 한국어 H1이 담당 */}
+          <h1 className="text-center text-sm sm:text-base font-bold tracking-tight text-zinc-400 dark:text-zinc-500 pt-12 pb-2 px-4">
+            데이터 기반 종합 광고 대행사 기브니즈
+          </h1>
           {sections.map(section => (
             <div key={section.id} className="mb-16 md:mb-32">
               <SectionRenderer

@@ -99,13 +99,13 @@ export default function CinematicHeader() {
       className="w-full h-screen relative flex items-center justify-center overflow-hidden bg-white dark:bg-zinc-950 z-40"
     >
       <div className="relative w-full h-full pointer-events-none px-4 sm:px-8">
-        {/* 브랜드 로고 — 모바일/데스크탑 모두 절대배치 중앙 */}
-        <h1
+        {/* 브랜드 로고(장식) — 페이지 H1 은 히어로 아래 한국어 헤드라인이 담당하므로 div 로 둔다 */}
+        <div
           ref={heroTextRef}
           className="absolute top-[50%] md:top-[45%] left-1/2 -translate-x-1/2 -translate-y-1/2 text-[12vw] md:text-[16vw] font-black tracking-tighter text-zinc-900 dark:text-white drop-shadow-2xl select-none uppercase z-10 text-center leading-none whitespace-nowrap"
         >
           GIVENEEDS
-        </h1>
+        </div>
 
         {/* 시네마틱 검색 팔레트 — 모바일도 절대배치 중앙 약간 위 */}
         <div className="absolute inset-0 flex items-center justify-center px-4 z-20 pointer-events-none" style={{ paddingBottom: '5vh' }}>

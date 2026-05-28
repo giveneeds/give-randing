@@ -106,9 +106,12 @@ export default function ServicePage() {
               더 많은 고객, 더 높은 매출
             </p>
 
-            {/* 메인 헤드라인 */}
-            <h1 className="text-[clamp(2.5rem,7vw,6rem)] font-black tracking-[-0.03em] text-zinc-900 dark:text-white leading-[1.05] mb-10 uppercase">
-              What We Do<br />For You
+            {/* 영문 라벨(장식) + 한국어 H1 — 검색 키워드는 H1이 담당 */}
+            <p className="text-sm font-black tracking-[0.3em] text-zinc-400 dark:text-zinc-500 uppercase mb-3">
+              What We Do For You
+            </p>
+            <h1 className="text-[clamp(2.5rem,7vw,6rem)] font-black tracking-[-0.03em] text-zinc-900 dark:text-white leading-[1.05] mb-10">
+              광고 대행사 기브니즈가<br />하는 일
             </h1>
 
             {/* 서브카피 */}
