@@ -34,5 +34,26 @@
       "source": "user_provided",
       "notes": "정욱님 제공 고반응 레퍼런스. ㅋㅋ 가득한 구어체 도발/유머. '맛있어도 릴스 없으면 존재감 없음' '전국민이 마케터 시대' 같은 현장어 FOMO. 짧은 문장 난사 + 반말. hook=micro_humor/provocation / engagement_intent=relate 톤 학습용. (날조 1인칭 아님 — 일반론 관찰체이므로 봇이 흉내내도 안전한 범위는 '현장 관찰' 톤까지만.)"
     }
+  },
+  {
+    "source_url": "",
+    "root_author": "",
+    "root_text": "마케팅 팁:\n'정보'를 주면\n사람들은 고마워하지만\n'기준'을 주면\n사람들은 지갑을 엽니다.",
+    "comments_count": 0,
+    "same_author_continuations": [
+      {
+        "author": "",
+        "text": "비슷해보이지만\n정보는 선택지를 주는거라면\n기준은 선택을 해주는 것입니다.\n기준은 경험과 통찰이 필요하기 때문에\n더 난이도가 높다고 볼 수 있습니다.\n1)\n정보: \"콘텐츠 제목 잘 쓰는 법 5가지\"\n기준: \"콘텐츠 제목이 안 먹히는 이유는 '누가' 봐야 하는지가 빠져 있기 때문입니다.\"\n2)\n정보: \"콘텐츠는 꾸준히 올리는 게 중요합니다.\"\n기준: \"이 단계에서 필요한 건 무조건 적인 꾸준함이 아니라 잘 된 글 하나를 다시 쓰는 겁니다\"\n3)\n정보: \"콘텐츠로 매출을 만드세요.\"\n기준: \"지금은 팔려고 하지 말고 누가 사야 하는지만 정하세요\"",
+        "url": ""
+      }
+    ],
+    "reply_samples": [],
+    "search_context": { "keyword": "마케팅 정보 vs 기준 선택 콘텐츠 통찰", "metrics": null },
+    "reference_context": {
+      "topic": "정보 vs 기준 — 기준 제시의 힘 (trust)",
+      "reference_type": "high_engagement_reference",
+      "source": "user_provided",
+      "notes": "정욱님 제공 고반응 레퍼런스. 루트에서 '정보는 고마워하지만 기준은 지갑을 연다' 후킹 → 연속글에서 정보/기준 1)2)3) 대비 예시로 알맹이. 추상 주장을 즉시 구체 대비로 증명하는 구조. post_role=criterion / hook=niche_expert / engagement_intent=trust 톤 학습용."
+    }
   }
 ]
