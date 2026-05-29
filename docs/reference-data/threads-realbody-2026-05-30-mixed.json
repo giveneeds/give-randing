@@ -1,0 +1,38 @@
+[
+  {
+    "source_url": "",
+    "root_author": "",
+    "root_text": "영상 편집, 클로드 + 프리미어 MCP로 자동화했습니다.\n영상 편집은 마지막까지\n\"사람 손이 필요한 영역\"이라고 생각했습니다.\n근데 반복 노동 80%는 이미 자동화 가능했습니다.\n❶ 한 세션에서 전부 끝납니다\n❷ \"프리미어 안에서\" 컷 편집됩니다\n❸ 전사·자막 파이프라인이 30분 안에 돕니다\n❹ 한글 오인식은 \"사전\"으로 학습됩니다\n❺ 1인 콘텐츠 제작자에게 진짜 도움이 됩니다\n남은 20%는 \"어떤 클립을 살릴까\"라는 판단.\n판단만 사람이 하고, 실행은 MCP가 합니다.\n영상 편집 자동화 워크플로우 받아보고 싶으신 분들\n댓글로 저요! 남겨주세요.✋",
+    "comments_count": 0,
+    "same_author_continuations": [],
+    "reply_samples": [],
+    "search_context": { "keyword": "클로드 프리미어 MCP 영상 편집 자동화 워크플로우", "metrics": null },
+    "reference_context": {
+      "topic": "AI 영상 편집 자동화 사례 (convert)",
+      "reference_type": "high_engagement_reference",
+      "source": "user_provided",
+      "notes": "정욱님 제공 고반응 레퍼런스. 본문에 파이프라인 구현 영상 첨부됨. 고백형 도입('사람 손 필요한 영역이라 생각했다') → '근데 80% 이미 자동화' 반전 → ❶~❺ 나열 → '판단만 사람, 실행은 MCP' 통찰 → '댓글로 저요!' 부드러운 CTA. hook=confession_story / engagement_intent=convert 톤 학습용."
+    }
+  },
+  {
+    "source_url": "",
+    "root_author": "",
+    "root_text": "요즘 자영업 왜 힘든 줄 앎? ㅋㅋ 옛날엔 맛있으면 소문났음. 지금은? 맛있어도 릴스 없으면 존재감 없음ㅋㅋ 사장님이 음식은 장인이야. 근데 인스타 업로드 안 함. 그럼 옆집 사장님이 냉동 돌려도 조회수로 이김ㅋㅋㅋ 이게 지금 현실임. 근데 웃긴 건 다들 아직도 마케팅을 \"업체가 대신 해주는 마법\" 이라고 생각함. 아니 형… 그 사람들이 신이면 자기 브랜드부터 재벌됐지ㅋㅋ 물론 잘하는 사람도 있음. 근데 무조건 맡긴다고 다 되는 건 아님. 결국 대표가 기본은 알아야 안 털림. 요즘은 편집도 AI가 해주고, 썸네일도 AI가 만들고, 글도 AI가 써줌. 근데 아직도 \"저는 그런 거 몰라요\" 이러면 진짜 위험함ㅋㅋ 이제는 전국민이 마케터 시대임. 배민 리뷰도 마케팅. 스토리 한 장도 마케팅. 카톡 소개도 마케팅. 쓰레드 한 줄도 마케팅. 솔직히 이제는 말 잘하는 사람이 아니라 계속 보이는 사람이 이김ㅋㅋ 그래서 앞으로는 마케팅 업체 찾는 사람보다 \"우리 가게 손님들을",
+    "comments_count": 0,
+    "same_author_continuations": [
+      {
+        "author": "",
+        "text": "어떻게 우리 편 마케터로 만들까?\" 이거 고민하는 사람이 진짜 오래 감.",
+        "url": ""
+      }
+    ],
+    "reply_samples": [],
+    "search_context": { "keyword": "자영업 마케팅 릴스 전국민 마케터 시대 도발", "metrics": null },
+    "reference_context": {
+      "topic": "자영업 마케팅 현실 도발 (relate)",
+      "reference_type": "high_engagement_reference",
+      "source": "user_provided",
+      "notes": "정욱님 제공 고반응 레퍼런스. ㅋㅋ 가득한 구어체 도발/유머. '맛있어도 릴스 없으면 존재감 없음' '전국민이 마케터 시대' 같은 현장어 FOMO. 짧은 문장 난사 + 반말. hook=micro_humor/provocation / engagement_intent=relate 톤 학습용. (날조 1인칭 아님 — 일반론 관찰체이므로 봇이 흉내내도 안전한 범위는 '현장 관찰' 톤까지만.)"
+    }
+  }
+]
