@@ -49,5 +49,20 @@
       "source": "user_provided",
       "notes": "정욱님 제공 고반응 레퍼런스. 루트에서 '너희 자랑해봐' 로 판을 깔고 '일단 나는!' 으로 연속글에서 직접 사례 공개. 참여를 먼저 유도하고 본인이 시범을 보이는 구조. engagement_intent=relate 톤 학습용."
     }
+  },
+  {
+    "source_url": "",
+    "root_author": "",
+    "root_text": "네이버 로직이 또 바뀐 이유 5가지\n1. 네이버 작년 선언 — \"검색엔진 아님, AI 플랫폼임\"\n2. AI 쇼핑으로 역대 최대 매출 맛봄\n3. AI 브리핑(작년 출시) + AI 탭(4월 말 출시) 밀어야 함\n4. 그래서 통합검색 또 바뀜. 스블 빠지고 웹페이지가 구글처럼 바뀜\n5. 이제 키워드 검색 → 질문형 검색\n결과: 네 블로그 지수 아무리 올려도 노출될 자리 자체가 줄어듦.\n이젠 진짜 AI 답변 신경 써야 할 때. AEO·GEO 최적화 진짜 시작해야함",
+    "comments_count": 0,
+    "same_author_continuations": [],
+    "reply_samples": [],
+    "search_context": { "keyword": "네이버 검색 로직 변화 AI 플랫폼 AEO GEO 블로그 노출", "metrics": null },
+    "reference_context": {
+      "topic": "네이버 검색 로직 변화 해설 (current_observation)",
+      "reference_type": "high_engagement_reference",
+      "source": "user_provided",
+      "notes": "정욱님 제공 고반응 레퍼런스. '바뀐 이유 5가지' 로 번호 나열, 이유를 쌓아 '결과:' 로 수렴, '진짜 시작해야함' 으로 날선 마감. 현장 용어(스블·AEO·GEO) 그대로. content_pillar=current_observation / treatment=news_commentary / engagement_intent=trust 톤 학습용."
+    }
   }
 ]
