@@ -1,0 +1,53 @@
+[
+  {
+    "source_url": "",
+    "root_author": "",
+    "root_text": "스레드에서\n부정적이지 않고,\n긍정적이고 자기할일\n묵묵히하는 분이랑\n친구되고 싶어\n그런 스치니 어디 없을까?",
+    "comments_count": 0,
+    "same_author_continuations": [],
+    "reply_samples": [],
+    "search_context": { "keyword": "관계형 친구 찾기 스친", "metrics": null },
+    "reference_context": {
+      "topic": "관계형 참여 유도 (relate)",
+      "reference_type": "high_engagement_reference",
+      "source": "user_provided",
+      "notes": "정욱님 제공 고반응 레퍼런스. 짧은 관계형 micro-post. 줄을 잘게 끊는 호흡, 부담 없는 반말, '~없을까?' 로 열어두는 마감. engagement_intent=relate 톤 학습용."
+    }
+  },
+  {
+    "source_url": "",
+    "root_author": "",
+    "root_text": "메타가 월 구독형 서비스인 '인스타그램 플러스(Instagram Plus)'를 공식 출시했습니다. 가격은 월 3.99달러(약 5천 원대) 수준인데요. 가장 화제가 되는 건 바로 스토리 기능들입니다.\n\n내 스토리를 누가 몇 번 다시 봤는지 확인할 수 있고, 반대로 다른 사람 스토리를 기록 없이 몰래 볼 수 있는 기능도 포함된다고 합니다.👀 이외에도 스토리를 더 오래 유지하거나, 인원 제한 없는 전용 그룹 생성, 내 스토리를 다른 사람 화면에 추가 노출시키는 기능까지 추가될 예정이라고 하는데요.\n\n또 프로필 폰트 변경, 맞춤형 앱 아이콘, 추가 프로필 고정 같은 꾸미기 요소도 함께 제공됩니다. 점점 \"무료 SNS\"의 시대가 끝나가고 있다는 반응도 나오고 있는데요, 여러분은 월 구독할 의향 있으신가요?🤔",
+    "comments_count": 0,
+    "same_author_continuations": [],
+    "reply_samples": [],
+    "search_context": { "keyword": "인스타그램 플러스 구독 SNS 트렌드", "metrics": null },
+    "reference_context": {
+      "topic": "플랫폼 신기능 정보 해설 (news_commentary)",
+      "reference_type": "high_engagement_reference",
+      "source": "user_provided",
+      "notes": "정욱님 제공 고반응 레퍼런스. 정보형 해설 → 핵심 기능 나열 → '여러분은 ~?' 질문으로 마감해 참여 유도. 이모지(👀🤔)로 호흡. 단정 대신 '~인데요/~한다고 합니다' 전달체. content_treatment=news_commentary 톤 학습용."
+    }
+  },
+  {
+    "source_url": "",
+    "root_author": "",
+    "root_text": "사업하는 친구들\n직업 밝히고, 너희 작품 한번 자랑해봐\n손으로 만든 어떤것도 다 가능.\n일단 나는!",
+    "comments_count": 0,
+    "same_author_continuations": [
+      {
+        "author": "",
+        "text": "조경업자 / 야외테라스 조경공사💙\n[사진: 야외테라스와 조경이 잘 나온 이미지]",
+        "url": ""
+      }
+    ],
+    "reply_samples": [],
+    "search_context": { "keyword": "사업 자랑 자기소개 커뮤니티 참여", "metrics": null },
+    "reference_context": {
+      "topic": "커뮤니티 참여 유도 + 자기공개 (relate)",
+      "reference_type": "high_engagement_reference",
+      "source": "user_provided",
+      "notes": "정욱님 제공 고반응 레퍼런스. 루트에서 '너희 자랑해봐' 로 판을 깔고 '일단 나는!' 으로 연속글에서 직접 사례 공개. 참여를 먼저 유도하고 본인이 시범을 보이는 구조. engagement_intent=relate 톤 학습용."
+    }
+  }
+]
