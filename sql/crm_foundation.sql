@@ -18,6 +18,8 @@ ALTER TABLE leads ADD COLUMN IF NOT EXISTS click_element TEXT;
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'new';
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS inquiry_type TEXT;
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS magazine_id UUID;
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS service_id UUID REFERENCES services(id) ON DELETE SET NULL;
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS service_slug TEXT;
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS agreements JSONB;
 
 -- CRM 신규 필드
@@ -41,6 +43,8 @@ CREATE INDEX IF NOT EXISTS idx_leads_anonymous_id ON leads (anonymous_id);
 CREATE INDEX IF NOT EXISTS idx_leads_pipeline ON leads (pipeline_stage);
 CREATE INDEX IF NOT EXISTS idx_leads_channel ON leads (channel_group);
 CREATE INDEX IF NOT EXISTS idx_leads_created ON leads (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_leads_service_id ON leads (service_id);
+CREATE INDEX IF NOT EXISTS idx_leads_service_slug ON leads (service_slug);
 
 -- ────────────────────────────────────────────────
 -- 2) lead_sessions: 방문자 세션

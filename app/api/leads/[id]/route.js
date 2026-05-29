@@ -15,9 +15,10 @@ export async function GET(request, { params }) {
 
     if (error) return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
 
-    // 2) 캠페인/매거진은 외래키 join 안 쓰고 별도 fetch — 한쪽이 실패해도 본체 반환
+    // 2) 캠페인/매거진/서비스는 외래키 join 안 쓰고 별도 fetch — 한쪽이 실패해도 본체 반환
     let campaign = null;
     let magazine = null;
+    let service = null;
 
     if (data?.campaign_id) {
       const { data: cRow } = await supabase
@@ -37,7 +38,23 @@ export async function GET(request, { params }) {
       magazine = mRow || null;
     }
 
-    return NextResponse.json({ lead: { ...data, campaign, magazine } });
+    if (data?.service_id) {
+      const { data: sRow } = await supabase
+        .from('services')
+        .select('id, slug, title')
+        .eq('id', data.service_id)
+        .maybeSingle();
+      service = sRow || null;
+    } else if (data?.service_slug) {
+      const { data: sRow } = await supabase
+        .from('services')
+        .select('id, slug, title')
+        .eq('slug', data.service_slug)
+        .maybeSingle();
+      service = sRow || null;
+    }
+
+    return NextResponse.json({ lead: { ...data, campaign, magazine, service } });
   } catch (e) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }

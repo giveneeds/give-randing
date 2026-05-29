@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import {
   Users, Search, Filter, Download, MoreHorizontal, Mail, Phone,
@@ -15,6 +15,7 @@ const LEAD_TYPE_CONFIG = {
   campaign:              { label: '캠페인 LP', color: 'bg-blue-50 text-blue-600 border-blue-200' },
   campaign_kakao_oauth:  { label: '캠페인 · 카카오', color: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
   campaign_basic_form:   { label: '캠페인 · 기본폼', color: 'bg-blue-50 text-blue-600 border-blue-200' },
+  service_basic_form:    { label: '서비스 문의', color: 'bg-indigo-50 text-indigo-600 border-indigo-200' },
   magazine:              { label: '매거진', color: 'bg-emerald-50 text-emerald-600 border-emerald-200' },
   magazine_kakao_oauth:  { label: '매거진 · 카카오', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
   magazine_basic_form:   { label: '매거진 · 기본폼', color: 'bg-emerald-50 text-emerald-600 border-emerald-200' },
@@ -54,6 +55,33 @@ const CHANNEL_LABELS = {
 
 const PAGE_SIZE = 10;
 
+function getServiceSource(lead) {
+  const slug = lead?.service?.slug || lead?.service_slug;
+  if (!slug) return null;
+  return {
+    slug,
+    title: lead?.service?.title || slug,
+    href: `/service/${slug}`,
+  };
+}
+
+function LeadServiceLink({ lead, className = '' }) {
+  const source = getServiceSource(lead);
+  if (!source) return null;
+  return (
+    <Link
+      href={source.href}
+      target="_blank"
+      onClick={(e) => e.stopPropagation()}
+      className={`inline-flex min-w-0 items-center gap-1 text-indigo-600 hover:underline underline-offset-2 ${className}`}
+      title={`${source.title} · ${source.href}`}
+    >
+      <MapPin size={9} className="flex-shrink-0" />
+      <span className="truncate">{source.title}</span>
+    </Link>
+  );
+}
+
 export default function AdminLeads() {
   const [leads, setLeads] = useState([]);
   const [campaigns, setCampaigns] = useState([]);
@@ -66,19 +94,7 @@ export default function AdminLeads() {
   const [expandedId, setExpandedId] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
 
-  useEffect(() => {
-    loadLeads();
-  }, [leadTypeFilter, statusFilter, pipelineFilter, campaignFilter]);
-
-  useEffect(() => {
-    // 캠페인 목록 1회 로드 (랜딩페이지별 필터 옵션용)
-    fetch('/api/campaigns?admin=true')
-      .then(r => r.json())
-      .then(d => setCampaigns(d.campaigns || []))
-      .catch(() => setCampaigns([]));
-  }, []);
-
-  async function loadLeads() {
+  const loadLeads = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -94,7 +110,22 @@ export default function AdminLeads() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [leadTypeFilter, statusFilter, pipelineFilter, campaignFilter]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      loadLeads();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [loadLeads]);
+
+  useEffect(() => {
+    // 캠페인 목록 1회 로드 (랜딩페이지별 필터 옵션용)
+    fetch('/api/campaigns?admin=true')
+      .then(r => r.json())
+      .then(d => setCampaigns(d.campaigns || []))
+      .catch(() => setCampaigns([]));
+  }, []);
 
   async function handlePipelineChange(leadId, newStage) {
     try {
@@ -113,7 +144,9 @@ export default function AdminLeads() {
       (lead.name || '').toLowerCase().includes(q) ||
       (lead.email || '').toLowerCase().includes(q) ||
       (lead.phone || '').includes(searchQuery) ||
-      (lead.company_name || '').toLowerCase().includes(q)
+      (lead.company_name || '').toLowerCase().includes(q) ||
+      (lead.service_slug || '').toLowerCase().includes(q) ||
+      (lead.service?.title || '').toLowerCase().includes(q)
     );
   });
 
@@ -140,11 +173,13 @@ export default function AdminLeads() {
 
   async function handleExportCSV() {
     if (filteredLeads.length === 0) return;
-    const headers = ['이름', '연락처', '이메일', '회사명', '홈페이지', '예산', '리드유형', '유입페이지', '클릭요소', '상태', '파이프라인', '채널', 'UTM Source', 'UTM Campaign', '디바이스', '수집일'];
+    const headers = ['이름', '연락처', '이메일', '회사명', '홈페이지', '예산', '리드유형', '서비스', '서비스 슬러그', '유입페이지', '클릭요소', '상태', '파이프라인', '채널', 'UTM Source', 'UTM Campaign', '디바이스', '수집일'];
     const rows = filteredLeads.map(l => [
       l.name, l.phone, l.email, l.company_name, l.website_url,
       BUDGET_LABEL[l.budget] || l.budget,
       LEAD_TYPE_CONFIG[l.lead_type]?.label || l.lead_type,
+      l.service?.title,
+      l.service?.slug || l.service_slug,
       l.source_page, l.click_element, l.status,
       PIPELINE_CONFIG[l.pipeline_stage]?.label || l.pipeline_stage,
       CHANNEL_LABELS[l.channel_group] || l.channel_group,
@@ -169,6 +204,8 @@ export default function AdminLeads() {
             <span>문의 <span className="font-black text-violet-600">{leads.filter(l=>l.lead_type==='consultation').length}</span>건</span>
             <span className="text-zinc-300">·</span>
             <span>캠페인 <span className="font-black text-blue-600">{leads.filter(l=>l.lead_type==='campaign').length}</span>건</span>
+            <span className="text-zinc-300">·</span>
+            <span>서비스 <span className="font-black text-indigo-600">{leads.filter(l=>l.lead_type==='service_basic_form').length}</span>건</span>
             <span className="text-zinc-300">·</span>
             <span>매거진 <span className="font-black text-emerald-600">{leads.filter(l=>l.lead_type==='magazine').length}</span>건</span>
           </p>
@@ -202,6 +239,7 @@ export default function AdminLeads() {
             <option value="campaign">캠페인 LP (전체)</option>
             <option value="campaign_kakao_oauth">└ 카카오 로그인</option>
             <option value="campaign_basic_form">└ 기본 폼</option>
+            <option value="service_basic_form">서비스 문의</option>
             <option value="magazine">매거진 회원가입</option>
             <option value="organic">기타</option>
           </select>
@@ -280,6 +318,7 @@ export default function AdminLeads() {
                       </span>
                     )}
                   </div>
+                  <LeadServiceLink lead={lead} className="mt-1.5 max-w-full text-[10px] font-bold" />
                   <div className="mt-2 space-y-1">
                     {lead.phone && <div className="flex items-center gap-1.5 text-xs text-zinc-600"><Phone size={11} className="text-zinc-400 flex-shrink-0"/><span className="truncate">{lead.phone}</span></div>}
                     {lead.email && <div className="flex items-center gap-1.5 text-xs text-zinc-500"><Mail size={11} className="text-zinc-400 flex-shrink-0"/><span className="truncate">{lead.email}</span></div>}
@@ -369,6 +408,7 @@ export default function AdminLeads() {
                       <td className="px-6 py-5">
                         <div className="space-y-1.5">
                           {getLeadTypeBadge(lead.lead_type || 'organic')}
+                          <LeadServiceLink lead={lead} className="max-w-[170px] text-[10px] font-bold" />
                           {lead.source_page && (
                             <div className="text-[10px] text-zinc-400 flex items-center gap-1">
                               <MapPin size={9}/>{lead.source_page}
@@ -438,6 +478,16 @@ export default function AdminLeads() {
                       <tr key={`${lead.id}-detail`} className="bg-zinc-50/50">
                         <td colSpan={8} className="px-8 py-5">
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                            {getServiceSource(lead) && (
+                              <div className="flex items-start gap-2">
+                                <MapPin size={13} className="text-zinc-400 mt-0.5 flex-shrink-0"/>
+                                <div className="min-w-0">
+                                  <p className="text-zinc-400 font-bold uppercase tracking-wider mb-0.5">서비스 상품</p>
+                                  <LeadServiceLink lead={lead} className="max-w-full text-xs font-bold" />
+                                  <p className="mt-0.5 font-mono text-[10px] text-zinc-400">/service/{getServiceSource(lead).slug}</p>
+                                </div>
+                              </div>
+                            )}
                             {lead.website_url && (
                               <div className="flex items-start gap-2">
                                 <Globe size={13} className="text-zinc-400 mt-0.5 flex-shrink-0"/>

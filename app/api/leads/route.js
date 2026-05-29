@@ -55,6 +55,7 @@ async function sendKakaoWebhook(lead) {
     `📌 ${lead.name} | ${lead.company_name || '회사명 미입력'}`,
     `📞 ${lead.phone || '연락처 없음'}`,
     `📧 ${lead.email || '이메일 없음'}`,
+    lead.service_slug ? `📦 상품: /service/${lead.service_slug}` : '',
     `💰 예산: ${budgetText}`,
     lead.message ? `💬 ${lead.message.slice(0, 100)}${lead.message.length > 100 ? '...' : ''}` : '',
     ``,
@@ -80,7 +81,7 @@ export async function POST(request) {
     const body = await request.json();
     const {
       name, email, phone,
-      campaign_id, magazine_id, agreements,
+      campaign_id, magazine_id, service_id, service_slug, agreements,
       // 신규 필드들
       company_name, website_url, inquiry_type,
       budget, message, category,
@@ -107,6 +108,8 @@ export async function POST(request) {
         phone: phone || null,
         campaign_id: campaign_id || null,
         magazine_id: magazine_id || null,
+        service_id: service_id || null,
+        service_slug: service_slug || null,
         agreements: agreements || null,
         // 유입 추적 필드
         company_name: company_name || null,
@@ -158,7 +161,7 @@ export async function POST(request) {
     console.log(`Name: ${name} | Type: ${lead_type} | Source: ${source_page}`);
 
     // 카카오 알람 (응답 전에 await — Vercel 서버리스는 응답 후 비동기 중단됨)
-    await sendKakaoWebhook({ name, phone, email, company_name, budget, message, lead_type, source_page })
+    await sendKakaoWebhook({ name, phone, email, company_name, budget, message, lead_type, source_page, service_slug })
       .catch(err => console.error('Kakao webhook failed:', err));
 
     // 3. 캠페인 basic 폼 + 활성 자료 보유 시 1회용 다운로드 토큰 발급
@@ -225,7 +228,7 @@ export async function GET(request) {
 
     let query = supabase
       .from('leads')
-      .select('*, campaign:campaigns(id, slug, title)')
+      .select('*, campaign:campaigns(id, slug, title), service:services(id, slug, title)')
       .order('created_at', { ascending: false });
 
     if (leadType && leadType !== 'all') {
@@ -255,4 +258,3 @@ export async function GET(request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
-

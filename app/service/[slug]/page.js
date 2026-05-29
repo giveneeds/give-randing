@@ -12,6 +12,7 @@ import { trackEvent } from '@/lib/tracker';
 import { supabase, isDummyMode, DUMMY_SETTINGS } from '@/lib/supabase';
 import LandingNavbar from '@/components/landing/LandingNavbar';
 import LandingFooter from '@/components/landing/LandingFooter';
+import ServiceLeadForm from '@/components/landing/ServiceLeadForm';
 
 export default function ServiceDetailPage({ params }) {
   const { slug } = use(params);
@@ -37,7 +38,10 @@ export default function ServiceDetailPage({ params }) {
         const res = await fetch(`/api/services?all=true`);
         const data = await res.json();
         const found = Array.isArray(data) ? data.find(s => s.slug === slug) : null;
-        if (found) setService(found);
+        if (found) {
+          setService(found);
+          if (!found?.details?.related_magazine_slug) setRelatedMagazine(null);
+        }
       } catch (err) {
         console.error('Fetch error:', err);
       } finally {
@@ -58,7 +62,7 @@ export default function ServiceDetailPage({ params }) {
   // 연결된 매거진 메타(제목/썸네일) 조회 — 서비스 로드 후 1회
   useEffect(() => {
     const relSlug = service?.details?.related_magazine_slug;
-    if (!relSlug) { setRelatedMagazine(null); return; }
+    if (!relSlug) return;
     fetch('/api/magazines')
       .then(r => r.json())
       .then(d => {
@@ -339,16 +343,7 @@ export default function ServiceDetailPage({ params }) {
             </Link>
           )}
 
-              {/* CTA */}
-              <div className="mt-12 flex justify-center">
-                <Link
-                  href="/contact"
-                  className="px-10 py-4 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-full font-black text-sm uppercase tracking-tight hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-all shadow-xl flex items-center gap-3"
-                >
-                  상담하기
-                  <ArrowLeft size={16} className="rotate-180" />
-                </Link>
-              </div>
+              <ServiceLeadForm service={service} />
             </div>
           </div>
 

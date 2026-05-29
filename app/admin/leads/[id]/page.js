@@ -27,6 +27,7 @@ const LEAD_TYPE_CONFIG = {
   campaign:               { label: '캠페인 LP', color: 'bg-blue-50 text-blue-600' },
   campaign_basic_form:    { label: '캠페인 · 기본폼', color: 'bg-blue-50 text-blue-600' },
   campaign_kakao_oauth:   { label: '캠페인 · 카카오', color: 'bg-yellow-50 text-yellow-700' },
+  service_basic_form:     { label: '서비스 문의', color: 'bg-indigo-50 text-indigo-600' },
   // 매거진
   magazine:               { label: '매거진', color: 'bg-emerald-50 text-emerald-600' },
   magazine_kakao_oauth:   { label: '매거진 · 카카오', color: 'bg-emerald-50 text-emerald-700' },
@@ -125,7 +126,11 @@ export default function LeadDetailPage() {
   }, [id]);
 
   useEffect(() => {
-    if (id) loadData();
+    if (!id) return undefined;
+    const timer = setTimeout(() => {
+      loadData();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [id, loadData]);
 
   async function handlePipelineChange(stage) {
@@ -371,8 +376,27 @@ export default function LeadDetailPage() {
               </InflowRow>
             )}
 
+            {/* 서비스 상품에서 온 경우 */}
+            {(lead?.service?.title || lead?.service_slug) && (
+              <InflowRow label="서비스">
+                <a
+                  href={`/service/${lead.service?.slug || lead.service_slug}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 text-indigo-600 hover:underline truncate"
+                  title={lead.service?.title || lead.service_slug}
+                >
+                  <span className="truncate font-bold">{lead.service?.title || lead.service_slug}</span>
+                  <ExternalLink size={10} className="flex-shrink-0" />
+                </a>
+                <div className="mt-1 font-mono text-[10px] text-zinc-400">
+                  /service/{lead.service?.slug || lead.service_slug}
+                </div>
+              </InflowRow>
+            )}
+
             {/* 제출 페이지 — 캠페인/매거진 어디에도 안 잡히면 fallback */}
-            {!lead?.campaign?.title && !lead?.magazine?.title && lead?.source_page && (
+            {!lead?.campaign?.title && !lead?.magazine?.title && !lead?.service?.title && !lead?.service_slug && lead?.source_page && (
               <InflowRow label="제출 페이지">
                 <span className="font-mono text-[11px] text-zinc-700 truncate" title={lead.source_page}>
                   {lead.source_page}

@@ -61,6 +61,23 @@ CREATE TABLE IF NOT EXISTS global_sections (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 4-1. 서비스/솔루션 마스터
+CREATE TABLE IF NOT EXISTS services (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    slug TEXT UNIQUE NOT NULL,
+    title TEXT NOT NULL,
+    subtitle TEXT,
+    description TEXT,
+    category TEXT NOT NULL,
+    color TEXT DEFAULT '#1E4181',
+    icon TEXT DEFAULT 'Target',
+    details JSONB DEFAULT '{}'::jsonb,
+    order_num INTEGER DEFAULT 0,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- 5. 고객 리드 데이터 (수집된 DB)
 -- 주의: 실제 컬럼 정의는 sql/crm_foundation.sql + sql/crm_visitor_identity.sql 의
 -- ALTER TABLE 들이 적용되어 있다. 이 CREATE 블록은 신규 환경 부트스트랩용.
@@ -80,8 +97,10 @@ CREATE TABLE IF NOT EXISTS leads (
     message TEXT,
     agreements JSONB,
     magazine_id TEXT,
+    service_id UUID REFERENCES services(id) ON DELETE SET NULL,
+    service_slug TEXT,
     -- 유입 추적
-    lead_type TEXT DEFAULT 'organic',  -- organic / consultation / campaign_kakao_oauth / campaign_basic_form / magazine_kakao_oauth
+    lead_type TEXT DEFAULT 'organic',  -- organic / consultation / campaign_kakao_oauth / campaign_basic_form / magazine_kakao_oauth / service_basic_form
     source_page TEXT,
     source_referrer TEXT,
     click_element TEXT,
@@ -110,6 +129,8 @@ CREATE INDEX IF NOT EXISTS idx_leads_pipeline ON leads (pipeline_stage);
 CREATE INDEX IF NOT EXISTS idx_leads_channel ON leads (channel_group);
 CREATE INDEX IF NOT EXISTS idx_leads_created ON leads (created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_leads_campaign ON leads (campaign_id);
+CREATE INDEX IF NOT EXISTS idx_leads_service_id ON leads (service_id);
+CREATE INDEX IF NOT EXISTS idx_leads_service_slug ON leads (service_slug);
 
 -- 6. AI 챗봇 메시지 기록
 CREATE TABLE IF NOT EXISTS chat_messages (
@@ -139,6 +160,7 @@ ALTER TABLE landing_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE magazines ENABLE ROW LEVEL SECURITY;
 ALTER TABLE campaigns ENABLE ROW LEVEL SECURITY;
 ALTER TABLE global_sections ENABLE ROW LEVEL SECURITY;
+ALTER TABLE services ENABLE ROW LEVEL SECURITY;
 ALTER TABLE leads ENABLE ROW LEVEL SECURITY;
 ALTER TABLE chat_messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ai_coaching_logs ENABLE ROW LEVEL SECURITY;
@@ -147,12 +169,14 @@ CREATE POLICY "Allow public read - settings" ON landing_settings FOR SELECT USIN
 CREATE POLICY "Allow public read - magazines" ON magazines FOR SELECT USING (true);
 CREATE POLICY "Allow public read - campaigns" ON campaigns FOR SELECT USING (true);
 CREATE POLICY "Allow public read - global_sections" ON global_sections FOR SELECT USING (true);
+CREATE POLICY "Allow public read - services" ON services FOR SELECT USING (true);
 CREATE POLICY "Allow public write - leads" ON leads FOR INSERT WITH CHECK (true);
 CREATE POLICY "Allow public read/write - chat" ON chat_messages FOR ALL USING (true);
 CREATE POLICY "Allow public read - ai_logs" ON ai_coaching_logs FOR SELECT USING (true);
 
 CREATE INDEX IF NOT EXISTS idx_magazines_slug ON magazines (slug);
 CREATE INDEX IF NOT EXISTS idx_campaigns_slug ON campaigns (slug);
+CREATE INDEX IF NOT EXISTS idx_services_slug ON services (slug);
 CREATE INDEX IF NOT EXISTS idx_chat_session ON chat_messages (session_id);
 
 -- =============================================
