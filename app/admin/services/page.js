@@ -1,24 +1,42 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { motion } from 'framer-motion';
 import {
-  Plus, Edit2, Trash2, Search,
-  MessageSquare, Star, Cpu, MapPin,
-  Layout, Target, Save, X, Image as ImageIcon,
-  CheckCircle2, Zap, LayoutGrid, ListOrdered, Clock, HelpCircle, Loader2
+  CheckCircle2,
+  Cpu,
+  Edit2,
+  HelpCircle,
+  Image as ImageIcon,
+  Layout,
+  LayoutGrid,
+  Loader2,
+  MapPin,
+  MessageSquare,
+  Monitor,
+  Plus,
+  Save,
+  Search,
+  Smartphone,
+  Star,
+  Target,
+  Trash2,
+  X,
 } from 'lucide-react';
-import { DUMMY_SERVICE_PRODUCTS } from '@/lib/supabase';
 import MarkdownContent from '@/lib/markdownRender';
+import { DUMMY_SETTINGS } from '@/lib/supabase';
+import { getSupabaseAuthHeaders } from '@/lib/clientAuthHeaders';
 import ServiceCaseTabs from '@/components/admin/ServiceCaseTabs';
+import ProductDetailBlockBuilder from '@/components/admin/ProductDetailBlockBuilder';
+import ServicePreviewSurface from '@/components/service/ServicePreviewSurface';
 
-// 항목 옆에 ? 아이콘 + 마우스 호버 시 한국어 도움말 툴팁을 노출
 function HelpTip({ text }) {
   return (
     <span className="relative inline-flex items-center group/tip align-middle">
       <HelpCircle
         size={14}
-        className="ml-1.5 text-zinc-300 hover:text-zinc-700 cursor-help transition-colors"
+        className="ml-1.5 text-zinc-500 hover:text-zinc-800 cursor-help transition-colors"
       />
       <span
         role="tooltip"
@@ -31,17 +49,53 @@ function HelpTip({ text }) {
 }
 
 const iconMap = {
-  MessageSquare, Star, Cpu, MapPin, Layout, Target, CheckCircle2
+  MessageSquare,
+  Star,
+  Cpu,
+  MapPin,
+  Layout,
+  Target,
+  CheckCircle2,
 };
 
-// 마크다운 입력 + 실시간 프리뷰 토글 + 이미지 업로드 텍스트에어리어
-function MdTextarea({ value, onChange, placeholder, rows = 4 }) {
+const FIELD = 'w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3.5 text-sm font-semibold text-zinc-900 outline-none placeholder:text-zinc-500 focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10 disabled:bg-zinc-100 disabled:text-zinc-600 disabled:opacity-100';
+const LABEL = 'block text-[11px] font-black uppercase tracking-[0.18em] text-zinc-700 mb-2';
+
+function newDraftKey() {
+  return `draft-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function normalizeDetails(details = {}) {
+  return {
+    effects: [],
+    operation: '',
+    process: [],
+    sub_items: [],
+    duration: '',
+    reference_img: '',
+    related_magazine_slug: '',
+    related_magazine_header: '',
+    status: 'published',
+    ...details,
+  };
+}
+
+function findRelatedMagazine(service, magazines = []) {
+  const details = service?.details || {};
+  const blockRelSlug = Array.isArray(details.blocks)
+    ? details.blocks.find((block) => block?.type === 'related_magazine' && block.is_visible !== false)?.magazine_slug
+    : '';
+  const relSlug = details.related_magazine_slug || blockRelSlug;
+  if (!relSlug) return null;
+  return magazines.find((magazine) => magazine.slug === relSlug) || null;
+}
+
+function MdTextarea({ value, onChange, placeholder, rows = 4, uploadFolder = 'services/drafts' }) {
   const [tab, setTab] = useState('write');
   const [uploading, setUploading] = useState(false);
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  // 현재 커서 위치에 텍스트 삽입
   const insertAtCursor = (insertText) => {
     const ta = textareaRef.current;
     const current = value || '';
@@ -66,7 +120,12 @@ function MdTextarea({ value, onChange, placeholder, rows = 4 }) {
     try {
       const fd = new FormData();
       fd.append('file', file);
-      const res = await fetch('/api/upload/magazine-image', { method: 'POST', body: fd });
+      fd.append('folder', uploadFolder);
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        headers: await getSupabaseAuthHeaders(),
+        body: fd,
+      });
       const data = await res.json();
       if (!res.ok || !data?.url) throw new Error(data?.error || '업로드 실패');
       const alt = file.name.replace(/\.[^.]+$/, '');
@@ -79,26 +138,25 @@ function MdTextarea({ value, onChange, placeholder, rows = 4 }) {
   };
 
   return (
-    <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden focus-within:ring-2 focus-within:ring-zinc-900">
-      <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-zinc-100 bg-zinc-50">
+    <div className="bg-white border border-zinc-300 rounded-2xl overflow-hidden focus-within:ring-2 focus-within:ring-zinc-900/10">
+      <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-zinc-200 bg-zinc-50">
         <div className="flex gap-1 items-center">
           <button
             type="button"
             onClick={() => setTab('write')}
-            className={`px-3 py-1 text-[11px] font-black uppercase tracking-wider rounded-md transition-colors ${tab === 'write' ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:bg-zinc-200'}`}
+            className={`px-3 py-1 text-[11px] font-black uppercase tracking-wider rounded-md transition-colors ${tab === 'write' ? 'bg-zinc-900 text-white' : 'text-zinc-700 hover:bg-zinc-200'}`}
           >Write</button>
           <button
             type="button"
             onClick={() => setTab('preview')}
-            className={`px-3 py-1 text-[11px] font-black uppercase tracking-wider rounded-md transition-colors ${tab === 'preview' ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:bg-zinc-200'}`}
+            className={`px-3 py-1 text-[11px] font-black uppercase tracking-wider rounded-md transition-colors ${tab === 'preview' ? 'bg-zinc-900 text-white' : 'text-zinc-700 hover:bg-zinc-200'}`}
           >Preview</button>
           <span className="w-px h-4 bg-zinc-200 mx-1" />
           <button
             type="button"
             disabled={uploading}
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-1.5 px-3 py-1 text-[11px] font-black uppercase tracking-wider rounded-md text-zinc-600 hover:bg-zinc-200 disabled:opacity-50 transition-colors"
-            title="이미지 삽입 — 커서 위치에 마크다운 형식으로 삽입됩니다"
+            className="flex items-center gap-1.5 px-3 py-1 text-[11px] font-black uppercase tracking-wider rounded-md text-zinc-700 hover:bg-zinc-200 disabled:opacity-50 transition-colors"
           >
             {uploading ? <Loader2 size={12} className="animate-spin" /> : <ImageIcon size={12} />}
             {uploading ? '업로드중' : 'Image'}
@@ -106,10 +164,9 @@ function MdTextarea({ value, onChange, placeholder, rows = 4 }) {
           <button
             type="button"
             onClick={() => insertAtCursor('\n\n---\n\n')}
-            className="flex items-center gap-1.5 px-3 py-1 text-[11px] font-black uppercase tracking-wider rounded-md text-zinc-600 hover:bg-zinc-200 transition-colors"
-            title="구분선 삽입 — 문단 사이에 얇은 가로선을 넣습니다"
+            className="flex items-center gap-1.5 px-3 py-1 text-[11px] font-black uppercase tracking-wider rounded-md text-zinc-700 hover:bg-zinc-200 transition-colors"
           >
-            — 구분선
+            구분선
           </button>
           <input
             ref={fileInputRef}
@@ -123,8 +180,8 @@ function MdTextarea({ value, onChange, placeholder, rows = 4 }) {
             }}
           />
         </div>
-        <div className="hidden sm:block text-[10px] text-zinc-400 font-medium tracking-tight">
-          <span className="font-bold">**굵게**</span> · <span className="italic">*기울임*</span> · &gt; 인용 · - 불릿 · 1. 번호 · --- 구분선
+        <div className="hidden sm:block text-[10px] text-zinc-600 font-semibold tracking-tight">
+          <span className="font-bold">**굵게**</span> · <span className="italic">*기울임*</span> · &gt; 인용 · - 불릿 · 1. 번호
         </div>
       </div>
       {tab === 'write' ? (
@@ -132,7 +189,7 @@ function MdTextarea({ value, onChange, placeholder, rows = 4 }) {
           ref={textareaRef}
           rows={rows}
           placeholder={placeholder}
-          className="w-full p-4 outline-none text-sm font-medium resize-y bg-white"
+          className="w-full p-4 outline-none text-sm font-semibold resize-y bg-white text-zinc-900 placeholder:text-zinc-500"
           value={value || ''}
           onChange={onChange}
           onPaste={(e) => {
@@ -152,44 +209,415 @@ function MdTextarea({ value, onChange, placeholder, rows = 4 }) {
         />
       ) : (
         <div className="p-4 min-h-[120px] bg-white">
-          {value ? (
-            <MarkdownContent text={value} />
-          ) : (
-            <p className="text-xs text-zinc-300 font-bold">미리볼 내용이 없습니다.</p>
-          )}
+          {value ? <MarkdownContent text={value} /> : <p className="text-xs text-zinc-600 font-bold">미리볼 내용이 없습니다.</p>}
         </div>
       )}
     </div>
   );
 }
 
+const DESKTOP_PREVIEW_WIDTH = 1440;
+
+function ServiceEditorPreview({ service, settings, relatedMagazine, magazines, previewMode, setPreviewMode }) {
+  const iframeRef = useRef(null);
+  const desktopFrameRef = useRef(null);
+  const desktopContentRef = useRef(null);
+  const [iframeReady, setIframeReady] = useState(false);
+  const [desktopScale, setDesktopScale] = useState(0.55);
+  const [desktopContentHeight, setDesktopContentHeight] = useState(900);
+  const payload = useMemo(() => ({
+    service,
+    settings,
+    relatedMagazine,
+    previewData: { magazines },
+  }), [service, settings, relatedMagazine, magazines]);
+
+  useEffect(() => {
+    function onMessage(event) {
+      if (event.origin !== window.location.origin) return;
+      if (event.source !== iframeRef.current?.contentWindow) return;
+      if (event.data?.type === 'service:preview:ready') setIframeReady(true);
+    }
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, []);
+
+  useEffect(() => {
+    if (previewMode !== 'mobile') return;
+    const target = iframeRef.current?.contentWindow;
+    if (!target) return;
+    const send = () => {
+      target.postMessage({ type: 'service:preview', payload }, window.location.origin);
+    };
+    const handles = [0, 120, 360].map((delay) => setTimeout(send, delay));
+    return () => handles.forEach((handle) => clearTimeout(handle));
+  }, [iframeReady, payload, previewMode]);
+
+  useEffect(() => {
+    if (previewMode !== 'desktop') return undefined;
+    const frame = desktopFrameRef.current;
+    if (!frame) return undefined;
+
+    const updateScale = () => {
+      const availableWidth = Math.max(320, frame.clientWidth - 24);
+      const nextScale = Math.min(1, Math.max(0.34, availableWidth / DESKTOP_PREVIEW_WIDTH));
+      setDesktopScale(Number(nextScale.toFixed(3)));
+    };
+
+    updateScale();
+    const observer = new ResizeObserver(updateScale);
+    observer.observe(frame);
+    window.addEventListener('resize', updateScale);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', updateScale);
+    };
+  }, [previewMode]);
+
+  useEffect(() => {
+    if (previewMode !== 'desktop') return undefined;
+    const content = desktopContentRef.current;
+    if (!content) return undefined;
+
+    const updateHeight = () => {
+      setDesktopContentHeight(Math.max(900, content.scrollHeight || content.getBoundingClientRect().height || 900));
+    };
+
+    updateHeight();
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(content);
+    return () => observer.disconnect();
+  }, [payload, previewMode]);
+
+  return (
+    <aside className="flex min-h-0 flex-col border-l border-zinc-200 bg-zinc-100">
+      <div className="flex items-center justify-between border-b border-zinc-200 bg-white px-5 py-4">
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-[0.28em] text-zinc-600">Live Preview</p>
+          <h3 className="text-sm font-black text-zinc-900">상품 상세 페이지</h3>
+        </div>
+        <div className="flex rounded-xl border border-zinc-200 bg-zinc-50 p-1">
+          <button
+            type="button"
+            onClick={() => setPreviewMode('desktop')}
+            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-black ${previewMode === 'desktop' ? 'bg-zinc-900 text-white' : 'text-zinc-700 hover:bg-zinc-200'}`}
+          >
+            <Monitor size={14} /> Desktop
+          </button>
+          <button
+            type="button"
+            onClick={() => setPreviewMode('mobile')}
+            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-black ${previewMode === 'mobile' ? 'bg-zinc-900 text-white' : 'text-zinc-700 hover:bg-zinc-200'}`}
+          >
+            <Smartphone size={14} /> Mobile
+          </button>
+        </div>
+      </div>
+      <div className="min-h-0 flex-1 overflow-auto p-4">
+        {previewMode === 'mobile' ? (
+          <div className="mx-auto h-[760px] w-[390px] max-w-full overflow-hidden rounded-[2.4rem] border-[10px] border-zinc-900 bg-white shadow-2xl">
+            <iframe
+              ref={iframeRef}
+              title="Service Mobile Preview"
+              src="/admin-service-preview"
+              onLoad={() => setIframeReady(true)}
+              className="h-full w-full border-0"
+            />
+          </div>
+        ) : (
+          <div ref={desktopFrameRef} className="min-w-0">
+            <div className="mb-3 flex items-center justify-between gap-3 rounded-2xl border border-zinc-200 bg-white px-4 py-2">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-500">Desktop Canvas</p>
+                <p className="text-xs font-black text-zinc-900">{DESKTOP_PREVIEW_WIDTH}px 실제 데스크톱 축소보기</p>
+              </div>
+              <span className="rounded-full bg-zinc-900 px-3 py-1 text-[10px] font-black text-white">
+                {Math.round(desktopScale * 100)}%
+              </span>
+            </div>
+            <div className="overflow-auto rounded-[1.5rem] border border-zinc-200 bg-zinc-200 p-3 shadow-inner">
+              <div
+                className="relative bg-white shadow-sm"
+                style={{
+                  width: DESKTOP_PREVIEW_WIDTH * desktopScale,
+                  height: desktopContentHeight * desktopScale,
+                  minHeight: 900 * desktopScale,
+                }}
+              >
+                <div
+                  ref={desktopContentRef}
+                  className="absolute left-0 top-0 overflow-hidden bg-white"
+                  style={{
+                    width: DESKTOP_PREVIEW_WIDTH,
+                    minHeight: 900,
+                    transform: `scale(${desktopScale})`,
+                    transformOrigin: 'top left',
+                  }}
+                >
+                  <ServicePreviewSurface
+                    service={service}
+                    settings={settings}
+                    relatedMagazine={relatedMagazine}
+                    preview
+                    previewData={{ magazines }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </aside>
+  );
+}
+
+function ServiceFullScreenEditor({
+  mode,
+  editForm,
+  setEditForm,
+  onClose,
+  onSave,
+  landingSections,
+  sectionLibrary,
+  magazines,
+  landingSettings,
+  uploadFolder,
+}) {
+  const [previewMode, setPreviewMode] = useState('desktop');
+  const relatedMagazine = findRelatedMagazine(editForm, magazines);
+  const existing = mode !== 'new';
+
+  const setDetails = (patch) => setEditForm((prev) => ({ ...prev, details: { ...prev.details, ...patch } }));
+
+  const editor = (
+    <div className="fixed inset-0 z-[9999] isolate bg-zinc-950/70 text-zinc-900">
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex h-screen w-screen flex-col bg-zinc-50"
+      >
+        <header className="flex shrink-0 items-center justify-between border-b border-zinc-200 bg-white px-5 py-4">
+          <div className="min-w-0">
+            <p className="text-[10px] font-black uppercase tracking-[0.32em] text-zinc-600">
+              Product Detail Builder
+            </p>
+            <h2 className="truncate text-xl font-black tracking-tight text-zinc-900">
+              {existing ? editForm.title || editForm.slug : '새 상품/솔루션 만들기'}
+            </h2>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-xl px-4 py-2 text-sm font-black text-zinc-700 hover:bg-zinc-100"
+            >
+              취소
+            </button>
+            <button
+              type="button"
+              onClick={onSave}
+              className="inline-flex items-center gap-2 rounded-xl bg-zinc-900 px-5 py-2.5 text-sm font-black text-white hover:bg-black"
+            >
+              <Save size={17} />
+              저장
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="닫기"
+              className="rounded-xl p-2.5 text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
+            >
+              <X size={20} />
+            </button>
+          </div>
+        </header>
+
+        <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[minmax(0,60%)_minmax(420px,40%)]">
+          <main className="min-h-0 overflow-y-auto bg-zinc-50 px-5 py-6">
+            <div className="mx-auto max-w-5xl space-y-8 pb-20">
+              <nav className="sticky top-0 z-20 -mx-5 border-b border-zinc-200 bg-zinc-50/95 px-5 py-3 backdrop-blur">
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    ['#basic', '기본 정보'],
+                    ['#builder', '상세 페이지 빌더'],
+                    ['#settings', '설정'],
+                  ].map(([href, label]) => (
+                    <a key={href} href={href} className="rounded-xl border border-zinc-200 bg-white px-4 py-2 text-xs font-black text-zinc-700 hover:border-zinc-900 hover:text-zinc-900">
+                      {label}
+                    </a>
+                  ))}
+                </div>
+              </nav>
+
+              <section id="basic" className="scroll-mt-24 rounded-3xl border border-zinc-200 bg-white p-6">
+                <div className="mb-6 flex items-center gap-3">
+                  <LayoutGrid className="text-zinc-900" size={20} />
+                  <h3 className="text-lg font-black uppercase italic text-zinc-900 underline decoration-zinc-200">
+                    Basic Information
+                  </h3>
+                </div>
+                <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                  <label>
+                    <span className={LABEL}>Title (국문 명칭)</span>
+                    <input className={FIELD} value={editForm.title || ''} onChange={(e) => setEditForm((prev) => ({ ...prev, title: e.target.value }))} />
+                  </label>
+                  <label>
+                    <span className={LABEL}>Slug (영문 URL용)</span>
+                    <input
+                      disabled={existing}
+                      className={FIELD}
+                      value={editForm.slug || ''}
+                      onChange={(e) => setEditForm((prev) => ({ ...prev, slug: e.target.value }))}
+                    />
+                    {existing && <p className="mt-2 text-[11px] font-semibold text-zinc-600">기존 상품의 URL은 공개 링크 보호를 위해 여기서 바꾸지 않습니다.</p>}
+                  </label>
+                  <label>
+                    <span className={LABEL}>Subtitle (전문적 한줄평)</span>
+                    <textarea
+                      className={`${FIELD} min-h-24 resize-y leading-relaxed`}
+                      value={editForm.subtitle || ''}
+                      onChange={(e) => setEditForm((prev) => ({ ...prev, subtitle: e.target.value }))}
+                    />
+                    <p className="mt-2 text-[11px] font-semibold leading-relaxed text-zinc-600">
+                      모바일에서 원하는 의미 단위로 줄을 나누고 싶다면 여기서 엔터를 넣으세요. 미리보기와 공개 화면에 같은 줄바꿈이 반영됩니다.
+                    </p>
+                  </label>
+                  <label>
+                    <span className={LABEL}>Category</span>
+                    <select className={FIELD} value={editForm.category || 'ADS'} onChange={(e) => setEditForm((prev) => ({ ...prev, category: e.target.value }))}>
+                      <option value="ADS">ADS (VIRAL)</option>
+                      <option value="GROWTH">GROWTH (REVIEW)</option>
+                      <option value="LOCAL">LOCAL (SEO)</option>
+                      <option value="TECH">TECH (CREATIVE)</option>
+                    </select>
+                  </label>
+                </div>
+                <div className="mt-6">
+                  <span className={LABEL}>Main Description (전체 설명)</span>
+                  <MdTextarea
+                    rows={6}
+                    value={editForm.description || ''}
+                    uploadFolder={uploadFolder}
+                    placeholder="서비스 개요를 입력하세요."
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, description: e.target.value }))}
+                  />
+                </div>
+              </section>
+
+              <section id="builder" className="scroll-mt-24">
+                <ProductDetailBlockBuilder
+                  details={editForm.details}
+                  uploadFolder={uploadFolder}
+                  landingSections={landingSections}
+                  sectionLibrary={sectionLibrary}
+                  magazines={magazines}
+                  onChange={(details) => setEditForm((prev) => ({ ...prev, details }))}
+                />
+              </section>
+
+              <section id="settings" className="scroll-mt-24 space-y-6">
+                <div className="rounded-3xl border border-zinc-200 bg-white p-6">
+                  <div className="mb-6 flex items-center gap-3">
+                    <Star className="text-zinc-900" size={20} />
+                    <h3 className="text-lg font-black uppercase italic text-zinc-900 underline decoration-zinc-200">
+                      Visual & Logic Settings
+                    </h3>
+                  </div>
+                  <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
+                    <label>
+                      <span className={LABEL}>Brand Color</span>
+                      <div className="flex gap-3 items-center">
+                        <input type="color" className="h-11 w-12 rounded-lg cursor-pointer border border-zinc-300" value={editForm.color || '#18181B'} onChange={(e) => setEditForm((prev) => ({ ...prev, color: e.target.value }))} />
+                        <input className={`${FIELD} font-mono`} value={editForm.color || ''} onChange={(e) => setEditForm((prev) => ({ ...prev, color: e.target.value }))} />
+                      </div>
+                    </label>
+                    <label>
+                      <span className={LABEL}>Order</span>
+                      <input type="number" className={FIELD} value={editForm.order_num ?? 0} onChange={(e) => setEditForm((prev) => ({ ...prev, order_num: Number.parseInt(e.target.value || '0', 10) }))} />
+                    </label>
+                    <label>
+                      <span className={LABEL}>Publish Status</span>
+                      <select className={FIELD} value={editForm.details.status || 'published'} onChange={(e) => setDetails({ status: e.target.value })}>
+                        <option value="published">Published (정상 노출)</option>
+                        <option value="coming_soon">Coming Soon (준비 중)</option>
+                      </select>
+                    </label>
+                    <label className="flex items-center gap-3 pt-8">
+                      <input type="checkbox" className="h-5 w-5 rounded-md border-zinc-300" checked={editForm.is_active !== false} onChange={(e) => setEditForm((prev) => ({ ...prev, is_active: e.target.checked }))} />
+                      <span className="text-xs font-black uppercase text-zinc-900">Active Stage</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="rounded-3xl border border-zinc-200 bg-white p-6">
+                  <div className="mb-5 flex items-center gap-3">
+                    <Star className="text-zinc-900" size={20} />
+                    <h3 className="text-lg font-black uppercase italic text-zinc-900 underline decoration-zinc-200">
+                      Related Magazine
+                      <HelpTip text="서비스 상세 페이지의 관련 매거진 카드 또는 관련 매거진 블록에 표시할 글을 고릅니다." />
+                    </h3>
+                  </div>
+                  <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                    <label>
+                      <span className={LABEL}>연결할 매거진</span>
+                      <select className={FIELD} value={editForm.details.related_magazine_slug || ''} onChange={(e) => setDetails({ related_magazine_slug: e.target.value })}>
+                        <option value="">연결 없음</option>
+                        {magazines.map((magazine) => (
+                          <option key={magazine.id || magazine.slug} value={magazine.slug}>{magazine.title}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      <span className={LABEL}>블록 헤더 텍스트</span>
+                      <input
+                        className={FIELD}
+                        placeholder="예) 이 서비스가 더 궁금하다면"
+                        value={editForm.details.related_magazine_header || ''}
+                        onChange={(e) => setDetails({ related_magazine_header: e.target.value })}
+                      />
+                    </label>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </main>
+
+          <ServiceEditorPreview
+            service={editForm}
+            settings={landingSettings}
+            relatedMagazine={relatedMagazine}
+            magazines={magazines}
+            previewMode={previewMode}
+            setPreviewMode={setPreviewMode}
+          />
+        </div>
+      </motion.div>
+    </div>
+  );
+
+  if (typeof document === 'undefined') return null;
+  return createPortal(editor, document.body);
+}
+
 export default function AdminServicesPage() {
   const [services, setServices] = useState([]);
   const [magazines, setMagazines] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [isEditing, setIsEditing] = useState(null); // id of service being edited or 'new'
+  const [isEditing, setIsEditing] = useState(null);
   const [editForm, setEditForm] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-
-  useEffect(() => {
-    fetchServices();
-    // 관련 매거진 드롭다운용 — 발행본만
-    fetch('/api/magazines')
-      .then(r => r.json())
-      .then(d => setMagazines(Array.isArray(d?.magazines) ? d.magazines : []))
-      .catch(() => setMagazines([]));
-  }, []);
+  const [landingSections, setLandingSections] = useState([]);
+  const [sectionLibrary, setSectionLibrary] = useState({ blocks: [] });
+  const [landingSettings, setLandingSettings] = useState(DUMMY_SETTINGS);
+  const [draftKey, setDraftKey] = useState(null);
 
   const fetchServices = async () => {
-    setLoading(true);
     try {
-      const res = await fetch('/api/services?all=true');
+      const res = await fetch('/api/services?all=true', {
+        headers: await getSupabaseAuthHeaders(),
+      });
       const data = await res.json();
-      if (Array.isArray(data) && data.length > 0) {
-        setServices(data);
-      } else {
-        setServices([]);
-      }
+      setServices(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Failed to fetch services:', err);
     } finally {
@@ -197,24 +625,65 @@ export default function AdminServicesPage() {
     }
   };
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadLandingBuilderSources() {
+      try {
+        const [sectionsRes, settingsRes] = await Promise.all([
+          fetch('/api/sections?all=true', { headers: await getSupabaseAuthHeaders() }),
+          fetch('/api/settings'),
+        ]);
+        const [sectionsData, settingsData] = await Promise.all([
+          sectionsRes.json(),
+          settingsRes.json(),
+        ]);
+        if (cancelled) return;
+        setLandingSections(Array.isArray(sectionsData?.sections) ? sectionsData.sections : []);
+        setSectionLibrary(settingsData?.settings?.section_library || { blocks: [] });
+        setLandingSettings(settingsData?.settings || DUMMY_SETTINGS);
+      } catch (err) {
+        if (!cancelled) {
+          console.error('Failed to fetch landing builder sources:', err);
+          setLandingSections([]);
+          setSectionLibrary({ blocks: [] });
+          setLandingSettings(DUMMY_SETTINGS);
+        }
+      }
+    }
+
+    const initTimer = setTimeout(() => {
+      fetchServices();
+      loadLandingBuilderSources();
+
+      fetch('/api/magazines')
+        .then((r) => r.json())
+        .then((d) => {
+          if (!cancelled) setMagazines(Array.isArray(d?.magazines) ? d.magazines : []);
+        })
+        .catch(() => {
+          if (!cancelled) setMagazines([]);
+        });
+    }, 0);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(initTimer);
+    };
+  }, []);
+
   const handleEdit = (service) => {
+    setDraftKey(null);
     setIsEditing(service.id);
     setEditForm({
       ...service,
-      details: {
-        effects: [],
-        operation: '',
-        process: [],
-        sub_items: [],
-        duration: '',
-        reference_img: '',
-        status: 'published',
-        ...(service.details || {})
-      }
+      details: normalizeDetails(service.details),
     });
   };
 
   const handleCreateNew = () => {
+    const nextDraftKey = newDraftKey();
+    setDraftKey(nextDraftKey);
     setIsEditing('new');
     setEditForm({
       title: '',
@@ -226,16 +695,11 @@ export default function AdminServicesPage() {
       icon: 'Target',
       order_num: services.length,
       is_active: true,
-      details: {
-        effects: [{ title: '', desc: '' }],
-        operation: '',
-        process: [{ step: '01', name: '', desc: '' }],
-        sub_items: [{ title: '', desc: '' }],
-        duration: '',
-        reference_img: '',
+      details: normalizeDetails({
         related_magazine_slug: '',
-        status: 'published'
-      }
+        status: 'published',
+        blocks: [],
+      }),
     });
   };
 
@@ -243,15 +707,22 @@ export default function AdminServicesPage() {
     try {
       const url = isEditing === 'new' ? '/api/services' : `/api/services/${isEditing}`;
       const method = isEditing === 'new' ? 'POST' : 'PATCH';
-      
+      const payload = { ...editForm };
+      if (isEditing !== 'new') delete payload.slug;
+
       const res = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editForm)
+        headers: {
+          'Content-Type': 'application/json',
+          ...(await getSupabaseAuthHeaders()),
+        },
+        body: JSON.stringify(payload),
       });
 
       if (res.ok) {
         setIsEditing(null);
+        setEditForm(null);
+        setDraftKey(null);
         fetchServices();
         alert('저장되었습니다.');
       } else {
@@ -268,12 +739,13 @@ export default function AdminServicesPage() {
     try {
       const res = await fetch(`/api/services/${service.id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ is_active: !service.is_active })
+        headers: {
+          'Content-Type': 'application/json',
+          ...(await getSupabaseAuthHeaders()),
+        },
+        body: JSON.stringify({ is_active: !service.is_active }),
       });
-      if (res.ok) {
-        fetchServices();
-      }
+      if (res.ok) fetchServices();
     } catch (err) {
       console.error('Toggle error:', err);
     }
@@ -282,121 +754,121 @@ export default function AdminServicesPage() {
   const handleDelete = async (id) => {
     if (!confirm('정말 삭제하시겠습니까?')) return;
     try {
-      const res = await fetch(`/api/services/${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        fetchServices();
-      }
+      const res = await fetch(`/api/services/${id}`, {
+        method: 'DELETE',
+        headers: await getSupabaseAuthHeaders(),
+      });
+      if (res.ok) fetchServices();
     } catch (err) {
       console.error('Delete error:', err);
     }
   };
 
-  const filteredServices = services.filter(s => 
-    s.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    s.slug.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredServices = services.filter((service) => {
+    const q = searchTerm.toLowerCase();
+    return (service.title || '').toLowerCase().includes(q) || (service.slug || '').toLowerCase().includes(q);
+  });
+
+  const serviceUploadFolder = isEditing && isEditing !== 'new'
+    ? `services/${isEditing}`
+    : `services/drafts/${draftKey || 'draft'}`;
 
   if (loading && services.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-zinc-900"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-zinc-900" />
       </div>
     );
   }
 
   return (
     <div className="space-y-8 max-w-6xl mx-auto pb-20">
-      <div className="flex justify-between items-end">
+      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <ServiceCaseTabs />
           <h1 className="text-3xl font-bold text-zinc-900 tracking-tight">서비스/솔루션 마스터 관리</h1>
-          <p className="text-zinc-500 mt-1">DB 연동을 통해 16대 서비스 상품의 상세 내용을 관리합니다.</p>
+          <p className="text-zinc-700 mt-1 font-medium">상품별 상세 페이지를 블록 조립 방식으로 구성하고 즉시 미리봅니다.</p>
         </div>
-        <button 
+        <button
           onClick={handleCreateNew}
-          className="flex items-center gap-2 bg-zinc-900 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:scale-[1.02] transition-transform"
+          className="flex items-center justify-center gap-2 bg-zinc-900 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:scale-[1.02] transition-transform"
         >
           <Plus size={18} />
           신규 서비스 추가
         </button>
       </div>
 
-      {/* 검색 바 */}
       <div className="relative">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
-        <input 
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-700" size={18} />
+        <input
           type="text"
           placeholder="서비스명 또는 슬러그 검색..."
-          className="w-full pl-12 pr-4 py-3 bg-white border border-zinc-200 rounded-xl focus:ring-2 focus:ring-zinc-900 outline-none transition-all"
+          className="w-full pl-12 pr-4 py-3 bg-white text-zinc-900 placeholder:text-zinc-500 border border-zinc-300 rounded-xl focus:ring-2 focus:ring-zinc-900 outline-none transition-all"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
       </div>
 
-      {/* 서비스 리스트 */}
       <div className="grid grid-cols-1 gap-4">
         {filteredServices.map((service, index) => {
           const Icon = iconMap[service.icon] || Target;
           return (
-            <div 
-              key={service.id} 
-              className="bg-white border border-zinc-200 rounded-2xl p-6 flex items-center gap-6 group hover:shadow-lg transition-all"
+            <div
+              key={service.id}
+              className="bg-white border border-zinc-200 rounded-2xl p-6 flex flex-col gap-5 md:flex-row md:items-center md:gap-6 group hover:shadow-lg transition-all"
             >
-              <div 
+              <div
                 className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-black text-lg flex-shrink-0"
-                style={{ backgroundColor: service.color }}
+                style={{ backgroundColor: service.color || '#18181B' }}
               >
                 {index + 1}
               </div>
 
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2 mb-1">
+                  <span className="text-[10px] font-black text-zinc-700 uppercase tracking-widest">
                     {service.category}
                   </span>
                   <div className="w-1 h-1 rounded-full bg-zinc-300" />
-                  <span className="text-[10px] font-bold px-2 py-0.5 bg-zinc-100 rounded text-zinc-600">
+                  <span className="text-[10px] font-bold px-2 py-0.5 bg-zinc-100 rounded text-zinc-700">
                     {service.slug}
                   </span>
                   {!service.is_active && (
-                    <span className="text-[10px] font-bold px-2 py-0.5 bg-red-50 rounded text-red-500 uppercase">
+                    <span className="text-[10px] font-bold px-2 py-0.5 bg-red-50 rounded text-red-600 uppercase">
                       비활성
                     </span>
                   )}
                 </div>
-                <h3 className="text-lg font-black text-zinc-900 leading-none mb-2">
+                <h3 className="text-lg font-black text-zinc-900 leading-tight mb-2">
                   {service.title}
                 </h3>
-                <p className="text-sm text-zinc-500 line-clamp-1 font-medium italic">
+                <p className="text-sm text-zinc-700 line-clamp-1 font-medium italic">
                   {service.description || service.subtitle || '설명 없음'}
                 </p>
               </div>
 
-              <div className="flex items-center gap-4">
-                {/* Active Toggle */}
-                <button 
+              <div className="flex items-center justify-between gap-4 md:justify-end">
+                <Icon size={18} className="hidden text-zinc-400 md:block" />
+                <button
                   onClick={() => handleToggleActive(service)}
-                  className={`
-                    relative w-12 h-6 rounded-full transition-colors duration-200 focus:outline-none
-                    ${service.is_active ? 'bg-zinc-900' : 'bg-zinc-200'}
-                  `}
+                  aria-label={`${service.title} 노출 상태 전환`}
+                  className={`relative h-6 w-12 rounded-full transition-colors duration-200 focus:outline-none ${service.is_active ? 'bg-zinc-900' : 'bg-zinc-300'}`}
                 >
-                  <div className={`
-                    absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform duration-200
-                    ${service.is_active ? 'translate-x-6' : 'translate-x-0'}
-                  `} />
+                  <div className={`absolute top-1 left-1 h-4 w-4 rounded-full bg-white transition-transform duration-200 ${service.is_active ? 'translate-x-6' : 'translate-x-0'}`} />
                 </button>
 
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button 
+                <div className="flex items-center gap-1">
+                  <button
                     onClick={() => handleEdit(service)}
-                    className="p-2 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-colors"
+                    aria-label={`${service.title} 편집`}
+                    className="p-2 text-zinc-700 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-colors"
                   >
                     <Edit2 size={18} />
                   </button>
-                  <button 
+                  <button
                     onClick={() => handleDelete(service.id)}
-                    className="p-2 text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                    aria-label={`${service.title} 삭제`}
+                    className="p-2 text-zinc-700 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                   >
                     <Trash2 size={18} />
                   </button>
@@ -407,440 +879,22 @@ export default function AdminServicesPage() {
         })}
       </div>
 
-      {/* 편집 모달 */}
-      {isEditing && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-zinc-50 w-full max-w-5xl rounded-[2.5rem] shadow-2xl flex flex-col max-h-[90vh]"
-          >
-            {/* Header */}
-            <div className="p-8 border-b border-zinc-200 flex justify-between items-center bg-white rounded-t-[2.5rem]">
-              <div>
-                <h2 className="text-2xl font-black text-zinc-900 uppercase italic">
-                  {isEditing === 'new' ? 'New Service' : 'Edit Service'}
-                </h2>
-                <p className="text-zinc-500 text-sm">{editForm.title || editForm.slug || '상품 정보를 입력하세요.'}</p>
-              </div>
-              <button 
-                onClick={() => setIsEditing(null)}
-                className="p-3 hover:bg-zinc-100 rounded-full transition-colors"
-              >
-                <X size={24} />
-              </button>
-            </div>
-
-            {/* Form Content */}
-            <div className="flex-1 overflow-y-auto p-8 space-y-12">
-              {/* 기본 정보 */}
-              <section>
-                <div className="flex items-center gap-3 mb-6">
-                  <LayoutGrid className="text-zinc-900" size={20} />
-                  <h3 className="font-black text-lg uppercase italic underline decoration-zinc-200">Basic Information</h3>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-xs font-black uppercase text-zinc-400">Title (국문 명칭)</label>
-                    <input 
-                      className="w-full p-4 bg-white border border-zinc-200 rounded-2xl outline-none focus:ring-2 focus:ring-zinc-900"
-                      value={editForm.title}
-                      onChange={(e) => setEditForm({...editForm, title: e.target.value})}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-black uppercase text-zinc-400">Slug (영문 URL용)</label>
-                    <input 
-                      disabled={isEditing !== 'new'}
-                      className="w-full p-4 bg-white border border-zinc-200 rounded-2xl outline-none focus:ring-2 focus:ring-zinc-900 disabled:opacity-50"
-                      value={editForm.slug}
-                      onChange={(e) => setEditForm({...editForm, slug: e.target.value})}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-black uppercase text-zinc-400">Subtitle (전문적 한줄평)</label>
-                    <input 
-                      className="w-full p-4 bg-white border border-zinc-200 rounded-2xl outline-none focus:ring-2 focus:ring-zinc-900"
-                      value={editForm.subtitle}
-                      onChange={(e) => setEditForm({...editForm, subtitle: e.target.value})}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-black uppercase text-zinc-400">Category</label>
-                    <select 
-                      className="w-full p-4 bg-white border border-zinc-200 rounded-2xl outline-none focus:ring-2 focus:ring-zinc-900"
-                      value={editForm.category}
-                      onChange={(e) => setEditForm({...editForm, category: e.target.value})}
-                    >
-                      <option value="ADS">ADS (VIRAL)</option>
-                      <option value="GROWTH">GROWTH (REVIEW)</option>
-                      <option value="LOCAL">LOCAL (SEO)</option>
-                      <option value="TECH">TECH (CREATIVE)</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="mt-6">
-                  <label className="text-xs font-black uppercase text-zinc-400 block mb-2">Main Description (전체 설명)</label>
-                  <MdTextarea
-                    rows={6}
-                    value={editForm.description}
-                    onChange={(e) => setEditForm({...editForm, description: e.target.value})}
-                  />
-                </div>
-
-              </section>
-
-              {/* 상세 상세 정보 (JSON Details) */}
-              <section className="space-y-10">
-                <div className="flex items-center gap-3 mb-2">
-                  <Star className="text-zinc-900" size={20} />
-                  <h3 className="font-black text-lg uppercase italic underline decoration-zinc-200 inline-flex items-center">
-                    Execution Details (JSON)
-                    <span className="ml-2 text-xs font-bold not-italic text-zinc-400 normal-case no-underline tracking-normal">— 실행 상세 정보</span>
-                    <HelpTip text="서비스 상세 페이지에 노출될 콘텐츠를 구조화된 형식으로 입력합니다. 효과 / 운영 방식 / 진행 절차 / 예상 기간 / 참고 이미지 / 하위 상품 항목으로 구성됩니다." />
-                  </h3>
-                </div>
-
-                {/* 상품 효과 */}
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <h4 className="text-sm font-black uppercase text-zinc-500 inline-flex items-center">
-                      01. Service Effects
-                      <span className="ml-2 text-[11px] font-bold normal-case text-zinc-400">— 도입 효과</span>
-                      <HelpTip text="이 서비스를 도입했을 때 고객이 얻을 수 있는 핵심 성과/베네핏을 항목별로 작성합니다. 예) '검색 노출 3배 증가', '체류 시간 2배 향상' 등 측정 가능하고 임팩트 있는 결과 위주로 적어주세요." />
-                    </h4>
-                    <button 
-                      onClick={() => setEditForm({
-                        ...editForm, 
-                        details: { ...editForm.details, effects: [...(editForm.details.effects || []), { title: '', desc: '' }] }
-                      })}
-                      className="text-xs font-bold text-zinc-900 px-3 py-1 bg-zinc-200 rounded-full hover:bg-zinc-300"
-                    >+ Add Effect</button>
-                  </div>
-                  {(editForm.details.effects || []).map((effect, idx) => (
-                    <div key={idx} className="flex gap-4 items-start">
-                      <div className="flex-1 space-y-2">
-                        <input
-                          placeholder="효과 제목"
-                          className="w-full p-3 bg-white border border-zinc-200 rounded-xl text-sm"
-                          value={effect.title}
-                          onChange={(e) => {
-                            const newEffects = [...editForm.details.effects];
-                            newEffects[idx].title = e.target.value;
-                            setEditForm({...editForm, details: {...editForm.details, effects: newEffects }});
-                          }}
-                        />
-                        <MdTextarea
-                          rows={4}
-                          placeholder="상세 설명"
-                          value={effect.desc}
-                          onChange={(e) => {
-                            const newEffects = [...editForm.details.effects];
-                            newEffects[idx].desc = e.target.value;
-                            setEditForm({...editForm, details: {...editForm.details, effects: newEffects }});
-                          }}
-                        />
-                      </div>
-                      <button 
-                        onClick={() => {
-                          const newEffects = editForm.details.effects.filter((_, i) => i !== idx);
-                          setEditForm({...editForm, details: {...editForm.details, effects: newEffects }});
-                        }}
-                        className="p-2 text-zinc-300 hover:text-red-500"
-                      ><Trash2 size={16} /></button>
-                    </div>
-                  ))}
-                </div>
-
-                {/* 운영 방식 */}
-                <div className="space-y-2">
-                  <h4 className="text-sm font-black uppercase text-zinc-500 inline-flex items-center">
-                    02. Operational Principle
-                    <span className="ml-2 text-[11px] font-bold normal-case text-zinc-400">— 운영 방식 / 차별화 철학</span>
-                    <HelpTip text="기브니즈가 이 서비스를 어떤 방식·철학으로 운영하는지 서술합니다. 경쟁사 대비 강점, 작업 프로세스의 디테일, 품질 관리 기준 등을 자유롭게 작성하세요. 마크다운 사용 가능." />
-                  </h4>
-                  <MdTextarea
-                    rows={8}
-                    placeholder="기브니즈만의 차별화된 운영 철학 및 방식을 입력하세요."
-                    value={editForm.details.operation}
-                    onChange={(e) => setEditForm({...editForm, details: {...editForm.details, operation: e.target.value}})}
-                  />
-                </div>
-
-                {/* 진행 절차 */}
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <h4 className="text-sm font-black uppercase text-zinc-500 inline-flex items-center">
-                      03. Execution Process
-                      <span className="ml-2 text-[11px] font-bold normal-case text-zinc-400">— 진행 절차</span>
-                      <HelpTip text="프로젝트 진행 단계를 순서대로 입력합니다. 단계 번호(01, 02 …) + 절차명 + 설명으로 구성되며, 랜딩에서 타임라인 형태로 노출됩니다. 고객이 '뭐부터 어떻게 진행되는지'를 한눈에 볼 수 있도록 구체적으로 작성하세요." />
-                    </h4>
-                    <button 
-                      onClick={() => setEditForm({
-                        ...editForm, 
-                        details: { ...editForm.details, process: [...(editForm.details.process || []), { step: `0${(editForm.details.process?.length || 0) + 1}`, name: '', desc: '' }] }
-                      })}
-                      className="text-xs font-bold text-zinc-900 px-3 py-1 bg-zinc-200 rounded-full hover:bg-zinc-300"
-                    >+ Add Step</button>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {(editForm.details.process || []).map((proc, idx) => (
-                      <div key={idx} className="p-4 bg-white border border-zinc-200 rounded-xl flex gap-3 relative group">
-                        <input 
-                          className="w-12 p-2 bg-zinc-100 rounded-lg text-center font-black text-xs h-fit"
-                          value={proc.step}
-                          onChange={(e) => {
-                            const newProc = [...editForm.details.process];
-                            newProc[idx].step = e.target.value;
-                            setEditForm({...editForm, details: {...editForm.details, process: newProc }});
-                          }}
-                        />
-                        <div className="flex-1 space-y-2">
-                          <input 
-                            placeholder="절차명"
-                            className="w-full p-2 border-b border-zinc-100 outline-none text-sm font-bold"
-                            value={proc.name}
-                            onChange={(e) => {
-                              const newProc = [...editForm.details.process];
-                              newProc[idx].name = e.target.value;
-                              setEditForm({...editForm, details: {...editForm.details, process: newProc }});
-                            }}
-                          />
-                          <MdTextarea
-                            rows={4}
-                            placeholder="설명"
-                            value={proc.desc}
-                            onChange={(e) => {
-                              const newProc = [...editForm.details.process];
-                              newProc[idx].desc = e.target.value;
-                              setEditForm({...editForm, details: {...editForm.details, process: newProc }});
-                            }}
-                          />
-                        </div>
-                        <button 
-                          onClick={() => {
-                            const newProc = editForm.details.process.filter((_, i) => i !== idx);
-                            setEditForm({...editForm, details: {...editForm.details, process: newProc }});
-                          }}
-                          className="absolute -top-2 -right-2 p-1.5 bg-white border border-zinc-200 rounded-full text-zinc-300 hover:text-red-500 opacity-0 group-hover:opacity-100"
-                        ><X size={12} /></button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* 세부 항목 & 기타 */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                   <div className="space-y-4">
-                      <div className="flex justify-between items-center">
-                        <h4 className="text-sm font-black uppercase text-zinc-500 inline-flex items-center">
-                          04. Estimated Duration
-                          <span className="ml-2 text-[11px] font-bold normal-case text-zinc-400">— 예상 소요 기간</span>
-                          <HelpTip text="해당 서비스의 전체 작업 소요 기간을 입력합니다. 예) '7-14일', '약 3주', '상시 운영' 등 고객이 일정 계획을 세울 수 있도록 구체적으로 적어주세요." />
-                        </h4>
-                      </div>
-                      <div className="flex items-center gap-4 p-4 bg-white border border-zinc-200 rounded-2xl">
-                        <Clock size={20} className="text-zinc-400" />
-                        <input 
-                          placeholder="e.g. 7-14 Days"
-                          className="flex-1 outline-none font-bold"
-                          value={editForm.details.duration}
-                          onChange={(e) => setEditForm({...editForm, details: {...editForm.details, duration: e.target.value}})}
-                        />
-                      </div>
-                      
-                      <div className="pt-4">
-                        <h4 className="text-sm font-black uppercase text-zinc-500 mb-4 inline-flex items-center">
-                          05. Reference Image Slot
-                          <span className="ml-2 text-[11px] font-bold normal-case text-zinc-400">— 참고 이미지</span>
-                          <HelpTip text="서비스 결과물·사례를 보여줄 대표 이미지의 URL을 입력합니다. 비워두면 이미지 영역이 노출되지 않습니다. (직접 업로드 기능은 추후 지원 예정)" />
-                        </h4>
-                        <div className="flex items-center gap-4 p-4 bg-zinc-900 rounded-2xl text-white">
-                          <ImageIcon size={20} className="opacity-50" />
-                          <input 
-                            placeholder="Image URL (Slot)"
-                            className="flex-1 bg-transparent border-none outline-none text-sm italic opacity-80"
-                            value={editForm.details.reference_img}
-                            onChange={(e) => setEditForm({...editForm, details: {...editForm.details, reference_img: e.target.value}})}
-                          />
-                        </div>
-                        <p className="text-[10px] text-zinc-400 mt-2 px-2">이미지 업로드 기능은 준비 중입니다. 현재는 URL을 직접 입력하거나 슬롯으로 활용하세요.</p>
-                      </div>
-                   </div>
-
-                   <div className="space-y-4">
-                      <div className="flex justify-between items-center">
-                        <h4 className="text-sm font-black uppercase text-zinc-500 inline-flex items-center">
-                          Sub Products
-                          <span className="ml-2 text-[11px] font-bold normal-case text-zinc-400">— 하위 상품 / 옵션</span>
-                          <HelpTip text="이 서비스에 포함된 하위 패키지·옵션 상품을 구성합니다. 예) '베이직 플랜', '프리미엄 플랜', '단건 제작 옵션' 등 고객이 선택할 수 있는 단위로 작성하세요." />
-                        </h4>
-                        <button 
-                          onClick={() => setEditForm({
-                            ...editForm, 
-                            details: { ...editForm.details, sub_items: [...(editForm.details.sub_items || []), { title: '', desc: '' }] }
-                          })}
-                          className="text-xs font-bold text-zinc-900 px-3 py-1 bg-zinc-200 rounded-full hover:bg-zinc-300"
-                        >+ Add</button>
-                      </div>
-                      <div className="space-y-3">
-                        {(editForm.details.sub_items || []).map((sub, idx) => (
-                           <div key={idx} className="p-4 bg-white border border-zinc-200 rounded-xl relative">
-                              <input 
-                                placeholder="상품명"
-                                className="w-full text-sm font-black mb-2 outline-none"
-                                value={sub.title}
-                                onChange={(e) => {
-                                  const newSubs = [...editForm.details.sub_items];
-                                  newSubs[idx].title = e.target.value;
-                                  setEditForm({...editForm, details: {...editForm.details, sub_items: newSubs }});
-                                }}
-                              />
-                              <MdTextarea
-                                rows={4}
-                                placeholder="설명"
-                                value={sub.desc}
-                                onChange={(e) => {
-                                  const newSubs = [...editForm.details.sub_items];
-                                  newSubs[idx].desc = e.target.value;
-                                  setEditForm({...editForm, details: {...editForm.details, sub_items: newSubs }});
-                                }}
-                              />
-                              <button 
-                                onClick={() => {
-                                  const newSubs = editForm.details.sub_items.filter((_, i) => i !== idx);
-                                  setEditForm({...editForm, details: {...editForm.details, sub_items: newSubs }});
-                                }}
-                                className="absolute top-2 right-2 text-zinc-200 hover:text-red-500"
-                              ><X size={14} /></button>
-                           </div>
-                        ))}
-                      </div>
-                   </div>
-                </div>
-              </section>
-
-              {/* 스타일 & 설정 */}
-              <section className="bg-white p-8 rounded-3xl border border-zinc-200">
-                 <h3 className="font-black text-sm uppercase italic mb-6">Visual & Logic Settings</h3>
-                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-                    <div className="space-y-2">
-                      <label className="text-xs font-black uppercase text-zinc-400">Brand Color</label>
-                      <div className="flex gap-3 items-center">
-                        <input type="color" className="w-10 h-10 rounded-lg cursor-pointer" value={editForm.color} onChange={e => setEditForm({...editForm, color: e.target.value})} />
-                        <input className="flex-1 text-xs font-mono p-2 bg-zinc-50 border rounded-lg" value={editForm.color} onChange={e => setEditForm({...editForm, color: e.target.value})} />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                       <label className="text-xs font-black uppercase text-zinc-400">Order</label>
-                       <input type="number" className="w-full p-2 bg-zinc-50 border rounded-lg" value={editForm.order_num} onChange={e => setEditForm({...editForm, order_num: parseInt(e.target.value)})} />
-                    </div>
-                    <div className="flex items-center gap-3 pt-6">
-                       <input type="checkbox" id="is_active" className="w-5 h-5 rounded-md" checked={editForm.is_active} onChange={e => setEditForm({...editForm, is_active: e.target.checked})} />
-                       <label htmlFor="is_active" className="text-xs font-black uppercase text-zinc-900">Active Stage</label>
-                    </div>
-                    <div className="space-y-2">
-                       <label className="text-xs font-black uppercase text-zinc-400">Publish Status</label>
-                       <select
-                         className="w-full p-2 bg-zinc-50 border rounded-lg text-xs font-bold"
-                         value={editForm.details.status || 'published'}
-                         onChange={(e) => setEditForm({...editForm, details: {...editForm.details, status: e.target.value}})}
-                       >
-                         <option value="published">Published (정상 노출)</option>
-                         <option value="coming_soon">Coming Soon (준비 중 팝업)</option>
-                       </select>
-                    </div>
-                 </div>
-              </section>
-
-              {/* ─── 관련 매거진 연결 (최하단 배치) ─── */}
-              <section className="bg-white p-8 rounded-3xl border border-zinc-200">
-                <div className="flex items-center gap-3 mb-6">
-                  <Star className="text-zinc-900" size={20} />
-                  <h3 className="font-black text-lg uppercase italic underline decoration-zinc-200">Related Magazine</h3>
-                </div>
-                <p className="text-xs text-zinc-500 mb-5">
-                  서비스 상세 페이지 하단(상담 CTA 위)에 매거진 카드 형태로 노출됩니다.
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div className="space-y-2">
-                    <label className="text-xs font-black uppercase text-zinc-400">연결할 매거진</label>
-                    <select
-                      className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-2xl outline-none focus:ring-2 focus:ring-zinc-900"
-                      value={editForm.details.related_magazine_slug || ''}
-                      onChange={(e) => setEditForm({
-                        ...editForm,
-                        details: { ...editForm.details, related_magazine_slug: e.target.value }
-                      })}
-                    >
-                      <option value="">— 연결 없음 —</option>
-                      {magazines.map(m => (
-                        <option key={m.id} value={m.slug}>{m.title}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-black uppercase text-zinc-400">블록 헤더 텍스트 (선택)</label>
-                    <input
-                      placeholder="예) 이 서비스가 더 궁금하다면 →"
-                      className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-2xl outline-none focus:ring-2 focus:ring-zinc-900"
-                      value={editForm.details.related_magazine_header || ''}
-                      onChange={(e) => setEditForm({
-                        ...editForm,
-                        details: { ...editForm.details, related_magazine_header: e.target.value }
-                      })}
-                    />
-                    <p className="text-[10px] text-zinc-400 px-1">
-                      비우면 기본값 “Related Magazine”
-                    </p>
-                  </div>
-                </div>
-
-                {/* 라이브 프리뷰 */}
-                {editForm.details.related_magazine_slug && (() => {
-                  const sel = magazines.find(m => m.slug === editForm.details.related_magazine_slug);
-                  if (!sel) return null;
-                  return (
-                    <div className="mt-6">
-                      <div className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 mb-2">Preview</div>
-                      <div className="flex bg-zinc-50 rounded-2xl border border-zinc-200 overflow-hidden">
-                        {sel.thumbnail_url && (
-                          <div className="w-32 h-24 shrink-0 bg-zinc-100 overflow-hidden">
-                            <img src={sel.thumbnail_url} alt={sel.title} className="w-full h-full object-cover" />
-                          </div>
-                        )}
-                        <div className="flex-1 p-4 min-w-0">
-                          <div className="text-[9px] font-black uppercase tracking-[0.3em] text-zinc-400 mb-1">
-                            {editForm.details.related_magazine_header || 'Related Magazine'}
-                          </div>
-                          <h4 className="text-sm font-black text-zinc-900 line-clamp-2 break-keep">{sel.title}</h4>
-                          <span className="inline-block mt-1 text-[10px] font-black uppercase tracking-widest text-zinc-700">
-                            매거진에서 더 알아보기 ↗
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })()}
-              </section>
-            </div>
-
-            {/* Footer */}
-            <div className="p-8 border-t border-zinc-200 flex justify-end gap-4 bg-white rounded-b-[2.5rem]">
-              <button 
-                onClick={() => setIsEditing(null)}
-                className="px-8 py-3 rounded-2xl font-bold text-zinc-500 hover:bg-zinc-100 transition-colors"
-              >취소</button>
-              <button 
-                onClick={handleSave}
-                className="px-10 py-3 rounded-2xl font-black bg-zinc-900 text-white flex items-center gap-2 hover:scale-105 transition-all shadow-xl shadow-zinc-900/10"
-              >
-                <Save size={18} />
-                데이터 저장하기
-              </button>
-            </div>
-          </motion.div>
-        </div>
+      {isEditing && editForm && (
+        <ServiceFullScreenEditor
+          mode={isEditing}
+          editForm={editForm}
+          setEditForm={setEditForm}
+          onClose={() => {
+            setIsEditing(null);
+            setEditForm(null);
+          }}
+          onSave={handleSave}
+          landingSections={landingSections}
+          sectionLibrary={sectionLibrary}
+          magazines={magazines}
+          landingSettings={landingSettings}
+          uploadFolder={serviceUploadFolder}
+        />
       )}
     </div>
   );

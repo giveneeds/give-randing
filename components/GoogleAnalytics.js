@@ -4,6 +4,7 @@ import Script from 'next/script';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useEffect, Suspense } from 'react';
 import { GA_MEASUREMENT_ID, pageview } from '@/lib/analytics/ga4';
+import { isAdminOrPreviewPath } from '@/lib/adminPreviewPaths';
 
 /**
  * GA4 스크립트 주입 + SPA 라우트 변경 시 페이지뷰 자동 전송.
@@ -20,6 +21,7 @@ function GAPageTracker() {
 
   useEffect(() => {
     if (!pathname) return;
+    if (isAdminOrPreviewPath(pathname)) return;
     const url = pathname + (searchParams?.toString() ? `?${searchParams.toString()}` : '');
     pageview(url);
   }, [pathname, searchParams]);
@@ -28,7 +30,9 @@ function GAPageTracker() {
 }
 
 export default function GoogleAnalytics() {
+  const pathname = usePathname();
   if (!GA_MEASUREMENT_ID) return null;
+  if (isAdminOrPreviewPath(pathname)) return null;
 
   return (
     <>

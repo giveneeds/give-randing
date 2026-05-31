@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { CheckCircle2, X } from 'lucide-react';
 import { Suspense } from 'react';
+import { isAdminOrPreviewPath } from '@/lib/adminPreviewPaths';
 
 function LoginToastInner() {
   const searchParams = useSearchParams();
@@ -12,8 +13,9 @@ function LoginToastInner() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
+    if (isAdminOrPreviewPath(pathname)) return;
     if (searchParams.get('welcome') === '1') {
-      setVisible(true);
+      const showTimer = setTimeout(() => setVisible(true), 0);
       // URL에서 ?welcome=1 제거
       const params = new URLSearchParams(searchParams.toString());
       params.delete('welcome');
@@ -21,11 +23,14 @@ function LoginToastInner() {
       router.replace(newUrl, { scroll: false });
       // 3.5초 후 자동 닫힘
       const t = setTimeout(() => setVisible(false), 3500);
-      return () => clearTimeout(t);
+      return () => {
+        clearTimeout(showTimer);
+        clearTimeout(t);
+      };
     }
   }, [searchParams, router, pathname]);
 
-  if (!visible) return null;
+  if (!visible || isAdminOrPreviewPath(pathname)) return null;
 
   return (
     <div

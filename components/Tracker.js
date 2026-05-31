@@ -14,14 +14,11 @@ import {
 } from '@/lib/tracker';
 import { supabase } from '@/lib/supabase';
 import { hasAdminTagCookie, isBotUserAgent } from '@/lib/botFilter';
+import { isAdminOrPreviewPath } from '@/lib/adminPreviewPaths';
 
 // 어드민 트래픽은 분석 통계에서 제외해야 함:
 // 1) /admin/* 경로 — admin이든 일반이든 어드민 페이지 방문은 무시
 // 2) 로그인된 사용자가 admin/superadmin role이면 — 사이트 어디를 가도 무시
-function isAdminPath(path) {
-  return !!path && path.startsWith('/admin');
-}
-
 async function fetchUserRole() {
   try {
     const { data: { user } } = await supabase.auth.getUser();
@@ -87,6 +84,13 @@ function TrackerInner() {
 
     (async () => {
       // 0) 빠른 차단 — role fetch 안 기다리고 즉시 결정:
+      //    (preview/admin) 프리뷰/어드민 경로는 세션 조회·이벤트 전송 자체를 하지 않음
+      if (isAdminOrPreviewPath(window.location.pathname)) {
+        skipUser.current = true;
+        setSkipTracking('admin_or_preview_path');
+        prevPath.current = window.location.pathname;
+        return;
+      }
       //    (a) 어드민 마커 쿠키가 있는 디바이스 (한 번이라도 어드민 로그인한 적 있음)
       //    (b) 봇/링크 프리뷰 UA (카톡·슬랙·디스코드 unfurl 등)
       if (hasAdminTagCookie()) {
@@ -112,7 +116,7 @@ function TrackerInner() {
       clearSkipTracking();
 
       // 2) 현재 경로가 /admin/* 이면 이 진입은 무시 (다음 일반 페이지 진입부터 추적)
-      if (isAdminPath(window.location.pathname)) {
+      if (isAdminOrPreviewPath(window.location.pathname)) {
         prevPath.current = window.location.pathname;
         return;
       }
@@ -147,7 +151,13 @@ function TrackerInner() {
     prevPath.current = pathname;
 
     // admin/superadmin 사용자 또는 /admin/* 경로 방문은 분석에서 제외
-    if (skipUser.current || isAdminPath(pathname)) return;
+    if (isAdminOrPreviewPath(pathname)) {
+      skipUser.current = true;
+      setSkipTracking('admin_or_preview_path');
+      return;
+    }
+
+    if (skipUser.current) return;
 
     // welcome=1 파라미터 = 카카오 로그인 직후 리다이렉트 → 신규 세션 강제
     const isWelcome = searchParams?.get('welcome') === '1';

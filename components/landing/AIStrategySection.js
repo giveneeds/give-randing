@@ -5,8 +5,9 @@ import { CpuArchitecture } from '@/components/ui/cpu-architecture';
 import { ArrowRight, Sparkles, Zap } from 'lucide-react';
 import { appendCTA } from '@/lib/userTrail';
 
-export default function AIStrategySection() {
+export default function AIStrategySection({ preview = false }) {
   const handleStartAI = () => {
+    if (preview) return;
     appendCTA({ label: 'AIStrategySection — 전략 알아보기', page: typeof window !== 'undefined' ? window.location.pathname : '' });
     window.location.href = '/chat';
   };

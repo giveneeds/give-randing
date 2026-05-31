@@ -5,15 +5,15 @@ import { Moon, Sun, Menu, X, ArrowLeft, LogOut } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { supabase, isDummyMode } from '@/lib/supabase';
 
-export default function LandingNavbar({ settings }) {
+export default function LandingNavbar({ settings, preview = false }) {
   const [scrolled, setScrolled] = useState(false);
-  const [mounted, setMounted] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [user, setUser] = useState(null);
   const { theme, setTheme } = useTheme();
   const pathname = usePathname();
 
   useEffect(() => {
+    if (preview) return;
     if (isDummyMode || !supabase) return;
     supabase.auth.getSession().then(({ data }) => {
       setUser(data?.session?.user || null);
@@ -22,9 +22,10 @@ export default function LandingNavbar({ settings }) {
       setUser(session?.user || null);
     });
     return () => sub?.subscription?.unsubscribe?.();
-  }, []);
+  }, [preview]);
 
   const handleSignOut = async () => {
+    if (preview) return;
     if (!supabase) return;
     await supabase.auth.signOut();
     setMobileOpen(false);
@@ -38,9 +39,16 @@ export default function LandingNavbar({ settings }) {
   const signupHref = `/signup?redirect=${encodeURIComponent(authRedirect)}`;
   const handleBack = () => {
     if (typeof window === 'undefined') return;
+    if (preview) return;
     if (window.history.length > 1) window.history.back();
     else window.location.href = '/';
   };
+  const preventPreviewNav = (e) => {
+    if (!preview) return;
+    e.preventDefault();
+    e.stopPropagation();
+  };
+  const hrefFor = (href) => (preview ? '#' : href);
   
   const brand = settings?.brand || {};
   const ctaGlobal = settings?.cta_global || {};
@@ -56,7 +64,6 @@ export default function LandingNavbar({ settings }) {
   const navLinks = (navbar.links && navbar.links.length > 0) ? navbar.links : DEFAULT_NAV_LINKS;
 
   useEffect(() => {
-    setMounted(true);
     const handleScroll = () => {
       setScrolled(window.scrollY > 50);
     };
@@ -73,7 +80,10 @@ export default function LandingNavbar({ settings }) {
 
   return (
     <>
-    <nav className={`navbar-minimal ${scrolled ? 'scrolled' : ''}`}>
+    <nav
+      className={`navbar-minimal ${scrolled ? 'scrolled' : ''}`}
+      style={preview ? { position: 'sticky', top: 0, left: 'auto', width: '100%', zIndex: 20 } : undefined}
+    >
       <div className="container nav-container-minimal px-4 sm:px-6">
         <div className="flex items-center gap-2">
           {!isHome && (
@@ -85,12 +95,13 @@ export default function LandingNavbar({ settings }) {
               <ArrowLeft size={20} />
             </button>
           )}
-          <a href="/" className="nav-brand-minimal">
+          <a href={hrefFor('/')} onClick={preventPreviewNav} className="nav-brand-minimal">
             {brand.name || 'GIVENEEDS'}
           </a>
           {/* 모바일 — we(회사소개) 빠른 진입 */}
           <a
-            href="/#hero"
+            href={hrefFor('/#hero')}
+            onClick={preventPreviewNav}
             className="md:hidden text-[10px] font-bold tracking-widest text-zinc-500 dark:text-zinc-400 uppercase px-2 py-1 rounded-md border border-zinc-200 dark:border-white/10 ml-1"
           >
             we
@@ -99,22 +110,23 @@ export default function LandingNavbar({ settings }) {
 
         <div className="nav-links-minimal">
           {navLinks.map((link, i) => (
-            <a key={i} href={link.url} className="nav-link-minimal">
+            <a key={i} href={hrefFor(link.url)} onClick={preventPreviewNav} className="nav-link-minimal">
               {link.label}
             </a>
           ))}
         </div>
 
         <div className="flex items-center gap-2 md:gap-4">
-          {mounted && (
-            <button
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors text-zinc-500 dark:text-zinc-400"
-              aria-label="Toggle theme"
-            >
-              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-            </button>
-          )}
+          <button
+            onClick={() => {
+              if (preview) return;
+              setTheme(theme === 'dark' ? 'light' : 'dark');
+            }}
+            className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors text-zinc-500 dark:text-zinc-400"
+            aria-label="Toggle theme"
+          >
+            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
 
           {user ? (
             <button
@@ -127,13 +139,15 @@ export default function LandingNavbar({ settings }) {
           ) : (
             <>
               <a
-                href={loginHref}
+                href={hrefFor(loginHref)}
+                onClick={preventPreviewNav}
                 className="hidden md:inline-flex items-center text-zinc-700 dark:text-zinc-200 hover:text-zinc-900 dark:hover:text-white px-3 py-2 font-bold text-xs tracking-widest uppercase transition-colors"
               >
                 로그인
               </a>
               <a
-                href={signupHref}
+                href={hrefFor(signupHref)}
+                onClick={preventPreviewNav}
                 className="hidden md:inline-flex bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-5 py-2 rounded-md font-bold text-xs tracking-widest uppercase hover:scale-[1.02] active:scale-[0.98] transition-all"
               >
                 무료 가입
@@ -143,7 +157,10 @@ export default function LandingNavbar({ settings }) {
 
           {/* 모바일 햄버거 (md 미만에서만) */}
           <button
-            onClick={() => setMobileOpen(true)}
+            onClick={() => {
+              if (preview) return;
+              setMobileOpen(true);
+            }}
             className="md:hidden p-2 -mr-1 rounded-md text-zinc-700 dark:text-zinc-200"
             aria-label="Open menu"
           >
@@ -157,7 +174,7 @@ export default function LandingNavbar({ settings }) {
     {mobileOpen && (
       <div className="md:hidden fixed inset-0 z-[100] bg-white dark:bg-zinc-950 flex flex-col">
           <div className="flex items-center justify-between px-5 py-5 border-b border-zinc-100 dark:border-white/5">
-            <a href="/" className="text-base font-bold tracking-tight text-zinc-900 dark:text-white" onClick={() => setMobileOpen(false)}>
+            <a href={hrefFor('/')} className="text-base font-bold tracking-tight text-zinc-900 dark:text-white" onClick={(e) => { preventPreviewNav(e); setMobileOpen(false); }}>
               {brand.name || 'GIVENEEDS'}
             </a>
             <button
@@ -173,8 +190,8 @@ export default function LandingNavbar({ settings }) {
               {navLinks.map((link, i) => (
                 <li key={i} className="border-b border-zinc-100 dark:border-white/5">
                   <a
-                    href={link.url}
-                    onClick={() => setMobileOpen(false)}
+                    href={hrefFor(link.url)}
+                    onClick={(e) => { preventPreviewNav(e); setMobileOpen(false); }}
                     className="block py-4 text-lg font-bold tracking-tight text-zinc-900 dark:text-white"
                   >
                     {link.label}
@@ -195,15 +212,15 @@ export default function LandingNavbar({ settings }) {
             ) : (
               <>
                 <a
-                  href={signupHref}
-                  onClick={() => setMobileOpen(false)}
+                  href={hrefFor(signupHref)}
+                  onClick={(e) => { preventPreviewNav(e); setMobileOpen(false); }}
                   className="block text-center w-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 py-4 rounded-2xl font-black text-sm tracking-widest uppercase active:scale-[0.99] transition-transform"
                 >
                   무료 회원가입
                 </a>
                 <a
-                  href={loginHref}
-                  onClick={() => setMobileOpen(false)}
+                  href={hrefFor(loginHref)}
+                  onClick={(e) => { preventPreviewNav(e); setMobileOpen(false); }}
                   className="block text-center w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 text-zinc-900 dark:text-white py-4 rounded-2xl font-black text-sm tracking-widest uppercase active:scale-[0.99] transition-transform"
                 >
                   로그인

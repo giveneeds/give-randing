@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import SectionRenderer from '@/components/landing/SectionRenderer';
 import { SECTION_TYPES, SECTION_TEMPLATES } from '@/lib/constants';
+import { getSupabaseAuthHeaders } from '@/lib/clientAuthHeaders';
 import { Plus, Trash2, Edit3, ChevronUp, ChevronDown, X, ImageIcon, Save, Eye, CheckCircle2, Clipboard, Check } from 'lucide-react';
 
 // 서비스 페이지에서 사용 가능한 섹션 타입
@@ -14,16 +15,28 @@ export default function ServiceAdminPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => { loadSections(); }, []);
+  useEffect(() => {
+    let cancelled = false;
 
-  async function loadSections() {
-    try {
-      const res = await fetch('/api/sections?all=true&page=service');
-      const data = await res.json();
-      setSections((data.sections || []).sort((a, b) => (a.order_index || 0) - (b.order_index || 0)));
-    } catch (e) { console.error(e); }
-    finally { setLoading(false); }
-  }
+    async function loadInitialSections() {
+      try {
+        const res = await fetch('/api/sections?all=true&page=service');
+        const data = await res.json();
+        if (!cancelled) {
+          setSections((data.sections || []).sort((a, b) => (a.order_index || 0) - (b.order_index || 0)));
+        }
+      } catch (e) {
+        if (!cancelled) console.error(e);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    loadInitialSections();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function handleAdd(type) {
     setSaving(true);
@@ -99,7 +112,11 @@ export default function ServiceAdminPage() {
     const fd = new FormData();
     fd.append('file', file);
     fd.append('folder', 'service-sections');
-    const res = await fetch('/api/upload', { method: 'POST', body: fd });
+    const res = await fetch('/api/upload', {
+      method: 'POST',
+      headers: await getSupabaseAuthHeaders(),
+      body: fd,
+    });
     const data = await res.json();
     if (data.url) updateItemField(i, 'image_url', data.url);
     else alert('업로드 실패: ' + data.error);
@@ -177,7 +194,11 @@ export default function ServiceAdminPage() {
         const fd = new FormData();
         fd.append('file', file);
         fd.append('folder', 'logos');
-        const res = await fetch('/api/upload', { method: 'POST', body: fd });
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          headers: await getSupabaseAuthHeaders(),
+          body: fd,
+        });
         const data = await res.json();
         if (data.url) updateItemField(i, 'image_url', data.url);
       };

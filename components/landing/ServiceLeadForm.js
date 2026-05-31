@@ -33,7 +33,7 @@ function validatePhone(phone) {
   return /^01[016789]-\d{3,4}-\d{4}$/.test(phone);
 }
 
-export default function ServiceLeadForm({ service }) {
+export default function ServiceLeadForm({ service, preview = false }) {
   const [values, setValues] = useState({
     name: '',
     phone: '',
@@ -53,6 +53,11 @@ export default function ServiceLeadForm({ service }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMessage('');
+
+    if (preview) {
+      setErrorMessage('미리보기에서는 상담 요청이 전송되지 않습니다.');
+      return;
+    }
 
     const name = values.name.trim();
     const phone = values.phone.trim();
@@ -176,13 +181,13 @@ export default function ServiceLeadForm({ service }) {
     >
       <div className="mb-7">
         <p className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 mb-3">
-          Service Inquiry
+          {preview ? 'Preview Inquiry' : 'Service Inquiry'}
         </p>
         <h2 className="text-2xl md:text-3xl font-black tracking-tight text-zinc-900 dark:text-white mb-3">
           {service?.title || '서비스'} 상담 요청
         </h2>
         <p className="text-sm text-zinc-500 dark:text-zinc-400 font-medium leading-relaxed">
-          필요한 정보를 남겨주시면 해당 상품 담당자가 확인 후 연락드립니다.
+          {preview ? '관리자 미리보기 화면입니다. 실제 문의는 저장 후 공개 페이지에서만 전송됩니다.' : '필요한 정보를 남겨주시면 해당 상품 담당자가 확인 후 연락드립니다.'}
         </p>
       </div>
 
@@ -305,11 +310,11 @@ export default function ServiceLeadForm({ service }) {
 
         <button
           type="submit"
-          disabled={submitting}
+          disabled={submitting || preview}
           className="w-full min-h-14 flex items-center justify-center gap-2 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {submitting ? <Loader2 size={18} className="animate-spin" /> : null}
-          {submitting ? '제출 중' : '상담 요청하기'}
+          {preview ? '미리보기에서는 제출 비활성' : submitting ? '제출 중' : '상담 요청하기'}
         </button>
       </form>
     </section>

@@ -19,55 +19,106 @@ import ConvictionSection from './ConvictionSection';
 import CaseStudiesSection from './CaseStudiesSection';
 import ClientLogosSection from './ClientLogosSection';
 
-export default function SectionRenderer({ type, content, settings, title, subtitle }) {
-  const commonProps = { title, subtitle, content, settings };
+function PreviewInteractionGuard({ enabled, children }) {
+  if (!enabled) return children;
+  const block = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+  };
+  return (
+    <div onClickCapture={block} onSubmitCapture={block}>
+      {children}
+    </div>
+  );
+}
+
+function PreviewPlaceholder({ type }) {
+  return (
+    <div className="px-4 py-12 text-center text-sm font-bold text-zinc-500">
+      프리뷰에서 안전하게 표시할 수 없는 섹션입니다: {type}
+    </div>
+  );
+}
+
+export default function SectionRenderer({ type, content, settings, title, subtitle, preview = false, previewData = {} }) {
+  const commonProps = { title, subtitle, content, settings, preview, previewData };
+  let rendered = null;
 
   switch (type) {
     case 'hero':
-      return <HeroSection {...commonProps} />;
+      rendered = <HeroSection {...commonProps} />;
+      break;
     case 'services':
-      return <ServicesSection {...commonProps} />;
+      rendered = <ServicesSection {...commonProps} />;
+      break;
     case 'resources':
-      return <ResourcesSection {...commonProps} />;
+      rendered = <ResourcesSection {...commonProps} />;
+      break;
     case 'testimonials':
-      return <TestimonialsSection {...commonProps} />;
+      rendered = <TestimonialsSection {...commonProps} />;
+      break;
     case 'faq':
-      return <FAQSection {...commonProps} />;
+      rendered = <FAQSection {...commonProps} />;
+      break;
     case 'cta':
-      return <CTASection {...commonProps} />;
+      rendered = <CTASection {...commonProps} />;
+      break;
     case 'gallery':
-      return <GallerySection {...commonProps} />;
+      rendered = <GallerySection {...commonProps} />;
+      break;
     case 'text':
-      return <TextSection {...commonProps} />;
+      rendered = <TextSection {...commonProps} />;
+      break;
     case 'video':
-      return <VideoSection {...commonProps} />;
+      rendered = <VideoSection {...commonProps} />;
+      break;
     case 'products':
-      return <ProductsSection {...commonProps} />;
+      rendered = <ProductsSection {...commonProps} />;
+      break;
     case 'hook':
-      return <MarketingHookSection {...commonProps} />;
+      rendered = <MarketingHookSection {...commonProps} />;
+      break;
     case 'stats':
-      return <StatsGridSection {...commonProps} />;
+      rendered = <StatsGridSection {...commonProps} />;
+      break;
     case 'identity':
-      return <BrandIdentitySection {...commonProps} />;
+      rendered = <BrandIdentitySection {...commonProps} />;
+      break;
     case 'product_detail':
-      return <ProductTabsSection {...commonProps} />;
+      rendered = <ProductTabsSection {...commonProps} />;
+      break;
     case 'ai_strategy':
-      return <AIStrategySection {...commonProps} />;
+      rendered = <AIStrategySection {...commonProps} />;
+      break;
     case 'magazine':
-      return <MagazineList {...commonProps} />;
+      rendered = <MagazineList {...commonProps} />;
+      break;
     case 'brand_stats':
-      return <BrandStatsSection {...commonProps} />;
+      rendered = <BrandStatsSection {...commonProps} />;
+      break;
     case 'conviction':
-      return <ConvictionSection {...commonProps} />;
+      rendered = <ConvictionSection {...commonProps} />;
+      break;
     case 'case_studies':
-      return <CaseStudiesSection {...commonProps} />;
+      rendered = <CaseStudiesSection {...commonProps} />;
+      break;
     case 'client_logos':
-      return <ClientLogosSection {...commonProps} />;
+      rendered = <ClientLogosSection {...commonProps} />;
+      break;
     default:
-      return (
+      rendered = (
         <div className="px-4 py-12 md:px-8 md:py-16 text-center text-sm text-zinc-500 break-keep">
           알 수 없는 섹션 타입입니다: {type}
         </div>
       );
+      break;
   }
+
+  if (preview && !rendered) rendered = <PreviewPlaceholder type={type} />;
+
+  return (
+    <PreviewInteractionGuard enabled={preview}>
+      {rendered}
+    </PreviewInteractionGuard>
+  );
 }

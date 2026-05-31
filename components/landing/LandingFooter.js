@@ -1,4 +1,4 @@
-export default function LandingFooter({ settings }) {
+export default function LandingFooter({ settings, preview = false }) {
   const brand = settings?.brand || {};
   const footer = settings?.footer || {};
 
@@ -13,7 +13,14 @@ export default function LandingFooter({ settings }) {
 
           <div style={{ display: 'flex', gap: '24px' }}>
             {(footer.social_links || []).map((link, i) => (
-              <a key={i} href={link.url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--muted)', fontSize: '0.9rem', transition: 'color 0.2s' }}>
+              <a
+                key={i}
+                href={preview ? '#' : link.url}
+                target={preview ? undefined : '_blank'}
+                rel={preview ? undefined : 'noopener noreferrer'}
+                onClick={preview ? (e) => e.preventDefault() : undefined}
+                style={{ color: 'var(--muted)', fontSize: '0.9rem', transition: 'color 0.2s' }}
+              >
                 {link.platform}
               </a>
             ))}

@@ -1,6 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
+import { usePathname } from 'next/navigation';
+import { isAdminOrPreviewPath } from '@/lib/adminPreviewPaths';
 
 /**
  * BlueDotCursor
@@ -10,16 +12,16 @@ import { useEffect, useRef, useState } from 'react';
  * - prefers-reduced-motion 대응
  */
 export default function BlueDotCursor() {
+  const pathname = usePathname();
   const dotRef = useRef(null);
-  const [enabled, setEnabled] = useState(false);
+  const disabled = isAdminOrPreviewPath(pathname);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    if (disabled) return;
 
     const canHover =
       window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
-
-    setEnabled(true);
 
     const onMove = (e) => {
       if (!dotRef.current) return;
@@ -63,9 +65,9 @@ export default function BlueDotCursor() {
       window.removeEventListener('mouseup', onUp);
       window.removeEventListener('touchstart', onTouch);
     };
-  }, []);
+  }, [disabled]);
 
-  if (!enabled) return null;
+  if (disabled) return null;
 
   return (
     <>

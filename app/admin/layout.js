@@ -4,7 +4,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import Sidebar from '@/components/admin/Sidebar';
 import AdminHeader from '@/components/admin/AdminHeader';
 import { Loader2 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { isDummyMode, supabase } from '@/lib/supabase';
 import { canAccessPath } from '@/lib/adminPermissions';
 
 const AdminContext = createContext();
@@ -17,28 +17,42 @@ export function useSidebar() {
   return useContext(SidebarContext);
 }
 
+const DUMMY_ADMIN_PROFILE = {
+  id: 'local-dummy-admin',
+  email: 'local@giveneeds.test',
+  full_name: 'Local Admin',
+  role: 'superadmin',
+};
+
 export default function AdminLayout({ children }) {
   const router = useRouter();
   const pathname = usePathname();
   const isPublicPage = pathname === '/admin/login' || pathname === '/admin/signup';
+  const authDisabled = process.env.NODE_ENV !== 'production' && (isDummyMode || !supabase);
 
-  const [checking, setChecking] = useState(true);
+  const [checking, setChecking] = useState(!isPublicPage);
   const [profile, setProfile] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // 라우트 이동 시 드로어 자동 닫힘
-  useEffect(() => {
-    setSidebarOpen(false);
-  }, [pathname]);
-
   useEffect(() => {
     if (isPublicPage) {
-      setChecking(false);
       return;
     }
     let active = true;
     (async () => {
       try {
+        await Promise.resolve();
+        if (authDisabled) {
+          if (!active) return;
+          setProfile(DUMMY_ADMIN_PROFILE);
+          setChecking(false);
+          return;
+        }
+        if (!supabase) {
+          router.replace('/admin/login?error=not_configured');
+          return;
+        }
+
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
           router.replace('/admin/login');
@@ -74,9 +88,13 @@ export default function AdminLayout({ children }) {
       }
     })();
     return () => { active = false; };
-  }, [isPublicPage, router, pathname]);
+  }, [authDisabled, isPublicPage, router, pathname]);
 
   async function handleLogout() {
+    if (!supabase) {
+      router.replace('/admin/login');
+      return;
+    }
     await supabase.auth.signOut();
     router.replace('/admin/login');
   }

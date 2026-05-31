@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import SectionRenderer from '@/components/landing/SectionRenderer';
 import { SECTION_TYPES, SECTION_TEMPLATES, CTA_TYPES } from '@/lib/constants';
+import { getSupabaseAuthHeaders } from '@/lib/clientAuthHeaders';
 import { 
   Plus, 
   Trash2, 
@@ -43,29 +44,41 @@ export default function SectionsPage() {
   const [isOrderDirty, setIsOrderDirty] = useState(false);
   const [library, setLibrary] = useState({ blocks: [] });
 
-  useEffect(() => { 
-    loadSections(); 
-    loadLibrary();
-  }, []);
+  useEffect(() => {
+    let cancelled = false;
 
-  async function loadLibrary() {
-    try {
-      const res = await fetch('/api/settings');
-      const data = await res.json();
-      if (data.settings?.section_library) {
-        setLibrary(data.settings.section_library);
+    async function loadInitialSections() {
+      try {
+        const res = await fetch('/api/sections?all=true&page=home');
+        const data = await res.json();
+        if (!cancelled) {
+          setSections((data.sections || []).sort((a, b) => a.order_index - b.order_index));
+        }
+      } catch (e) {
+        if (!cancelled) console.error(e);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-    } catch (e) { console.error('Library load failed:', e); }
-  }
+    }
 
-  async function loadSections() {
-    try {
-      const res = await fetch('/api/sections?all=true&page=home');
-      const data = await res.json();
-      setSections((data.sections || []).sort((a, b) => a.order_index - b.order_index));
-    } catch (e) { console.error(e); }
-    finally { setLoading(false); }
-  }
+    async function loadInitialLibrary() {
+      try {
+        const res = await fetch('/api/settings');
+        const data = await res.json();
+        if (!cancelled && data.settings?.section_library) {
+          setLibrary(data.settings.section_library);
+        }
+      } catch (e) {
+        if (!cancelled) console.error('Library load failed:', e);
+      }
+    }
+
+    loadInitialSections();
+    loadInitialLibrary();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const getIcon = (type) => {
     switch (type) {
@@ -702,7 +715,11 @@ function SectionContentEditor({ type, content, onChange }) {
         const fd = new FormData();
         fd.append('file', file);
         fd.append('folder', 'logos');
-        const res = await fetch('/api/upload', { method: 'POST', body: fd });
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          headers: await getSupabaseAuthHeaders(),
+          body: fd,
+        });
         const data = await res.json();
         if (data.url) updateItemField(i, 'image_url', data.url);
       };
@@ -973,7 +990,7 @@ function SectionContentEditor({ type, content, onChange }) {
         <div className="space-y-8">
           <p className="text-[10px] text-amber-600 bg-amber-50 p-3 rounded font-bold leading-relaxed">
             * 검은 배경 + shimmer 타이틀 + 카운트업 숫자 섹션입니다.<br/>
-            * 상단 "공통 헤더 타이틀/서브타이틀"은 무시되고 아래 필드가 사용됩니다.
+            * 상단 &quot;공통 헤더 타이틀/서브타이틀&quot;은 무시되고 아래 필드가 사용됩니다.
           </p>
 
           <div className="space-y-4">

@@ -1,33 +1,67 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { randomUUID } from 'crypto';
+import { mkdir, writeFile } from 'fs/promises';
+import path from 'path';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { requireAdmin } from '@/lib/adminAuth';
+import { isDummyMode } from '@/lib/supabase';
 
-// 서버 전용 — 서비스 롤 키로 Storage RLS 우회
-const adminSupabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+export const runtime = 'nodejs';
+
+const MAX_BYTES = 5 * 1024 * 1024;
+const ALLOWED = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif'];
+const ALLOW_LOCAL_DUMMY_ADMIN_UPLOAD = process.env.NODE_ENV !== 'production' && isDummyMode;
+
+function safeFolder(value) {
+  const folder = typeof value === 'string' ? value : 'uploads';
+  return folder
+    .split('/')
+    .map((part) => part.replace(/[^a-zA-Z0-9_-]/g, ''))
+    .filter(Boolean)
+    .join('/') || 'uploads';
+}
 
 export async function POST(request) {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return NextResponse.json({ error: 'Supabase not configured' }, { status: 500 });
-  }
+  const auth = await requireAdmin(request);
+  if (auth.error && !ALLOW_LOCAL_DUMMY_ADMIN_UPLOAD) return auth.error;
 
   try {
     const formData = await request.formData();
     const file = formData.get('file');
-    const folder = formData.get('folder') || 'uploads';
+    const folder = safeFolder(formData.get('folder'));
 
-    if (!file) {
+    if (!file || typeof file === 'string') {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+    }
+    if (!ALLOWED.includes(file.type)) {
+      return NextResponse.json({ error: '지원하지 않는 이미지 포맷입니다.' }, { status: 400 });
+    }
+    if (file.size > MAX_BYTES) {
+      return NextResponse.json({ error: '이미지 크기는 5MB 이하여야 합니다.' }, { status: 400 });
     }
 
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    const ext = file.name.split('.').pop();
+    const ext = (file.name?.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 5) || 'jpg';
+
+    if (!supabaseAdmin) {
+      if (!ALLOW_LOCAL_DUMMY_ADMIN_UPLOAD) {
+        return NextResponse.json({ error: 'Supabase not configured' }, { status: 500 });
+      }
+
+      const localFile = `${Date.now()}-${randomUUID()}.${ext}`;
+      const folderParts = folder.split('/').filter(Boolean);
+      const localDir = path.join(process.cwd(), 'public', 'uploads', ...folderParts);
+      await mkdir(localDir, { recursive: true });
+      await writeFile(path.join(localDir, localFile), buffer);
+
+      return NextResponse.json({ url: `/uploads/${[...folderParts, localFile].join('/')}` });
+    }
+
     const filename = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
 
-    const { error } = await adminSupabase.storage
+    const { error } = await supabaseAdmin.storage
       .from('magazine-images')
       .upload(filename, buffer, {
         contentType: file.type,
@@ -36,7 +70,7 @@ export async function POST(request) {
 
     if (error) throw error;
 
-    const { data: urlData } = adminSupabase.storage
+    const { data: urlData } = supabaseAdmin.storage
       .from('magazine-images')
       .getPublicUrl(filename);
 

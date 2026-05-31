@@ -2,12 +2,13 @@
 
 import { usePathname } from 'next/navigation';
 import GlobalFooter from './GlobalFooter';
+import { isAdminOrPreviewPath } from '@/lib/adminPreviewPaths';
 
 export default function FooterWrapper() {
   const pathname = usePathname();
   
   // 어드민 페이지 또는 관련 페이지에서는 푸터를 노출하지 않음
-  if (pathname.startsWith('/admin')) {
+  if (isAdminOrPreviewPath(pathname)) {
     return null;
   }
 
