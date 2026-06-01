@@ -75,7 +75,7 @@ const FRAME_RATIO_MAP = {
 const STORY_ITEM_TYPES = [
   { type: 'text', label: '본문', icon: Type },
   { type: 'image', label: '사진', icon: ImageIcon },
-  { type: 'image_group', label: '사진열', icon: LayoutGrid },
+  { type: 'image_group', label: '미디어열', icon: LayoutGrid },
   { type: 'video', label: '영상', icon: Video },
   { type: 'quote', label: '후기', icon: Quote },
   { type: 'metric', label: '성과', icon: BarChart3 },
@@ -105,6 +105,13 @@ const PROCESS_VARIANT_OPTIONS = [
   { value: 'alternating', label: '좌우 교차형', description: '이미지가 있는 절차를 데스크톱에서 교차 배치합니다.' },
   { value: 'checklist', label: '체크리스트형', description: '짧은 실행 항목을 빠르게 훑게 합니다.' },
 ];
+const SERVICE_VIDEO_ACCEPT = 'video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov';
+const SERVICE_VIDEO_MIME_BY_EXT = {
+  mp4: 'video/mp4',
+  webm: 'video/webm',
+  mov: 'video/quicktime',
+};
+const MAX_SERVICE_VIDEO_BYTES = 50 * 1024 * 1024;
 
 function asBlocks(details) {
   return Array.isArray(details?.blocks) ? details.blocks : [];
@@ -193,11 +200,66 @@ function readFileImageDimensions(file) {
   });
 }
 
+function readFileVideoDimensions(file) {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const video = document.createElement('video');
+    video.preload = 'metadata';
+    video.muted = true;
+    video.playsInline = true;
+    video.onloadedmetadata = () => {
+      URL.revokeObjectURL(url);
+      resolve(imageDimensionPatch(video.videoWidth, video.videoHeight));
+    };
+    video.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve({});
+    };
+    video.src = url;
+  });
+}
+
+function aspectRatioFromDimensions(dimensions) {
+  const width = Number.parseInt(dimensions?.natural_width, 10);
+  const height = Number.parseInt(dimensions?.natural_height, 10);
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) return '16:9';
+  const ratio = width / height;
+  if (ratio > 1.55) return '16:9';
+  if (ratio > 1.15) return '4:3';
+  if (ratio > 0.85) return '1:1';
+  return '9:16';
+}
+
+function videoExtension(fileName = '') {
+  return String(fileName).split('.').pop()?.toLowerCase().replace(/[^a-z0-9]/g, '') || '';
+}
+
+async function readUploadError(res) {
+  const status = res.status;
+  let raw = '';
+  try {
+    raw = await res.text();
+  } catch {
+    raw = '';
+  }
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed?.error) return parsed.error;
+  } catch {
+    // plain text response
+  }
+  if (status === 413 || /request entity too large/i.test(raw)) {
+    return '파일이 서버 요청 한도를 초과했습니다. 더 작은 파일로 시도해 주세요.';
+  }
+  if (status >= 500) return `서버 오류 (${status}) — 잠시 후 다시 시도해 주세요.`;
+  return raw?.slice(0, 200) || `요청 실패 (${status})`;
+}
+
 async function uploadImageFile(file, uploadFolder) {
   const dimensions = await readFileImageDimensions(file);
   const fd = new FormData();
   fd.append('file', file);
-  fd.append('folder', uploadFolder || 'services/drafts');
+  fd.append('folder', uploadFolder || 'services/drafts/draft');
   const res = await fetch('/api/upload', {
     method: 'POST',
     headers: await getSupabaseAuthHeaders(),
@@ -213,6 +275,89 @@ async function uploadImageFile(file, uploadFolder) {
     caption: '',
     object_position: '50% 50%',
     object_scale: 100,
+    ...dimensions,
+  };
+}
+
+async function uploadVideoFile(file, uploadFolder) {
+  if (!file) return null;
+  const ext = videoExtension(file.name);
+  const expectedType = SERVICE_VIDEO_MIME_BY_EXT[ext];
+  if (!expectedType || file.type !== expectedType) {
+    throw new Error('mp4, webm, mov 영상 파일만 업로드할 수 있습니다.');
+  }
+  if (file.size > MAX_SERVICE_VIDEO_BYTES) {
+    throw new Error('영상 파일 크기는 50MB 이하여야 합니다.');
+  }
+
+  const dimensions = await readFileVideoDimensions(file);
+  const headers = await getSupabaseAuthHeaders();
+  const signRes = await fetch('/api/upload/service-media/sign', {
+    method: 'POST',
+    headers: { ...headers, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      kind: 'video',
+      file_name: file.name,
+      file_type: file.type,
+      file_size: file.size,
+      folder: uploadFolder || 'services/drafts/draft',
+    }),
+  });
+
+  if (!signRes.ok) {
+    throw new Error(await readUploadError(signRes));
+  }
+
+  const signData = await signRes.json();
+  let publicUrl = signData.publicUrl;
+
+  if (signData.localUpload) {
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('folder', signData.pathPrefix || `${uploadFolder || 'services/drafts/draft'}/videos`);
+    const localRes = await fetch(signData.uploadUrl || '/api/upload', {
+      method: 'POST',
+      headers,
+      body: fd,
+    });
+    if (!localRes.ok) {
+      throw new Error(await readUploadError(localRes));
+    }
+    const localData = await localRes.json();
+    publicUrl = localData.url;
+  } else {
+    if (!signData?.signedUrl || !signData?.publicUrl) {
+      throw new Error('영상 업로드 URL 응답이 올바르지 않습니다.');
+    }
+    const uploadBody = new FormData();
+    uploadBody.append('cacheControl', '31536000');
+    uploadBody.append('', file);
+    const uploadRes = await fetch(signData.signedUrl, {
+      method: 'POST',
+      headers: {
+        'x-upsert': 'false',
+      },
+      body: uploadBody,
+    });
+    if (!uploadRes.ok) {
+      throw new Error(`Storage 업로드 실패: ${await readUploadError(uploadRes)}`);
+    }
+  }
+
+  if (!publicUrl) throw new Error('업로드된 영상 URL을 확인할 수 없습니다.');
+
+  return {
+    id: `video-${Date.now()}`,
+    type: 'video',
+    url: publicUrl,
+    title: file.name.replace(/\.[^.]+$/, ''),
+    caption: '',
+    alt: '',
+    aspect_ratio: aspectRatioFromDimensions(dimensions),
+    fit: 'contain',
+    object_position: '50% 50%',
+    object_scale: 100,
+    autoplay: true,
     ...dimensions,
   };
 }
@@ -271,7 +416,7 @@ function createStoryItem(type) {
     case 'image_group':
       return { id, type, variant: 'carousel', frame_ratio: 'first_image', fit: 'contain', images: [] };
     case 'video':
-      return { id, type, media_type: 'youtube', url: '', thumbnail_url: '', title: '', aspect_ratio: '16:9' };
+      return { id, type, media_type: 'video', url: '', title: '', aspect_ratio: '16:9', fit: 'contain', object_position: '50% 50%', object_scale: 100, autoplay: true };
     case 'quote':
       return { id, type, quote: '', author: '', role: '', media: null };
     case 'metric':
@@ -382,13 +527,13 @@ function blockWarnings(block) {
     warnings.push('유튜브 링크 형식을 확인해 주세요.');
   }
   if ((block.type === 'gallery' || block.type === 'mockup_showcase') && (!block.images || block.images.length === 0)) {
-    warnings.push('이미지를 1장 이상 추가해야 화면에 노출됩니다.');
+    warnings.push(`${block.type === 'gallery' ? '미디어' : '이미지'}를 1개 이상 추가해야 화면에 노출됩니다.`);
   }
-  if (Array.isArray(block.images) && block.images.some((image) => image.url && !image.alt)) {
+  if (Array.isArray(block.images) && block.images.some((image) => image.type !== 'video' && image.url && !image.alt)) {
     warnings.push('이미지 대체 텍스트가 비어 있습니다.');
   }
   if (block.type === 'video' && !block.url) {
-    warnings.push('영상 URL을 입력해야 화면에 노출됩니다.');
+    warnings.push('영상 파일을 업로드하거나 URL을 입력해야 화면에 노출됩니다.');
   }
   if (block.type === 'landing_section' && !block.section_type) {
     warnings.push('랜딩 공통 섹션 타입을 선택해야 화면에 노출됩니다.');
@@ -426,21 +571,24 @@ function LandingContentJsonEditor({ content, onCommit }) {
 
 function ImageListEditor({ block, onChange, uploadFolder }) {
   const fileInputRef = useRef(null);
+  const videoInputRef = useRef(null);
   const [uploading, setUploading] = useState(false);
   const [dragIndex, setDragIndex] = useState(null);
   const images = Array.isArray(block.images) ? block.images : [];
 
-  const uploadFile = async (file) => {
+  const uploadFile = async (file, kind = 'image') => {
     if (!file) return;
     setUploading(true);
     try {
-      const uploadedImage = await uploadImageFile(file, uploadFolder);
+      const uploadedImage = kind === 'video'
+        ? await uploadVideoFile(file, uploadFolder)
+        : { ...(await uploadImageFile(file, uploadFolder)), type: 'image' };
       onChange({
         images: addArrayItem(images, uploadedImage),
         ...(block.type === 'gallery' && !block.frame_ratio ? { frame_ratio: 'first_image' } : {}),
       });
     } catch (err) {
-      alert(`이미지 업로드 실패: ${err.message}`);
+      alert(`${kind === 'video' ? '영상' : '이미지'} 업로드 실패: ${err.message}`);
     } finally {
       setUploading(false);
     }
@@ -450,13 +598,13 @@ function ImageListEditor({ block, onChange, uploadFolder }) {
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <span className={LABEL}>이미지</span>
-          <p className={HELP}>업로드하거나 URL을 직접 넣을 수 있습니다. 이미지는 선택한 프리셋 안에서만 배치됩니다.</p>
+          <span className={LABEL}>미디어</span>
+          <p className={HELP}>이미지 URL을 직접 넣거나, 사진/영상을 업로드할 수 있습니다. 영상은 무음 자동재생으로 저장됩니다.</p>
         </div>
         <div className="flex gap-2">
           <button
             type="button"
-            onClick={() => onChange({ images: addArrayItem(images, { id: `image-${Date.now()}`, url: '', alt: '', caption: '', object_position: '50% 50%', object_scale: 100 }) })}
+            onClick={() => onChange({ images: addArrayItem(images, { id: `image-${Date.now()}`, type: 'image', url: '', alt: '', caption: '', object_position: '50% 50%', object_scale: 100 }) })}
             className="rounded-lg border border-zinc-300 px-3 py-2 text-[11px] font-black text-zinc-800 hover:bg-zinc-100"
           >
             URL 추가
@@ -466,7 +614,14 @@ function ImageListEditor({ block, onChange, uploadFolder }) {
             onClick={() => fileInputRef.current?.click()}
             className="rounded-lg bg-zinc-900 px-3 py-2 text-[11px] font-black text-white hover:bg-black"
           >
-            {uploading ? '업로드 중' : '업로드'}
+            {uploading ? '업로드 중' : '사진 업로드'}
+          </button>
+          <button
+            type="button"
+            onClick={() => videoInputRef.current?.click()}
+            className="rounded-lg border border-zinc-900 px-3 py-2 text-[11px] font-black text-zinc-900 hover:bg-zinc-100"
+          >
+            영상 업로드
           </button>
           <input
             ref={fileInputRef}
@@ -474,7 +629,17 @@ function ImageListEditor({ block, onChange, uploadFolder }) {
             accept="image/*"
             className="hidden"
             onChange={(e) => {
-              uploadFile(e.target.files?.[0]);
+              uploadFile(e.target.files?.[0], 'image');
+              e.target.value = '';
+            }}
+          />
+          <input
+            ref={videoInputRef}
+            type="file"
+            accept={SERVICE_VIDEO_ACCEPT}
+            className="hidden"
+            onChange={(e) => {
+              uploadFile(e.target.files?.[0], 'video');
               e.target.value = '';
             }}
           />
@@ -482,16 +647,23 @@ function ImageListEditor({ block, onChange, uploadFolder }) {
       </div>
       <div className="space-y-3">
         {images.map((image, index) => {
+          const isVideo = image.type === 'video';
           const position = parseObjectPosition(image.object_position);
           const scale = clampImageScale(image.object_scale);
           const frameRatio = getImageEditorFrameRatio(block, images);
-          const fitMode = block.type === 'mockup_showcase' && block.fit === 'cover' ? 'cover' : 'contain';
+          const fitMode = block.fit === 'cover' ? 'cover' : 'contain';
           const effectiveScale = getEffectiveImageScale(image, frameRatio, fitMode);
           const updatePosition = (patch) => {
             onChange({ images: updateArrayItem(images, index, { object_position: objectPositionValue(patch, position) }) });
           };
           const rememberDimensions = (event) => {
             const patch = imageDimensionPatch(event.currentTarget.naturalWidth, event.currentTarget.naturalHeight);
+            if (!patch.natural_width || !patch.natural_height) return;
+            if (patch.natural_width === image.natural_width && patch.natural_height === image.natural_height) return;
+            onChange({ images: updateArrayItem(images, index, patch) });
+          };
+          const rememberVideoDimensions = (event) => {
+            const patch = imageDimensionPatch(event.currentTarget.videoWidth, event.currentTarget.videoHeight);
             if (!patch.natural_width || !patch.natural_height) return;
             if (patch.natural_width === image.natural_width && patch.natural_height === image.natural_height) return;
             onChange({ images: updateArrayItem(images, index, patch) });
@@ -515,13 +687,30 @@ function ImageListEditor({ block, onChange, uploadFolder }) {
               }`}
             >
               <div className="overflow-hidden rounded-xl bg-zinc-200" style={{ aspectRatio: frameRatio }}>
-                {image.url ? (
+                {image.url && isVideo ? (
+                  <video
+                    src={image.url}
+                    className="h-full w-full"
+                    muted
+                    loop
+                    playsInline
+                    autoPlay
+                    onLoadedMetadata={rememberVideoDimensions}
+                    style={{
+                      objectFit: fitMode,
+                      objectPosition: image.object_position || '50% 50%',
+                      transform: `scale(${effectiveScale})`,
+                      transformOrigin: image.object_position || '50% 50%',
+                    }}
+                  />
+                ) : image.url ? (
                   <img
                     src={image.url}
                     alt={image.alt || ''}
-                    className="h-full w-full object-contain"
+                    className="h-full w-full"
                     onLoad={rememberDimensions}
                     style={{
+                      objectFit: fitMode,
                       objectPosition: image.object_position || '50% 50%',
                       transform: `scale(${effectiveScale})`,
                       transformOrigin: image.object_position || '50% 50%',
@@ -529,23 +718,23 @@ function ImageListEditor({ block, onChange, uploadFolder }) {
                   />
                 ) : (
                   <div className="flex h-full items-center justify-center text-zinc-500">
-                    <ImageIcon size={18} />
+                    {isVideo ? <Video size={18} /> : <ImageIcon size={18} />}
                   </div>
                 )}
               </div>
               <div className="grid gap-2">
                 <input
                   className={FIELD}
-                  placeholder="이미지 URL"
+                  placeholder={isVideo ? '영상 URL' : '이미지 URL'}
                   value={image.url || ''}
                   onChange={(e) => onChange({ images: updateArrayItem(images, index, { url: e.target.value }) })}
                 />
                 <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
                   <input
                     className={FIELD}
-                    placeholder="대체 텍스트"
-                    value={image.alt || ''}
-                    onChange={(e) => onChange({ images: updateArrayItem(images, index, { alt: e.target.value }) })}
+                    placeholder={isVideo ? '영상 제목' : '대체 텍스트'}
+                    value={isVideo ? (image.title || '') : (image.alt || '')}
+                    onChange={(e) => onChange({ images: updateArrayItem(images, index, isVideo ? { title: e.target.value } : { alt: e.target.value }) })}
                   />
                   <input
                     className={FIELD}
@@ -554,14 +743,25 @@ function ImageListEditor({ block, onChange, uploadFolder }) {
                     onChange={(e) => onChange({ images: updateArrayItem(images, index, { caption: e.target.value }) })}
                   />
                 </div>
+                {isVideo && (
+                  <label className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs font-black text-zinc-700">
+                    <input
+                      type="checkbox"
+                      checked={image.autoplay !== false}
+                      onChange={(e) => onChange({ images: updateArrayItem(images, index, { autoplay: e.target.checked }) })}
+                      className="h-4 w-4 rounded border-zinc-300 text-zinc-900"
+                    />
+                    무음 자동재생
+                  </label>
+                )}
                 <div className="rounded-xl border border-zinc-200 bg-white p-3">
                   <div className="mb-2 flex items-center justify-between gap-2">
-                    <span className="text-[11px] font-black uppercase tracking-[0.14em] text-zinc-700">이미지 초점</span>
+                    <span className="text-[11px] font-black uppercase tracking-[0.14em] text-zinc-700">{isVideo ? '영상 초점' : '이미지 초점'}</span>
                     <span className="text-[11px] font-black text-zinc-500">{position.x}% / {position.y}%</span>
                   </div>
                   <div className="grid gap-3">
                     <label className="grid gap-1 text-[11px] font-bold text-zinc-600">
-                      사진 크기
+                      {isVideo ? '영상 크기' : '사진 크기'}
                       <div className="flex items-center gap-3">
                         <input
                           type="range"
@@ -623,7 +823,7 @@ function ImageListEditor({ block, onChange, uploadFolder }) {
                     </button>
                   </div>
                   <p className={`${HELP} mt-2`}>
-                    원본 이미지를 먼저 보존한 뒤 프레임 안에서 확대/축소합니다. 크기를 줄이면 잘려 보이던 원본 영역이 다시 보이고, 초점은 확대 기준점으로 쓰입니다.
+                    원본 미디어를 먼저 보존한 뒤 프레임 안에서 확대/축소합니다. 크기를 줄이면 잘려 보이던 원본 영역이 다시 보이고, 초점은 확대 기준점으로 쓰입니다.
                   </p>
                 </div>
               </div>
@@ -808,19 +1008,182 @@ function imageFromMedia(media) {
   return null;
 }
 
-function thumbnailFromMedia(media) {
-  if (media?.thumbnail) return media.thumbnail;
-  if (media?.thumbnail_url) {
-    return {
-      id: media.id ? `${media.id}-thumbnail` : 'media-thumbnail-draft',
-      url: media.thumbnail_url,
-      alt: media.title || '',
-      caption: '',
-      object_position: '50% 50%',
-      object_scale: 100,
-    };
-  }
-  return null;
+function VideoAssetEditor({ label = '업로드 영상', media, onChange, uploadFolder, allowRemove = false, onRemove }) {
+  const fileInputRef = useRef(null);
+  const [uploading, setUploading] = useState(false);
+  const current = {
+    id: media?.id || 'video-draft',
+    type: 'video',
+    url: '',
+    title: '',
+    aspect_ratio: '16:9',
+    fit: 'contain',
+    object_position: '50% 50%',
+    object_scale: 100,
+    autoplay: true,
+    ...media,
+  };
+  const position = parseObjectPosition(current.object_position);
+  const scale = clampImageScale(current.object_scale);
+  const frameRatio = FRAME_RATIO_MAP[current.aspect_ratio] || getImageRatio(current)?.css || '16 / 9';
+  const effectiveScale = getEffectiveImageScale(current, frameRatio, current.fit === 'cover' ? 'cover' : 'contain');
+
+  const updateVideo = (patch) => {
+    onChange({
+      ...current,
+      type: 'video',
+      object_position: current.object_position || '50% 50%',
+      object_scale: current.object_scale || 100,
+      autoplay: current.autoplay !== false,
+      ...patch,
+    });
+  };
+  const updatePosition = (patch) => {
+    updateVideo({ object_position: objectPositionValue(patch, position) });
+  };
+  const uploadFile = async (file) => {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const uploaded = await uploadVideoFile(file, uploadFolder);
+      updateVideo(uploaded);
+    } catch (err) {
+      alert(`영상 업로드 실패: ${err.message}`);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="rounded-2xl border border-zinc-200 bg-white p-3">
+      <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div>
+          <span className={LABEL}>{label}</span>
+          <p className={HELP}>파일 업로드가 기본입니다. URL을 직접 넣는 경우에도 같은 맞춤/초점/크기 설정을 적용합니다.</p>
+        </div>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="rounded-lg bg-zinc-900 px-3 py-2 text-[11px] font-black text-white hover:bg-black"
+          >
+            {uploading ? '업로드 중' : '영상 업로드'}
+          </button>
+          {allowRemove && (
+            <button
+              type="button"
+              onClick={onRemove}
+              className="rounded-lg border border-zinc-300 px-3 py-2 text-[11px] font-black text-zinc-700 hover:bg-red-50 hover:text-red-600"
+            >
+              제거
+            </button>
+          )}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept={SERVICE_VIDEO_ACCEPT}
+            className="hidden"
+            onChange={(e) => {
+              uploadFile(e.target.files?.[0]);
+              e.target.value = '';
+            }}
+          />
+        </div>
+      </div>
+      <div className="grid gap-3 md:grid-cols-[160px_1fr]">
+        <div className="overflow-hidden rounded-xl bg-zinc-200" style={{ aspectRatio: frameRatio }}>
+          {current.url ? (
+            <video
+              src={current.url}
+              className="h-full w-full"
+              muted
+              loop
+              playsInline
+              autoPlay={current.autoplay !== false}
+              controls={current.autoplay === false}
+              onLoadedMetadata={(event) => {
+                const patch = imageDimensionPatch(event.currentTarget.videoWidth, event.currentTarget.videoHeight);
+                if (!patch.natural_width || !patch.natural_height) return;
+                if (patch.natural_width === current.natural_width && patch.natural_height === current.natural_height) return;
+                updateVideo(patch);
+              }}
+              style={{
+                objectFit: current.fit === 'cover' ? 'cover' : 'contain',
+                objectPosition: current.object_position || '50% 50%',
+                transform: `scale(${effectiveScale})`,
+                transformOrigin: current.object_position || '50% 50%',
+              }}
+            />
+          ) : (
+            <div className="flex h-full min-h-28 items-center justify-center text-zinc-500">
+              <Video size={18} />
+            </div>
+          )}
+        </div>
+        <div className="grid gap-2">
+          <input
+            className={FIELD}
+            placeholder="영상 URL 또는 업로드 후 생성된 URL"
+            value={current.url || ''}
+            onChange={(e) => updateVideo({ url: e.target.value })}
+          />
+          <input
+            className={FIELD}
+            placeholder="영상 제목"
+            value={current.title || ''}
+            onChange={(e) => updateVideo({ title: e.target.value })}
+          />
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+            <label>
+              <span className={LABEL}>비율</span>
+              <select className={FIELD} value={current.aspect_ratio || '16:9'} onChange={(e) => updateVideo({ aspect_ratio: e.target.value })}>
+                <option value="16:9">16:9</option>
+                <option value="4:3">4:3</option>
+                <option value="1:1">1:1</option>
+                <option value="9:16">9:16</option>
+              </select>
+            </label>
+            <label>
+              <span className={LABEL}>맞춤</span>
+              <select className={FIELD} value={current.fit || 'contain'} onChange={(e) => updateVideo({ fit: e.target.value })}>
+                <option value="contain">전체 보이기</option>
+                <option value="cover">꽉 채우기</option>
+              </select>
+            </label>
+          </div>
+          <label className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs font-black text-zinc-700">
+            <input
+              type="checkbox"
+              checked={current.autoplay !== false}
+              onChange={(e) => updateVideo({ autoplay: e.target.checked })}
+              className="h-4 w-4 rounded border-zinc-300 text-zinc-900"
+            />
+            무음 자동재생
+          </label>
+          <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <span className="text-[11px] font-black uppercase tracking-[0.14em] text-zinc-700">영상 조정</span>
+              <span className="text-[11px] font-black text-zinc-500">{position.x}% / {position.y}% / {scale}%</span>
+            </div>
+            <label className="grid gap-1 text-[11px] font-bold text-zinc-600">
+              영상 크기
+              <input type="range" min="25" max="250" value={scale} onChange={(e) => updateVideo({ object_scale: clampImageScale(e.target.value) })} />
+            </label>
+            <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+              <label className="grid gap-1 text-[11px] font-bold text-zinc-600">
+                가로 위치
+                <input type="range" min="0" max="100" value={position.x} onChange={(e) => updatePosition({ x: e.target.value })} />
+              </label>
+              <label className="grid gap-1 text-[11px] font-bold text-zinc-600">
+                세로 위치
+                <input type="range" min="0" max="100" value={position.y} onChange={(e) => updatePosition({ y: e.target.value })} />
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function MediaEditor({ label = '선택 미디어', media, onChange, uploadFolder }) {
@@ -833,7 +1196,7 @@ function MediaEditor({ label = '선택 미디어', media, onChange, uploadFolder
       <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>
           <span className={LABEL}>{label}</span>
-          <p className={HELP}>없어도 저장됩니다. 사진은 원본 비율을 우선 보존하고, 영상은 URL과 썸네일을 분리해 넣을 수 있습니다.</p>
+          <p className={HELP}>없어도 저장됩니다. 사진과 업로드 영상은 같은 방식으로 비율, 맞춤, 위치, 크기를 조정합니다.</p>
         </div>
         <button
           type="button"
@@ -845,10 +1208,17 @@ function MediaEditor({ label = '선택 미디어', media, onChange, uploadFolder
       </div>
       <label>
         <span className={LABEL}>미디어 종류</span>
-        <select className={FIELD} value={type} onChange={(e) => updateMedia({ type: e.target.value })}>
+        <select
+          className={FIELD}
+          value={type}
+          onChange={(e) => updateMedia({
+            type: e.target.value,
+            ...(e.target.value === 'video' ? { autoplay: current.autoplay !== false, fit: current.fit || 'contain', object_position: current.object_position || '50% 50%', object_scale: current.object_scale || 100 } : {}),
+          })}
+        >
           <option value="image">사진</option>
           <option value="youtube">유튜브 링크</option>
-          <option value="video">일반 영상 URL</option>
+          <option value="video">업로드 영상</option>
         </select>
       </label>
 
@@ -861,10 +1231,19 @@ function MediaEditor({ label = '선택 미디어', media, onChange, uploadFolder
             onChange={(image) => updateMedia({ type: 'image', url: image.url || '', image })}
           />
         </div>
+      ) : type === 'video' ? (
+        <div className="mt-3">
+          <VideoAssetEditor
+            label="영상"
+            media={current}
+            uploadFolder={uploadFolder}
+            onChange={(video) => updateMedia(video)}
+          />
+        </div>
       ) : (
         <div className="mt-3 grid gap-3">
           <label>
-            <span className={LABEL}>{type === 'youtube' ? '유튜브 링크' : '영상 URL'}</span>
+            <span className={LABEL}>유튜브 링크</span>
             <input className={FIELD} value={current.url || ''} onChange={(e) => updateMedia({ url: e.target.value })} />
           </label>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -882,14 +1261,6 @@ function MediaEditor({ label = '선택 미디어', media, onChange, uploadFolder
               </select>
             </label>
           </div>
-          <SingleImageEditor
-            label="썸네일 이미지"
-            image={thumbnailFromMedia(current)}
-            uploadFolder={uploadFolder}
-            help="비워두면 영상 자체의 기본 썸네일 또는 기본 프레임만 사용합니다."
-            onChange={(thumbnail) => updateMedia({ thumbnail_url: thumbnail.url || '', thumbnail })}
-            onRemove={() => updateMedia({ thumbnail_url: '', thumbnail: null })}
-          />
         </div>
       )}
     </div>
@@ -974,7 +1345,7 @@ function StoryItemEditor({ item, onChange, uploadFolder }) {
           </label>
         </div>
         <ImageListEditor
-          block={{ type: 'gallery', variant: item.variant || 'carousel', frame_ratio: item.frame_ratio || 'first_image', images: item.images || [] }}
+          block={{ type: 'gallery', variant: item.variant || 'carousel', frame_ratio: item.frame_ratio || 'first_image', fit: item.fit || 'contain', images: item.images || [] }}
           uploadFolder={uploadFolder}
           onChange={(patch) => onChange({ ...patch })}
         />
@@ -983,45 +1354,51 @@ function StoryItemEditor({ item, onChange, uploadFolder }) {
   }
 
   if (item.type === 'video') {
-    const isYoutube = (item.media_type || 'youtube') === 'youtube';
+    const mediaType = item.media_type || item.provider || (item.video_id ? 'youtube' : 'video');
+    const isYoutube = mediaType === 'youtube';
     const parsed = isYoutube && item.url ? parseYouTubeUrl(item.url) : { ok: true };
     return (
       <div className="grid gap-3">
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           <label>
             <span className={LABEL}>영상 종류</span>
-            <select className={FIELD} value={item.media_type || 'youtube'} onChange={(e) => onChange({ media_type: e.target.value })}>
+            <select className={FIELD} value={mediaType} onChange={(e) => onChange({ media_type: e.target.value })}>
+              <option value="video">업로드 영상</option>
               <option value="youtube">유튜브</option>
-              <option value="video">일반 영상 URL</option>
             </select>
           </label>
-          <label>
-            <span className={LABEL}>비율</span>
-            <select className={FIELD} value={item.aspect_ratio || '16:9'} onChange={(e) => onChange({ aspect_ratio: e.target.value })}>
-              <option value="16:9">16:9</option>
-              <option value="4:3">4:3</option>
-              <option value="1:1">1:1</option>
-              <option value="9:16">9:16</option>
-            </select>
-          </label>
+          {isYoutube && (
+            <label>
+              <span className={LABEL}>비율</span>
+              <select className={FIELD} value={item.aspect_ratio || '16:9'} onChange={(e) => onChange({ aspect_ratio: e.target.value })}>
+                <option value="16:9">16:9</option>
+                <option value="4:3">4:3</option>
+                <option value="1:1">1:1</option>
+                <option value="9:16">9:16</option>
+              </select>
+            </label>
+          )}
         </div>
-        <label>
-          <span className={LABEL}>{isYoutube ? '유튜브 링크' : '영상 URL'}</span>
-          <input className={FIELD} value={item.url || ''} onChange={(e) => onChange({ url: e.target.value })} />
-        </label>
-        {item.url && !parsed.ok && <p className="rounded-xl bg-red-50 px-3 py-2 text-xs font-bold text-red-600">{parsed.error}</p>}
-        <label>
-          <span className={LABEL}>영상 제목</span>
-          <input className={FIELD} value={item.title || ''} onChange={(e) => onChange({ title: e.target.value })} />
-        </label>
-        <SingleImageEditor
-          label="선택 썸네일"
-          image={thumbnailFromMedia(item)}
-          uploadFolder={uploadFolder}
-          help="영상 URL과 별도로 썸네일을 넣을 수 있습니다. 필요 없으면 비워도 됩니다."
-          onChange={(thumbnail) => onChange({ thumbnail_url: thumbnail.url || '', thumbnail })}
-          onRemove={() => onChange({ thumbnail_url: '', thumbnail: null })}
-        />
+        {isYoutube ? (
+          <>
+            <label>
+              <span className={LABEL}>유튜브 링크</span>
+              <input className={FIELD} value={item.url || ''} onChange={(e) => onChange({ url: e.target.value })} />
+            </label>
+            {item.url && !parsed.ok && <p className="rounded-xl bg-red-50 px-3 py-2 text-xs font-bold text-red-600">{parsed.error}</p>}
+            <label>
+              <span className={LABEL}>영상 제목</span>
+              <input className={FIELD} value={item.title || ''} onChange={(e) => onChange({ title: e.target.value })} />
+            </label>
+          </>
+        ) : (
+          <VideoAssetEditor
+            label="스토리 영상"
+            media={{ ...item, type: 'video' }}
+            uploadFolder={uploadFolder}
+            onChange={(video) => onChange({ ...video, media_type: 'video' })}
+          />
+        )}
       </div>
     );
   }
@@ -1117,7 +1494,7 @@ function StoryItemsEditor({ items = [], onChange, uploadFolder }) {
         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
           <div>
             <span className={LABEL}>스토리 조각</span>
-            <p className={HELP}>사진, 본문, 사진열, 영상, 후기, 성과, 상담 CTA를 원하는 순서로 쌓습니다. 저장 전까지는 오른쪽 미리보기에만 즉시 반영됩니다.</p>
+            <p className={HELP}>사진, 본문, 미디어열, 영상, 후기, 성과, 상담 CTA를 원하는 순서로 쌓습니다. 저장 전까지는 오른쪽 미리보기에만 즉시 반영됩니다.</p>
           </div>
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
@@ -1618,7 +1995,7 @@ function BlockFields({ block, onChange, uploadFolder, magazines = [] }) {
   if (block.type === 'gallery') {
     return (
       <div className="grid gap-4">
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
           <label>
             <span className={LABEL}>배치 방식</span>
             <select className={FIELD} value={block.variant || 'grid_2'} onChange={(e) => onChange({ variant: e.target.value })}>
@@ -1637,6 +2014,14 @@ function BlockFields({ block, onChange, uploadFolder, magazines = [] }) {
               ))}
             </select>
             <p className={`${HELP} mt-2`}>첫 이미지 비율을 선택하면 처음 등록한 이미지의 원본 규격을 기준으로 모든 갤러리 이미지 프레임이 맞춰집니다.</p>
+          </label>
+          <label>
+            <span className={LABEL}>미디어 맞춤</span>
+            <select className={FIELD} value={block.fit || 'contain'} onChange={(e) => onChange({ fit: e.target.value })}>
+              <option value="contain">전체 보이기</option>
+              <option value="cover">꽉 채우기</option>
+            </select>
+            <p className={`${HELP} mt-2`}>같은 열의 미디어는 프레임을 통일하고, 내부 초점/크기는 항목별로 조정합니다.</p>
           </label>
         </div>
         <ImageListEditor block={block} onChange={onChange} uploadFolder={uploadFolder} />
@@ -1706,16 +2091,12 @@ function BlockFields({ block, onChange, uploadFolder, magazines = [] }) {
 
   if (block.type === 'video') {
     return (
-      <div className="grid gap-3">
-        <label>
-          <span className={LABEL}>영상 URL</span>
-          <input className={FIELD} value={block.url || ''} onChange={(e) => onChange({ url: e.target.value })} />
-        </label>
-        <label>
-          <span className={LABEL}>포스터 이미지 URL</span>
-          <input className={FIELD} value={block.poster_url || ''} onChange={(e) => onChange({ poster_url: e.target.value })} />
-        </label>
-      </div>
+      <VideoAssetEditor
+        label="일반 영상"
+        media={{ ...block, type: 'video' }}
+        uploadFolder={uploadFolder}
+        onChange={(video) => onChange(video)}
+      />
     );
   }
 
@@ -1938,7 +2319,7 @@ function uniquifyLegacyBlocks(blocks, offset) {
   }));
 }
 
-export default function ProductDetailBlockBuilder({ details, onChange, uploadFolder = 'services/drafts', landingSections = [], sectionLibrary = { blocks: [] }, magazines = [] }) {
+export default function ProductDetailBlockBuilder({ details, onChange, uploadFolder = 'services/drafts/draft', landingSections = [], sectionLibrary = { blocks: [] }, magazines = [] }) {
   const blocks = asBlocks(details);
   const [libraryQuery, setLibraryQuery] = useState('');
   const [dragIndex, setDragIndex] = useState(null);

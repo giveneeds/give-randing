@@ -66,6 +66,158 @@ test('story mode blocks keep ordered text, media, grouped images, and CTA items'
   assert.equal(blocks[0].story_items[3].button_href, 'https://pf.kakao.com/example');
 });
 
+test('gallery and story image groups support mixed legacy-named media items', () => {
+  const { blocks, errors } = normalizeServiceDetailBlocks({
+    blocks: [
+      {
+        id: 'gallery-1',
+        type: 'gallery',
+        variant: 'carousel',
+        frame_ratio: '4:3',
+        fit: 'cover',
+        images: [
+          {
+            id: 'image-a',
+            url: '/uploads/a.jpg',
+            alt: '기존 이미지',
+            object_position: '20% 80%',
+            object_scale: 95,
+            natural_width: 900,
+            natural_height: 600,
+          },
+          {
+            id: 'video-a',
+            type: 'video',
+            url: 'https://cdn.example.com/a.mp4',
+            title: '업로드 영상',
+            caption: '영상 설명',
+            fit: 'cover',
+            object_position: '70% 25%',
+            object_scale: 320,
+            natural_width: 1920,
+            natural_height: 1080,
+          },
+          {
+            id: 'image-b',
+            type: 'image',
+            url: '/uploads/b.jpg',
+          },
+        ],
+      },
+      {
+        id: 'rich-story',
+        type: 'rich_text',
+        editor_mode: 'story',
+        story_items: [
+          {
+            id: 'story-media',
+            type: 'image_group',
+            variant: 'grid_2',
+            images: [
+              {
+                id: 'story-video',
+                type: 'video',
+                url: 'https://cdn.example.com/story.webm',
+                autoplay: false,
+                object_position: '15% 40%',
+                object_scale: 80,
+              },
+              {
+                id: 'story-image',
+                url: '/uploads/story.jpg',
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  });
+
+  assert.deepEqual(errors, []);
+  assert.equal(blocks[0].images.length, 3);
+  assert.equal(blocks[0].images[0].id, 'image-a');
+  assert.equal(blocks[0].images[0].type, 'image');
+  assert.equal(blocks[0].images[0].object_position, '20% 80%');
+  assert.equal(blocks[0].images[1].type, 'video');
+  assert.equal(blocks[0].images[1].url, 'https://cdn.example.com/a.mp4');
+  assert.equal(blocks[0].images[1].autoplay, true);
+  assert.equal(blocks[0].images[1].fit, 'cover');
+  assert.equal(blocks[0].images[1].object_position, '70% 25%');
+  assert.equal(blocks[0].images[1].object_scale, 250);
+  assert.equal(blocks[0].images[1].natural_width, 1920);
+  assert.equal(blocks[0].images[1].natural_height, 1080);
+  assert.equal(blocks[0].images[2].type, 'image');
+  assert.equal(blocks[1].story_items[0].images[0].type, 'video');
+  assert.equal(blocks[1].story_items[0].images[0].autoplay, false);
+  assert.equal(blocks[1].story_items[0].images[0].object_position, '15% 40%');
+  assert.equal(blocks[1].story_items[0].images[1].type, 'image');
+});
+
+test('video blocks and case proof media preserve uploaded video controls', () => {
+  const { blocks, errors } = normalizeServiceDetailBlocks({
+    blocks: [
+      {
+        id: 'video-1',
+        type: 'video',
+        url: 'https://cdn.example.com/detail.mov',
+        title: '상세 영상',
+        aspect_ratio: '9:16',
+        fit: 'cover',
+        object_position: '64% 12%',
+        object_scale: 10,
+        natural_width: 1080,
+        natural_height: 1920,
+        autoplay: false,
+        signedUrl: 'https://signed.example.com/secret',
+      },
+      {
+        id: 'case-proof-video',
+        type: 'case_proof',
+        metrics: [
+          {
+            title: '문의 240%',
+            media: {
+              type: 'video',
+              url: 'https://cdn.example.com/proof.mp4',
+              fit: 'cover',
+              object_position: '30% 70%',
+              object_scale: 125,
+              natural_width: 1280,
+              natural_height: 720,
+            },
+          },
+        ],
+        testimonials: [
+          {
+            quote: '영상으로 보니 더 설득력 있습니다.',
+            media: {
+              type: 'video',
+              url: 'https://cdn.example.com/review.webm',
+              autoplay: false,
+              aspect_ratio: '1:1',
+            },
+          },
+        ],
+      },
+    ],
+  });
+
+  assert.deepEqual(errors, []);
+  assert.equal(blocks[0].url, 'https://cdn.example.com/detail.mov');
+  assert.equal(blocks[0].autoplay, false);
+  assert.equal(blocks[0].fit, 'cover');
+  assert.equal(blocks[0].object_position, '64% 12%');
+  assert.equal(blocks[0].object_scale, 25);
+  assert.equal(blocks[0].natural_height, 1920);
+  assert.equal(Object.hasOwn(blocks[0], 'signedUrl'), false);
+  assert.equal(blocks[1].metrics[0].media.type, 'video');
+  assert.equal(blocks[1].metrics[0].media.autoplay, true);
+  assert.equal(blocks[1].metrics[0].media.object_scale, 125);
+  assert.equal(blocks[1].testimonials[0].media.type, 'video');
+  assert.equal(blocks[1].testimonials[0].media.autoplay, false);
+  assert.equal(blocks[1].testimonials[0].media.aspect_ratio, '1:1');
+});
+
 test('process steps preserve optional images without requiring every step to have one', () => {
   const { blocks, errors } = normalizeServiceDetailBlocks({
     blocks: [{

@@ -9,7 +9,9 @@ import { isDummyMode } from '@/lib/supabase';
 export const runtime = 'nodejs';
 
 const MAX_BYTES = 5 * 1024 * 1024;
+const MAX_LOCAL_VIDEO_BYTES = 50 * 1024 * 1024;
 const ALLOWED = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif'];
+const LOCAL_VIDEO_ALLOWED = ['video/mp4', 'video/webm', 'video/quicktime'];
 const ALLOW_LOCAL_DUMMY_ADMIN_UPLOAD = process.env.NODE_ENV !== 'production' && isDummyMode;
 
 function safeFolder(value) {
@@ -33,11 +35,17 @@ export async function POST(request) {
     if (!file || typeof file === 'string') {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
-    if (!ALLOWED.includes(file.type)) {
-      return NextResponse.json({ error: '지원하지 않는 이미지 포맷입니다.' }, { status: 400 });
+    const isImage = ALLOWED.includes(file.type);
+    const isLocalVideo = ALLOW_LOCAL_DUMMY_ADMIN_UPLOAD && LOCAL_VIDEO_ALLOWED.includes(file.type);
+
+    if (!isImage && !isLocalVideo) {
+      return NextResponse.json({ error: '지원하지 않는 파일 포맷입니다.' }, { status: 400 });
     }
-    if (file.size > MAX_BYTES) {
+    if (isImage && file.size > MAX_BYTES) {
       return NextResponse.json({ error: '이미지 크기는 5MB 이하여야 합니다.' }, { status: 400 });
+    }
+    if (isLocalVideo && file.size > MAX_LOCAL_VIDEO_BYTES) {
+      return NextResponse.json({ error: '영상 파일 크기는 50MB 이하여야 합니다.' }, { status: 400 });
     }
 
     const bytes = await file.arrayBuffer();

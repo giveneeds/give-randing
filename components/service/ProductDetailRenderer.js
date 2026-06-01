@@ -17,6 +17,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import MarkdownContent from '@/lib/markdownRender';
+import { getServiceVideoPlaybackProps } from '@/lib/serviceVideoPlayback';
 import {
   SERVICE_DETAIL_EFFECT_VARIANTS,
   SERVICE_DETAIL_PROCESS_VARIANTS,
@@ -138,6 +139,37 @@ function FramedImage({ image, frameRatio = '4 / 3', fitMode = 'contain', classNa
   );
 }
 
+function FramedVideo({ media, frameRatio = '16 / 9', fitMode = 'contain', className = '' }) {
+  const [measured, setMeasured] = useState(null);
+  const playbackProps = getServiceVideoPlaybackProps(media);
+  return (
+    <div className={`overflow-hidden bg-zinc-950 ${className}`} style={{ aspectRatio: frameRatio }}>
+      <video
+        src={media.url}
+        poster={media.thumbnail_url || undefined}
+        className="h-full w-full"
+        style={{
+          objectFit: fitMode === 'cover' ? 'cover' : 'contain',
+          ...getImageTransform(media, frameRatio, fitMode, measured),
+        }}
+        onLoadedMetadata={(event) => {
+          const width = event.currentTarget.videoWidth;
+          const height = event.currentTarget.videoHeight;
+          if (width > 0 && height > 0) setMeasured({ width, height });
+        }}
+        {...playbackProps}
+      />
+    </div>
+  );
+}
+
+function FramedMedia({ media, frameRatio = '4 / 3', fitMode = 'contain', className = '' }) {
+  if (media?.type === 'video') {
+    return <FramedVideo media={media} frameRatio={frameRatio} fitMode={fitMode} className={className} />;
+  }
+  return <FramedImage image={media} frameRatio={frameRatio} fitMode={fitMode} className={className} />;
+}
+
 function sectionId(block, index) {
   return `detail-${block.type}-${index + 1}`;
 }
@@ -190,13 +222,14 @@ function GalleryBlock({ block }) {
   const images = Array.isArray(block.images) ? block.images : [];
   if (images.length === 0) return null;
   const frameRatio = getGalleryFrameRatio(block, images);
+  const fitMode = block.fit === 'cover' ? 'cover' : 'contain';
 
   if (block.variant === 'carousel') {
     return (
       <div className="flex snap-x gap-4 overflow-x-auto pb-2">
         {images.map((image, index) => (
           <figure key={image.id || index} className="min-w-[78%] snap-start overflow-hidden rounded-2xl bg-zinc-100 sm:min-w-[48%]">
-            <FramedImage image={image} frameRatio={frameRatio} />
+            <FramedMedia media={image} frameRatio={frameRatio} fitMode={fitMode} />
             {image.caption && <figcaption className="px-4 py-3 text-xs font-bold text-zinc-600">{image.caption}</figcaption>}
           </figure>
         ))}
@@ -209,7 +242,7 @@ function GalleryBlock({ block }) {
       <div className="grid gap-4 sm:grid-cols-2">
         {images.slice(0, 2).map((image, index) => (
           <figure key={image.id || index} className="overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50">
-            <FramedImage image={image} frameRatio={frameRatio} />
+            <FramedMedia media={image} frameRatio={frameRatio} fitMode={fitMode} />
             <figcaption className="px-4 py-3 text-xs font-black uppercase tracking-widest text-zinc-700">
               {image.caption || (index === 0 ? 'Before' : 'After')}
             </figcaption>
@@ -229,7 +262,7 @@ function GalleryBlock({ block }) {
     <div className={`grid gap-4 ${gridClass}`}>
       {images.map((image, index) => (
         <figure key={image.id || index} className="overflow-hidden rounded-2xl bg-zinc-100">
-          <FramedImage image={image} frameRatio={frameRatio} />
+          <FramedMedia media={image} frameRatio={frameRatio} fitMode={fitMode} />
           {image.caption && <figcaption className="px-4 py-3 text-xs font-bold text-zinc-600">{image.caption}</figcaption>}
         </figure>
       ))}
@@ -688,7 +721,7 @@ function MediaDisplay({ media, frameRatio = '4 / 3', fitMode = 'contain', classN
   const thumbnail = mediaThumbnail(media);
   const ratio = FRAME_RATIO_MAP[media.aspect_ratio] || FRAME_RATIO_MAP[frameRatio] || '16 / 9';
 
-  if (preview && thumbnail?.url) {
+  if (preview && media.type === 'youtube' && thumbnail?.url) {
     return (
       <div className={`relative overflow-hidden rounded-2xl bg-zinc-950 ${className}`} style={{ aspectRatio: ratio }}>
         <FramedImage image={thumbnail} frameRatio={ratio} fitMode="cover" />
@@ -716,15 +749,7 @@ function MediaDisplay({ media, frameRatio = '4 / 3', fitMode = 'contain', classN
   }
 
   if (media.type === 'video' && media.url) {
-    return (
-      <video
-        src={media.url}
-        poster={thumbnail?.url || media.thumbnail_url || undefined}
-        controls
-        className={`w-full rounded-2xl bg-zinc-950 ${className}`}
-        style={{ aspectRatio: ratio }}
-      />
-    );
+    return <FramedVideo media={{ ...media, thumbnail_url: thumbnail?.url || media.thumbnail_url }} frameRatio={ratio} fitMode={media.fit || fitMode} className={className || 'rounded-2xl'} />;
   }
 
   if (thumbnail?.url) {
@@ -743,6 +768,12 @@ function storyVideoMedia(item) {
     thumbnail_url: item.thumbnail_url || '',
     thumbnail: item.thumbnail || null,
     aspect_ratio: item.aspect_ratio || '16:9',
+    fit: item.fit || 'contain',
+    object_position: item.object_position || '50% 50%',
+    object_scale: item.object_scale || 100,
+    natural_width: item.natural_width,
+    natural_height: item.natural_height,
+    autoplay: item.autoplay !== false,
   };
 }
 
@@ -960,7 +991,22 @@ function renderBlock(block, index, context = {}) {
           <ManualLineText as="h3" className="mb-3 text-lg font-black leading-tight">
             {block.title}
           </ManualLineText>
-          <video src={block.url} poster={block.poster_url || undefined} controls className={`w-full rounded-2xl bg-zinc-950 ${ratioClass(block.aspect_ratio)}`} />
+          <MediaDisplay
+            media={{
+              type: 'video',
+              url: block.url,
+              title: block.title,
+              thumbnail_url: block.poster_url || '',
+              aspect_ratio: block.aspect_ratio || '16:9',
+              fit: block.fit || 'contain',
+              object_position: block.object_position || '50% 50%',
+              object_scale: block.object_scale || 100,
+              natural_width: block.natural_width,
+              natural_height: block.natural_height,
+              autoplay: block.autoplay !== false,
+            }}
+            preview={preview}
+          />
         </BlockShell>
       );
     case 'sub_products':
