@@ -244,7 +244,11 @@ async function readUploadError(res) {
   }
   try {
     const parsed = JSON.parse(raw);
-    if (parsed?.error) return parsed.error;
+    const message = parsed?.message || parsed?.error_description || parsed?.msg;
+    if (parsed?.error && message && parsed.error !== message) return `${parsed.error}: ${message}`;
+    if (message) return message;
+    if (parsed?.error && parsed.error !== 'Error') return parsed.error;
+    if (parsed?.error) return `Storage 오류 (${status})`;
   } catch {
     // plain text response
   }
@@ -329,15 +333,14 @@ async function uploadVideoFile(file, uploadFolder) {
     if (!signData?.signedUrl || !signData?.publicUrl) {
       throw new Error('영상 업로드 URL 응답이 올바르지 않습니다.');
     }
-    const uploadBody = new FormData();
-    uploadBody.append('cacheControl', '31536000');
-    uploadBody.append('', file);
     const uploadRes = await fetch(signData.signedUrl, {
-      method: 'POST',
+      method: 'PUT',
       headers: {
+        'Content-Type': file.type,
+        'Cache-Control': '31536000',
         'x-upsert': 'false',
       },
-      body: uploadBody,
+      body: file,
     });
     if (!uploadRes.ok) {
       throw new Error(`Storage 업로드 실패: ${await readUploadError(uploadRes)}`);
