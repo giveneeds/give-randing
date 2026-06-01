@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import {
   ArrowRight,
@@ -79,19 +78,6 @@ function clampImageScale(value) {
   return Math.max(25, Math.min(250, rawScale));
 }
 
-function imageRatio(image, measured) {
-  const width = Number.parseInt(image?.natural_width || measured?.width, 10);
-  const height = Number.parseInt(image?.natural_height || measured?.height, 10);
-  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) return null;
-  return width / height;
-}
-
-function ratioNumber(cssRatio) {
-  const [width, height] = String(cssRatio || '4 / 3').split('/').map((part) => Number.parseFloat(part.trim()));
-  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) return 4 / 3;
-  return width / height;
-}
-
 function getGalleryFrameRatio(block, images) {
   if ((block.frame_ratio || 'first_image') === 'first_image') {
     const first = images[0];
@@ -105,34 +91,26 @@ function getGalleryFrameRatio(block, images) {
   return FRAME_RATIO_MAP[block.frame_ratio] || '4 / 3';
 }
 
-function getImageTransform(image, frameRatio, fitMode, measured) {
-  const objectPosition = image.object_position || '50% 50%';
-  const userScale = clampImageScale(image.object_scale) / 100;
-  const naturalRatio = imageRatio(image, measured);
-  const frameRatioValue = ratioNumber(frameRatio);
-  const coverScale = fitMode === 'cover' && naturalRatio
-    ? Math.max(frameRatioValue / naturalRatio, naturalRatio / frameRatioValue, 1)
-    : 1;
+function getMediaTransform(media) {
+  const objectPosition = media.object_position || '50% 50%';
+  const userScale = clampImageScale(media.object_scale) / 100;
   return {
     objectPosition,
-    transform: `scale(${coverScale * userScale})`,
+    transform: `scale(${userScale})`,
     transformOrigin: objectPosition,
   };
 }
 
 function FramedImage({ image, frameRatio = '4 / 3', fitMode = 'contain', className = '' }) {
-  const [measured, setMeasured] = useState(null);
   return (
     <div className={`overflow-hidden bg-zinc-100 ${className}`} style={{ aspectRatio: frameRatio }}>
       <img
         src={image.url}
         alt={image.alt || image.caption || ''}
-        className="h-full w-full object-contain"
-        style={getImageTransform(image, frameRatio, fitMode, measured)}
-        onLoad={(event) => {
-          const width = event.currentTarget.naturalWidth;
-          const height = event.currentTarget.naturalHeight;
-          if (width > 0 && height > 0) setMeasured({ width, height });
+        className="h-full w-full"
+        style={{
+          objectFit: fitMode === 'cover' ? 'cover' : 'contain',
+          ...getMediaTransform(image),
         }}
       />
     </div>
@@ -140,7 +118,6 @@ function FramedImage({ image, frameRatio = '4 / 3', fitMode = 'contain', classNa
 }
 
 function FramedVideo({ media, frameRatio = '16 / 9', fitMode = 'contain', className = '' }) {
-  const [measured, setMeasured] = useState(null);
   const playbackProps = getServiceVideoPlaybackProps(media);
   return (
     <div className={`overflow-hidden bg-zinc-950 ${className}`} style={{ aspectRatio: frameRatio }}>
@@ -150,12 +127,7 @@ function FramedVideo({ media, frameRatio = '16 / 9', fitMode = 'contain', classN
         className="h-full w-full"
         style={{
           objectFit: fitMode === 'cover' ? 'cover' : 'contain',
-          ...getImageTransform(media, frameRatio, fitMode, measured),
-        }}
-        onLoadedMetadata={(event) => {
-          const width = event.currentTarget.videoWidth;
-          const height = event.currentTarget.videoHeight;
-          if (width > 0 && height > 0) setMeasured({ width, height });
+          ...getMediaTransform(media),
         }}
         {...playbackProps}
       />
@@ -771,12 +743,19 @@ function MediaRail({ items = [], frameRatio = '16:9', fitMode = 'contain', class
   const mediaItems = items.filter(Boolean);
   if (mediaItems.length === 0) return null;
 
+  const railMedia = (media) => ({
+    ...media,
+    frame_ratio: frameRatio,
+    aspect_ratio: frameRatio,
+    fit: fitMode,
+  });
+
   if (mediaItems.length === 1) {
     return (
       <MediaDisplay
-        media={mediaItems[0]}
-        frameRatio={mediaItems[0].frame_ratio || frameRatio}
-        fitMode={mediaItems[0].fit || fitMode}
+        media={railMedia(mediaItems[0])}
+        frameRatio={frameRatio}
+        fitMode={fitMode}
         className={`rounded-2xl ${className}`.trim()}
         preview={preview}
       />
@@ -791,9 +770,9 @@ function MediaRail({ items = [], frameRatio = '16:9', fitMode = 'contain', class
           className="min-w-[82%] snap-start overflow-hidden rounded-2xl bg-zinc-100 sm:min-w-[58%] lg:min-w-[48%]"
         >
           <MediaDisplay
-            media={media}
-            frameRatio={media.frame_ratio || frameRatio}
-            fitMode={media.fit || fitMode}
+            media={railMedia(media)}
+            frameRatio={frameRatio}
+            fitMode={fitMode}
             className="rounded-2xl"
             preview={preview}
           />
