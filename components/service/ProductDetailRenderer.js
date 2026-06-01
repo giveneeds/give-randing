@@ -759,6 +759,51 @@ function MediaDisplay({ media, frameRatio = '4 / 3', fitMode = 'contain', classN
   return null;
 }
 
+function mediaItemsForDisplay(item) {
+  const items = Array.isArray(item?.media_items)
+    ? item.media_items
+    : (Array.isArray(item?.mediaItems) ? item.mediaItems : []);
+  if (items.length > 0) return items.filter(Boolean);
+  return item?.media ? [item.media] : [];
+}
+
+function MediaRail({ items = [], frameRatio = '16:9', fitMode = 'contain', className = '', preview = false }) {
+  const mediaItems = items.filter(Boolean);
+  if (mediaItems.length === 0) return null;
+
+  if (mediaItems.length === 1) {
+    return (
+      <MediaDisplay
+        media={mediaItems[0]}
+        frameRatio={mediaItems[0].frame_ratio || frameRatio}
+        fitMode={mediaItems[0].fit || fitMode}
+        className={`rounded-2xl ${className}`.trim()}
+        preview={preview}
+      />
+    );
+  }
+
+  return (
+    <div className={`flex snap-x gap-3 overflow-x-auto pb-2 ${className}`.trim()}>
+      {mediaItems.map((media, index) => (
+        <figure
+          key={media.id || media.url || index}
+          className="min-w-[82%] snap-start overflow-hidden rounded-2xl bg-zinc-100 sm:min-w-[58%] lg:min-w-[48%]"
+        >
+          <MediaDisplay
+            media={media}
+            frameRatio={media.frame_ratio || frameRatio}
+            fitMode={media.fit || fitMode}
+            className="rounded-2xl"
+            preview={preview}
+          />
+          {media.caption && <figcaption className="px-4 py-3 text-xs font-bold text-zinc-600">{media.caption}</figcaption>}
+        </figure>
+      ))}
+    </div>
+  );
+}
+
 function storyVideoMedia(item) {
   if (item.media) return item.media;
   return {
@@ -810,7 +855,13 @@ function StoryRenderer({ items = [], preview }) {
         if (item.type === 'quote') {
           return (
             <blockquote key={item.id || index} className="rounded-2xl border-l-4 border-zinc-900 bg-zinc-50 p-5 text-sm font-bold leading-relaxed text-zinc-700 dark:border-white dark:bg-zinc-800 dark:text-zinc-200">
-              {item.media && <MediaDisplay media={item.media} frameRatio={item.media.frame_ratio || '16:9'} fitMode={item.media.fit || 'contain'} className="mb-4" preview={preview} />}
+              <MediaRail
+                items={mediaItemsForDisplay(item)}
+                frameRatio={item.media_frame_ratio || item.frame_ratio || item.media?.frame_ratio || '16:9'}
+                fitMode={item.media_fit || item.fit || item.media?.fit || 'contain'}
+                className="mb-4"
+                preview={preview}
+              />
               <Quote size={16} className="mb-2" />
               <ManualLineText>{item.quote}</ManualLineText>
               {(item.author || item.role) && (
@@ -824,7 +875,13 @@ function StoryRenderer({ items = [], preview }) {
         if (item.type === 'metric') {
           return (
             <div key={item.id || index} className="rounded-2xl border border-zinc-100 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-800/60">
-              {item.media && <MediaDisplay media={item.media} frameRatio={item.media.frame_ratio || '16:9'} fitMode={item.media.fit || 'contain'} className="mb-4" preview={preview} />}
+              <MediaRail
+                items={mediaItemsForDisplay(item)}
+                frameRatio={item.media_frame_ratio || item.frame_ratio || item.media?.frame_ratio || '16:9'}
+                fitMode={item.media_fit || item.fit || item.media?.fit || 'contain'}
+                className="mb-4"
+                preview={preview}
+              />
               {item.title && <h3 className="mb-2 text-lg font-black text-zinc-900 dark:text-white">{item.title}</h3>}
               {item.desc && <MarkdownContent text={item.desc} variant="compact" />}
             </div>
@@ -857,7 +914,13 @@ function ProofMetricsBlock({ metrics = [], frameRatio = '16:9', fitMode = 'conta
     <div className="grid gap-3 sm:grid-cols-2">
       {metrics.map((item, index) => (
         <div key={item.id || index} className="rounded-2xl border border-zinc-100 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-800/60">
-          {item.media && <MediaDisplay media={item.media} frameRatio={frameRatio} fitMode={fitMode} className="mb-4" preview={preview} />}
+          <MediaRail
+            items={mediaItemsForDisplay(item)}
+            frameRatio={frameRatio}
+            fitMode={fitMode}
+            className="mb-4"
+            preview={preview}
+          />
           {item.title && <h3 className="mb-2 text-sm font-black text-zinc-900 dark:text-white">{item.title}</h3>}
           {item.desc && <MarkdownContent text={item.desc} variant="compact" />}
         </div>
@@ -872,7 +935,13 @@ function TestimonialsBlock({ testimonials = [], frameRatio = '16:9', fitMode = '
     <div className="mt-5 grid gap-3">
       {testimonials.map((item, index) => (
         <blockquote key={item.id || index} className="rounded-2xl border-l-4 border-zinc-900 bg-zinc-50 p-5 text-sm font-bold leading-relaxed text-zinc-700 dark:border-white dark:bg-zinc-800 dark:text-zinc-200">
-          {item.media && <MediaDisplay media={item.media} frameRatio={frameRatio} fitMode={fitMode} className="mb-4" preview={preview} />}
+          <MediaRail
+            items={mediaItemsForDisplay(item)}
+            frameRatio={frameRatio}
+            fitMode={fitMode}
+            className="mb-4"
+            preview={preview}
+          />
           <Quote size={16} className="mb-2" />
           <ManualLineText>{item.quote}</ManualLineText>
           {(item.author || item.role) && (

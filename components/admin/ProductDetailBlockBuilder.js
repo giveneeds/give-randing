@@ -1270,6 +1270,67 @@ function MediaEditor({ label = '선택 미디어', media, onChange, uploadFolder
   );
 }
 
+function proofMediaItemsForEditor(item) {
+  const items = Array.isArray(item?.media_items)
+    ? item.media_items
+    : (Array.isArray(item?.mediaItems) ? item.mediaItems : []);
+  const editableItems = items.filter((media) => media?.type !== 'youtube');
+  if (editableItems.length > 0) return editableItems;
+  if (item?.media && item.media.type !== 'youtube') return [item.media];
+  return [];
+}
+
+function proofMediaPatch(images) {
+  const mediaItems = Array.isArray(images) ? images : [];
+  return {
+    media_items: mediaItems,
+    media: mediaItems[0] || null,
+  };
+}
+
+function ProofMediaItemsEditor({
+  label = '근거 사진/영상',
+  item,
+  onChange,
+  uploadFolder,
+  frameRatio = '16:9',
+  fitMode = 'contain',
+}) {
+  const images = proofMediaItemsForEditor(item);
+  const legacyYoutube = item?.media?.type === 'youtube' && images.length === 0;
+
+  return (
+    <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-3">
+      <div className="mb-3">
+        <span className={LABEL}>{label}</span>
+        <p className={HELP}>여러 사진/영상을 추가하고 드래그로 순서를 바꿀 수 있습니다. 실제 페이지에서는 가로로 넘겨 보입니다.</p>
+      </div>
+      {legacyYoutube && (
+        <div className="mb-3 rounded-xl border border-amber-200 bg-amber-50 p-3">
+          <MediaEditor
+            label="기존 유튜브 근거"
+            media={item.media}
+            uploadFolder={uploadFolder}
+            onChange={(media) => onChange({ media })}
+          />
+          <p className={`${HELP} mt-2`}>새 사진/영상을 추가하면 여러 개를 가로로 넘기는 근거 미디어로 저장됩니다.</p>
+        </div>
+      )}
+      <ImageListEditor
+        block={{
+          type: 'gallery',
+          variant: 'carousel',
+          frame_ratio: frameRatio || '16:9',
+          fit: fitMode || 'contain',
+          images,
+        }}
+        uploadFolder={uploadFolder}
+        onChange={(patch) => onChange(proofMediaPatch(patch.images))}
+      />
+    </div>
+  );
+}
+
 function StoryItemEditor({ item, onChange, uploadFolder }) {
   if (item.type === 'text') {
     const textSize = SERVICE_DETAIL_STORY_TEXT_SIZES.includes(item.text_size) ? item.text_size : 'md';
@@ -1423,7 +1484,14 @@ function StoryItemEditor({ item, onChange, uploadFolder }) {
             <input className={FIELD} value={item.role || ''} onChange={(e) => onChange({ role: e.target.value })} />
           </label>
         </div>
-        <MediaEditor label="후기에 붙일 사진/영상" media={item.media} onChange={(media) => onChange({ media })} uploadFolder={uploadFolder} />
+        <ProofMediaItemsEditor
+          label="후기에 붙일 사진/영상"
+          item={item}
+          uploadFolder={uploadFolder}
+          frameRatio={item.media_frame_ratio || item.frame_ratio || '16:9'}
+          fitMode={item.media_fit || item.fit || 'contain'}
+          onChange={onChange}
+        />
       </div>
     );
   }
@@ -1445,7 +1513,14 @@ function StoryItemEditor({ item, onChange, uploadFolder }) {
           <span className={LABEL}>설명</span>
           <textarea className={`${FIELD} min-h-24 resize-y`} value={item.desc || ''} onChange={(e) => onChange({ desc: e.target.value })} />
         </label>
-        <MediaEditor label="성과 근거 사진/영상" media={item.media} onChange={(media) => onChange({ media })} uploadFolder={uploadFolder} />
+        <ProofMediaItemsEditor
+          label="성과 근거 사진/영상"
+          item={item}
+          uploadFolder={uploadFolder}
+          frameRatio={item.media_frame_ratio || item.frame_ratio || '16:9'}
+          fitMode={item.media_fit || item.fit || 'contain'}
+          onChange={onChange}
+        />
       </div>
     );
   }
@@ -1797,14 +1872,14 @@ function StepsEditor({ items = [], onChange, uploadFolder }) {
   );
 }
 
-function ProofMetricsEditor({ items = [], onChange, uploadFolder }) {
+function ProofMetricsEditor({ items = [], onChange, uploadFolder, frameRatio = '16:9', fitMode = 'contain' }) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <span className={LABEL}>성과 수치</span>
         <button
           type="button"
-          onClick={() => onChange(addArrayItem(items, { id: `metric-${Date.now()}`, title: '', desc: '', icon: '', media: null }))}
+          onClick={() => onChange(addArrayItem(items, { id: `metric-${Date.now()}`, title: '', desc: '', icon: '', media: null, media_items: [] }))}
           className="rounded-lg border border-zinc-300 px-3 py-2 text-[11px] font-black text-zinc-800 hover:bg-zinc-100"
         >
           성과 추가
@@ -1837,11 +1912,13 @@ function ProofMetricsEditor({ items = [], onChange, uploadFolder }) {
             value={item.desc || ''}
             onChange={(e) => onChange(updateArrayItem(items, index, { desc: e.target.value }))}
           />
-          <MediaEditor
+          <ProofMediaItemsEditor
             label="성과 근거 사진/영상"
-            media={item.media}
+            item={item}
             uploadFolder={uploadFolder}
-            onChange={(media) => onChange(updateArrayItem(items, index, { media }))}
+            frameRatio={frameRatio}
+            fitMode={fitMode}
+            onChange={(patch) => onChange(updateArrayItem(items, index, patch))}
           />
           <button
             type="button"
@@ -1856,14 +1933,14 @@ function ProofMetricsEditor({ items = [], onChange, uploadFolder }) {
   );
 }
 
-function TestimonialsEditor({ items = [], onChange, uploadFolder }) {
+function TestimonialsEditor({ items = [], onChange, uploadFolder, frameRatio = '16:9', fitMode = 'contain' }) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <span className={LABEL}>후기 / 인용문</span>
         <button
           type="button"
-          onClick={() => onChange(addArrayItem(items, { id: `testimonial-${Date.now()}`, quote: '', author: '', role: '', media: null }))}
+          onClick={() => onChange(addArrayItem(items, { id: `testimonial-${Date.now()}`, quote: '', author: '', role: '', media: null, media_items: [] }))}
           className="rounded-lg border border-zinc-300 px-3 py-2 text-[11px] font-black text-zinc-800 hover:bg-zinc-100"
         >
           후기 추가
@@ -1896,11 +1973,13 @@ function TestimonialsEditor({ items = [], onChange, uploadFolder }) {
               onChange={(e) => onChange(updateArrayItem(items, index, { role: e.target.value }))}
             />
           </div>
-          <MediaEditor
+          <ProofMediaItemsEditor
             label="후기 근거 사진/영상"
-            media={item.media}
+            item={item}
             uploadFolder={uploadFolder}
-            onChange={(media) => onChange(updateArrayItem(items, index, { media }))}
+            frameRatio={frameRatio}
+            fitMode={fitMode}
+            onChange={(patch) => onChange(updateArrayItem(items, index, patch))}
           />
           <button
             type="button"
@@ -2134,11 +2213,15 @@ function BlockFields({ block, onChange, uploadFolder, magazines = [] }) {
         <ProofMetricsEditor
           items={block.metrics || []}
           uploadFolder={uploadFolder}
+          frameRatio={block.media_frame_ratio || '16:9'}
+          fitMode={block.media_fit || 'contain'}
           onChange={(metrics) => onChange({ metrics })}
         />
         <TestimonialsEditor
           items={testimonialItems}
           uploadFolder={uploadFolder}
+          frameRatio={block.media_frame_ratio || '16:9'}
+          fitMode={block.media_fit || 'contain'}
           onChange={(testimonials) => onChange({ testimonials, quote: '' })}
         />
       </div>

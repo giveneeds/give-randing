@@ -42,6 +42,25 @@ test('story mode blocks keep ordered text, media, grouped images, and CTA items'
         },
         {
           id: 's4',
+          type: 'quote',
+          quote: '실제 결과를 영상과 사진으로 확인했습니다.',
+          author: '브랜드 담당자',
+          media_items: [
+            { type: 'video', url: 'https://cdn.example.com/story-proof.mp4', autoplay: false },
+            { type: 'image', url: '/uploads/story-proof.jpg' },
+          ],
+        },
+        {
+          id: 's5',
+          type: 'metric',
+          title: '문의 240%',
+          desc: '상담 전환 증가',
+          media_items: [
+            { type: 'image', url: '/uploads/story-metric.jpg', natural_width: 1200, natural_height: 900 },
+          ],
+        },
+        {
+          id: 's6',
           type: 'cta',
           copy: '본문 중간에서 바로 상담으로 연결합니다.',
           button_label: '카카오톡 문의',
@@ -54,7 +73,7 @@ test('story mode blocks keep ordered text, media, grouped images, and CTA items'
   assert.deepEqual(errors, []);
   assert.equal(blocks[0].editor_mode, 'story');
   assert.equal(blocks[0].body, '기존 본문');
-  assert.equal(blocks[0].story_items.length, 4);
+  assert.equal(blocks[0].story_items.length, 6);
   assert.equal(blocks[0].story_items[0].body, '첫 문단\n직접 줄바꿈');
   assert.equal(blocks[0].story_items[0].text_size, 'xl');
   assert.equal(blocks[0].story_items[0].text_weight, 'black');
@@ -63,7 +82,11 @@ test('story mode blocks keep ordered text, media, grouped images, and CTA items'
   assert.equal(blocks[0].story_items[1].image.natural_width, 1280);
   assert.equal(blocks[0].story_items[2].frame_ratio, '4:3');
   assert.equal(blocks[0].story_items[2].images.length, 2);
-  assert.equal(blocks[0].story_items[3].button_href, 'https://pf.kakao.com/example');
+  assert.equal(blocks[0].story_items[3].media_items.length, 2);
+  assert.equal(blocks[0].story_items[3].media.type, 'video');
+  assert.equal(blocks[0].story_items[3].media.autoplay, false);
+  assert.equal(blocks[0].story_items[4].media_items[0].image.natural_width, 1200);
+  assert.equal(blocks[0].story_items[5].button_href, 'https://pf.kakao.com/example');
 });
 
 test('gallery and story image groups support mixed legacy-named media items', () => {
@@ -176,26 +199,44 @@ test('video blocks and case proof media preserve uploaded video controls', () =>
         metrics: [
           {
             title: '문의 240%',
-            media: {
-              type: 'video',
-              url: 'https://cdn.example.com/proof.mp4',
-              fit: 'cover',
-              object_position: '30% 70%',
-              object_scale: 125,
-              natural_width: 1280,
-              natural_height: 720,
-            },
+            media_items: [
+              {
+                id: 'proof-video',
+                type: 'video',
+                url: 'https://cdn.example.com/proof.mp4',
+                fit: 'cover',
+                object_position: '30% 70%',
+                object_scale: 125,
+                natural_width: 1280,
+                natural_height: 720,
+              },
+              {
+                id: 'proof-image',
+                type: 'image',
+                url: '/uploads/proof-2.jpg',
+                natural_width: 900,
+                natural_height: 1200,
+              },
+            ],
           },
         ],
         testimonials: [
           {
             quote: '영상으로 보니 더 설득력 있습니다.',
-            media: {
-              type: 'video',
-              url: 'https://cdn.example.com/review.webm',
-              autoplay: false,
-              aspect_ratio: '1:1',
-            },
+            media_items: [
+              {
+                id: 'review-video',
+                type: 'video',
+                url: 'https://cdn.example.com/review.webm',
+                autoplay: false,
+                aspect_ratio: '1:1',
+              },
+              {
+                id: 'review-image',
+                type: 'image',
+                url: '/uploads/review.jpg',
+              },
+            ],
           },
         ],
       },
@@ -213,9 +254,13 @@ test('video blocks and case proof media preserve uploaded video controls', () =>
   assert.equal(blocks[1].metrics[0].media.type, 'video');
   assert.equal(blocks[1].metrics[0].media.autoplay, true);
   assert.equal(blocks[1].metrics[0].media.object_scale, 125);
+  assert.equal(blocks[1].metrics[0].media_items.length, 2);
+  assert.equal(blocks[1].metrics[0].media_items[1].type, 'image');
   assert.equal(blocks[1].testimonials[0].media.type, 'video');
   assert.equal(blocks[1].testimonials[0].media.autoplay, false);
   assert.equal(blocks[1].testimonials[0].media.aspect_ratio, '1:1');
+  assert.equal(blocks[1].testimonials[0].media_items.length, 2);
+  assert.equal(blocks[1].testimonials[0].media_items[1].url, '/uploads/review.jpg');
 });
 
 test('process steps preserve optional images without requiring every step to have one', () => {
@@ -341,7 +386,9 @@ test('case proof keeps metric media, testimonials, and legacy quote fallback', (
   assert.equal(blocks[0].metrics[0].media.type, 'youtube');
   assert.equal(blocks[0].metrics[0].media.video_id, 'dQw4w9WgXcQ');
   assert.equal(blocks[0].metrics[0].media.thumbnail_url, '/uploads/youtube-thumb.jpg');
+  assert.equal(blocks[0].metrics[0].media_items.length, 1);
   assert.equal(blocks[0].testimonials[0].media.image.natural_height, 960);
+  assert.equal(blocks[0].testimonials[0].media_items[0].image.natural_height, 960);
 });
 
 test('case proof creates a testimonial from legacy quote when no testimonials exist', () => {
