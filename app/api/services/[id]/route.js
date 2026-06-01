@@ -16,6 +16,8 @@ const ALLOWED_PATCH_FIELDS = new Set([
   'is_active',
 ]);
 
+const READ_ONLY_PATCH_FIELDS = new Set(['id', 'created_at', 'updated_at']);
+
 // PATCH: 서비스 정보 수정 (어드민용)
 export async function PATCH(request, { params }) {
   const { id } = await params;
@@ -27,7 +29,12 @@ export async function PATCH(request, { params }) {
       return NextResponse.json({ error: 'Supabase not configured' }, { status: 500 });
     }
 
-    const body = await request.json();
+    const rawBody = await request.json();
+    const body = rawBody && typeof rawBody === 'object' && !Array.isArray(rawBody)
+      ? Object.fromEntries(
+        Object.entries(rawBody).filter(([key]) => !READ_ONLY_PATCH_FIELDS.has(key))
+      )
+      : {};
     const unknownFields = Object.keys(body).filter((key) => !ALLOWED_PATCH_FIELDS.has(key));
 
     if (unknownFields.length > 0) {

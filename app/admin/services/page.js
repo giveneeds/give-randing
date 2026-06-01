@@ -80,6 +80,24 @@ function normalizeDetails(details = {}) {
   };
 }
 
+function buildServiceSavePayload(form = {}, { existing = false } = {}) {
+  const payload = {
+    title: form.title || '',
+    slug: form.slug || '',
+    subtitle: form.subtitle || '',
+    description: form.description || '',
+    category: form.category || 'ADS',
+    color: form.color || '#1E4181',
+    icon: form.icon || 'Target',
+    details: normalizeDetails(form.details),
+    order_num: Number.isFinite(Number(form.order_num)) ? Number(form.order_num) : 0,
+    is_active: form.is_active !== false,
+  };
+
+  if (existing) delete payload.slug;
+  return payload;
+}
+
 function findRelatedMagazine(service, magazines = []) {
   const details = service?.details || {};
   const blockRelSlug = Array.isArray(details.blocks)
@@ -707,8 +725,7 @@ export default function AdminServicesPage() {
     try {
       const url = isEditing === 'new' ? '/api/services' : `/api/services/${isEditing}`;
       const method = isEditing === 'new' ? 'POST' : 'PATCH';
-      const payload = { ...editForm };
-      if (isEditing !== 'new') delete payload.slug;
+      const payload = buildServiceSavePayload(editForm, { existing: isEditing !== 'new' });
 
       const res = await fetch(url, {
         method,
