@@ -1,12 +1,14 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { GitBranch, Search, Inbox, CheckCircle2, Activity } from 'lucide-react';
+import { GitBranch, Search, Inbox, CheckCircle2, Activity, Sparkles } from 'lucide-react';
 
 // 콘텐츠 스튜디오는 운영 화면을 검토함 중심으로 두고,
 // 기둥/리서치 설정은 고급 관리 영역으로 낮춘다.
 const TABS = [
   { href: '/admin/content-studio', label: '검토함', icon: Inbox, exact: true },
+  // 새 트랙 — 트렌드 기반 기획 에이전트 (USE_TREND_PIPELINE 분기). 기존 흐름과 별도.
+  { href: '/admin/content-studio/research-workbench', label: '워크벤치', icon: Sparkles },
   { href: '/admin/content-studio/published', label: '발행', icon: CheckCircle2 },
   { href: '/admin/content-studio/activity', label: '진행', icon: Activity },
   { href: '/admin/content-studio/pillars', label: '기둥', icon: GitBranch, advanced: true },

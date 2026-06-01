@@ -57,6 +57,7 @@ next-env.d.ts
 /docs/reference-data/threads-detail-manual-*.json
 /docs/reference-data/threads-popular-post-audit-*-manual-*.*
 /docs/reference-data/threads-popular-post-audit-*-apify-detail.json
+/docs/reference-data/goal-e2e-context.json
 
 # tools/content-mvp: 자체 node_modules + 실행 산출물 격리
 /tools/content-mvp/node_modules
@@ -73,3 +74,7 @@ next-env.d.ts
 
 # 로컬 빌드/리소스 산출물 (deck, skills 등) — 코드 아님
 /outputs/
+
+# 정욱님 본인용 실험 일지·작업 메모 — 공유 X
+/docs/experiments/
+
