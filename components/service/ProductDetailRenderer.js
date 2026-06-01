@@ -17,7 +17,12 @@ import {
   Sparkles,
 } from 'lucide-react';
 import MarkdownContent from '@/lib/markdownRender';
-import { getVisibleServiceDetailBlocks, parseYouTubeUrl } from '@/lib/serviceDetailBlocks';
+import {
+  SERVICE_DETAIL_EFFECT_VARIANTS,
+  SERVICE_DETAIL_PROCESS_VARIANTS,
+  getVisibleServiceDetailBlocks,
+  parseYouTubeUrl,
+} from '@/lib/serviceDetailBlocks';
 import SectionRenderer from '@/components/landing/SectionRenderer';
 
 const iconMap = {
@@ -307,6 +312,316 @@ function CardsBlock({ items = [] }) {
   );
 }
 
+function effectVariant(block) {
+  return SERVICE_DETAIL_EFFECT_VARIANTS.includes(block.variant) ? block.variant : 'benefit_cards';
+}
+
+function processVariant(block) {
+  return SERVICE_DETAIL_PROCESS_VARIANTS.includes(block.variant) ? block.variant : 'timeline';
+}
+
+function hasEffectContent(item = {}) {
+  return Boolean(item.title || item.desc || item.metric || item.before || item.after);
+}
+
+function EffectLabel({ item, dark = false }) {
+  if (!item.icon) return null;
+  return (
+    <span className={`mb-3 inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-widest ${
+      dark ? 'bg-white/10 text-zinc-200' : 'bg-zinc-200 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-100'
+    }`}>
+      {item.icon}
+    </span>
+  );
+}
+
+function EffectTitle({ item, dark = false, large = false }) {
+  if (!item.title && !item.metric) return null;
+  return (
+    <div>
+      {item.metric && (
+        <ManualLineText
+          as="p"
+          className={`${large ? 'text-3xl md:text-4xl' : 'text-xl md:text-2xl'} font-black leading-none tracking-tight ${
+            dark ? 'text-white' : 'text-zinc-950 dark:text-white'
+          }`}
+        >
+          {item.metric}
+        </ManualLineText>
+      )}
+      {item.title && (
+        <ManualLineText
+          as="h3"
+          className={`${item.metric ? 'mt-2' : ''} ${large ? 'text-lg md:text-xl' : 'text-sm'} font-black leading-tight ${
+            dark ? 'text-zinc-100' : 'text-zinc-900 dark:text-white'
+          }`}
+        >
+          {item.title}
+        </ManualLineText>
+      )}
+    </div>
+  );
+}
+
+function EffectDescription({ item, dark = false }) {
+  if (!item.desc) return null;
+  return <div className="mt-3"><MarkdownContent text={item.desc} variant={dark ? 'dark' : 'compact'} /></div>;
+}
+
+function BenefitCards({ items }) {
+  return (
+    <div className="grid gap-3 sm:grid-cols-2">
+      {items.map((item, index) => {
+        const dark = item.is_featured === true;
+        return (
+          <article
+            key={index}
+            className={`rounded-2xl border p-5 ${
+              dark
+                ? 'border-zinc-900 bg-zinc-900 text-white shadow-sm'
+                : 'border-zinc-100 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-800/60'
+            }`}
+          >
+            <EffectLabel item={item} dark={dark} />
+            <EffectTitle item={item} dark={dark} />
+            <EffectDescription item={item} dark={dark} />
+          </article>
+        );
+      })}
+    </div>
+  );
+}
+
+function MetricFocusEffects({ items }) {
+  const featured = items.find((item) => item.is_featured) || items[0];
+  const secondary = items.filter((item) => item !== featured);
+  return (
+    <div className="grid gap-4 lg:grid-cols-[1.1fr_1fr]">
+      <article className="rounded-3xl bg-zinc-900 p-6 text-white md:p-8">
+        <EffectLabel item={featured} dark />
+        <EffectTitle item={featured} dark large />
+        <EffectDescription item={featured} dark />
+      </article>
+      {secondary.length > 0 && (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+          {secondary.map((item, index) => (
+            <article key={index} className="rounded-2xl border border-zinc-100 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-800/60">
+              <EffectLabel item={item} />
+              <EffectTitle item={item} />
+              <EffectDescription item={item} />
+            </article>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function BeforeAfterEffects({ items }) {
+  return (
+    <div className="space-y-3">
+      {items.map((item, index) => (
+        <article key={index} className="rounded-2xl border border-zinc-100 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-800/60">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <EffectLabel item={item} />
+              <EffectTitle item={item} />
+            </div>
+            {item.metric && <span className="rounded-full bg-zinc-900 px-3 py-1 text-xs font-black text-white dark:bg-white dark:text-zinc-900">{item.metric}</span>}
+          </div>
+          <div className="grid gap-3 md:grid-cols-[1fr_auto_1fr] md:items-stretch">
+            <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
+              <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-zinc-400">Before</p>
+              <ManualLineText as="p" className="text-sm font-bold leading-relaxed text-zinc-700 dark:text-zinc-200">
+                {item.before || item.title}
+              </ManualLineText>
+            </div>
+            <div className="hidden items-center text-zinc-400 md:flex"><ArrowRight size={18} /></div>
+            <div className="rounded-2xl border border-zinc-900 bg-zinc-900 p-4 text-white">
+              <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-zinc-400">After</p>
+              <ManualLineText as="p" className="text-sm font-bold leading-relaxed">
+                {item.after || item.desc}
+              </ManualLineText>
+            </div>
+          </div>
+          {(item.before || item.after) && <EffectDescription item={item} />}
+        </article>
+      ))}
+    </div>
+  );
+}
+
+function ProblemSolutionEffects({ items }) {
+  return (
+    <div className="grid gap-3">
+      {items.map((item, index) => (
+        <article key={index} className="grid gap-3 rounded-2xl border border-zinc-100 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900 md:grid-cols-[1fr_1.15fr]">
+          <div className="rounded-2xl bg-zinc-50 p-4 dark:bg-zinc-800/60">
+            <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-zinc-400">Problem</p>
+            <ManualLineText as="h3" className="text-sm font-black leading-tight text-zinc-900 dark:text-white">
+              {item.before || item.title}
+            </ManualLineText>
+          </div>
+          <div className="rounded-2xl bg-zinc-900 p-4 text-white">
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Solution</p>
+              {item.metric && <span className="shrink-0 rounded-full bg-white/10 px-2 py-1 text-[10px] font-black dark:bg-zinc-900/10">{item.metric}</span>}
+            </div>
+            <ManualLineText as="p" className="text-sm font-bold leading-relaxed">
+              {item.after || item.desc}
+            </ManualLineText>
+          </div>
+        </article>
+      ))}
+    </div>
+  );
+}
+
+function EffectsBlock({ block }) {
+  const items = (block.cards || []).filter(hasEffectContent);
+  if (!items.length) return null;
+  const variant = effectVariant(block);
+
+  if (variant === 'metric_focus') return <MetricFocusEffects items={items} />;
+  if (variant === 'before_after') return <BeforeAfterEffects items={items} />;
+  if (variant === 'problem_solution') return <ProblemSolutionEffects items={items} />;
+  return <BenefitCards items={items} />;
+}
+
+function hasStepContent(step = {}) {
+  return Boolean(step.name || step.desc || step.image?.url || step.duration || step.deliverable);
+}
+
+function StepMeta({ step, dark = false }) {
+  const meta = [step.duration, step.deliverable].filter(Boolean);
+  if (meta.length === 0) return null;
+  return (
+    <div className="mt-3 flex flex-wrap gap-2">
+      {meta.map((item) => (
+        <span key={item} className={`rounded-full px-2.5 py-1 text-[10px] font-black ${
+          dark ? 'bg-white/10 text-zinc-100' : 'bg-zinc-200 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-100'
+        }`}>
+          {item}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function StepImage({ step, className = '' }) {
+  if (!step.image?.url) return null;
+  return (
+    <figure className={`overflow-hidden rounded-2xl bg-zinc-100 ${className}`}>
+      <FramedImage image={step.image} frameRatio={imageFrameRatio(step.image)} />
+      {step.image.caption && <figcaption className="px-4 py-3 text-xs font-bold text-zinc-600">{step.image.caption}</figcaption>}
+    </figure>
+  );
+}
+
+function StepText({ step, headingClassName = 'text-sm', dark = false }) {
+  return (
+    <div>
+      {step.name && (
+        <ManualLineText as="h3" className={`mb-2 font-black leading-tight ${headingClassName}`}>
+          {step.name}
+        </ManualLineText>
+      )}
+      {step.desc && <MarkdownContent text={step.desc} variant={dark ? 'dark' : 'compact'} />}
+      <StepMeta step={step} dark={dark} />
+    </div>
+  );
+}
+
+function TimelineProcess({ steps }) {
+  return (
+    <ol className="relative space-y-5 before:absolute before:left-5 before:top-5 before:h-[calc(100%-2.5rem)] before:w-px before:bg-zinc-200 dark:before:bg-zinc-700">
+      {steps.map((step, index) => (
+        <li key={index} className="relative grid grid-cols-[44px_1fr] gap-4">
+          <div className="z-10 flex h-10 w-10 items-center justify-center rounded-full bg-zinc-900 text-xs font-black text-white ring-4 ring-white dark:bg-white dark:text-zinc-900 dark:ring-zinc-900">
+            {step.step || String(index + 1).padStart(2, '0')}
+          </div>
+          <div className="rounded-2xl bg-zinc-50 p-4 dark:bg-zinc-800/60">
+            <StepText step={step} />
+            <StepImage step={step} className="mt-4" />
+          </div>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+function StepCardsProcess({ steps }) {
+  return (
+    <ol className="grid gap-3 md:grid-cols-2">
+      {steps.map((step, index) => (
+        <li key={index} className="rounded-2xl border border-zinc-100 bg-zinc-50 p-5 dark:border-zinc-800 dark:bg-zinc-800/60">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <span className="rounded-xl bg-zinc-900 px-3 py-2 text-xs font-black text-white dark:bg-white dark:text-zinc-900">
+              {step.step || String(index + 1).padStart(2, '0')}
+            </span>
+            {step.duration && <span className="text-xs font-black text-zinc-500">{step.duration}</span>}
+          </div>
+          <StepText step={step} headingClassName="text-base" />
+          <StepImage step={step} className="mt-4" />
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+function AlternatingProcess({ steps }) {
+  return (
+    <ol className="space-y-5">
+      {steps.map((step, index) => {
+        const hasImage = Boolean(step.image?.url);
+        return (
+          <li key={index} className={`grid gap-4 ${hasImage ? 'md:grid-cols-2 md:items-center' : ''}`}>
+            <div className={`rounded-3xl bg-zinc-900 p-5 text-white ${hasImage && index % 2 === 1 ? 'md:order-2' : ''}`}>
+              <span className="mb-4 inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-black dark:bg-zinc-900/10">
+                {step.step || String(index + 1).padStart(2, '0')}
+              </span>
+              <StepText step={step} headingClassName="text-lg" dark />
+            </div>
+            {hasImage && <StepImage step={step} className={index % 2 === 1 ? 'md:order-1' : ''} />}
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+function ChecklistProcess({ steps }) {
+  return (
+    <ul className="grid gap-3 sm:grid-cols-2">
+      {steps.map((step, index) => (
+        <li key={index} className="flex gap-3 rounded-2xl border border-zinc-100 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-800/60">
+          <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-zinc-900 text-white dark:bg-white dark:text-zinc-900">
+            <CheckCircle2 size={14} />
+          </div>
+          <div>
+            <ManualLineText as="h3" className="text-sm font-black leading-tight">
+              {step.name || step.deliverable || `Step ${index + 1}`}
+            </ManualLineText>
+            {step.desc && <MarkdownContent text={step.desc} variant="compact" />}
+            <StepMeta step={step} />
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function ProcessBlock({ block }) {
+  const steps = (block.steps || []).filter(hasStepContent);
+  if (!steps.length) return null;
+  const variant = processVariant(block);
+
+  if (variant === 'step_cards') return <StepCardsProcess steps={steps} />;
+  if (variant === 'alternating') return <AlternatingProcess steps={steps} />;
+  if (variant === 'checklist') return <ChecklistProcess steps={steps} />;
+  return <TimelineProcess steps={steps} />;
+}
+
 function PreviewSafeLink({ href, preview, className, children, ...props }) {
   if (preview) {
     return (
@@ -438,7 +753,14 @@ function StoryRenderer({ items = [], preview }) {
     <div className="space-y-6">
       {items.map((item, index) => {
         if (item.type === 'text') {
-          return <MarkdownContent key={item.id || index} text={item.body} />;
+          return (
+            <MarkdownContent
+              key={item.id || index}
+              text={item.body}
+              textSize={item.text_size || 'md'}
+              textWeight={item.text_weight || 'medium'}
+            />
+          );
         }
         if (item.type === 'image' && item.image?.url) {
           return (
@@ -584,31 +906,13 @@ function renderBlock(block, index, context = {}) {
     case 'effects':
       return (
         <BlockShell block={block} index={index}>
-          <CardsBlock items={block.cards} />
+          <EffectsBlock block={block} />
         </BlockShell>
       );
     case 'process':
       return (
         <BlockShell block={block} index={index}>
-          <ol className="space-y-3">
-            {(block.steps || []).map((step, stepIndex) => (
-              <li key={stepIndex} className="grid grid-cols-[44px_1fr] gap-3 rounded-2xl bg-zinc-50 p-4 dark:bg-zinc-800/60">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-900 text-xs font-black text-white dark:bg-white dark:text-zinc-900">
-                  {step.step || String(stepIndex + 1).padStart(2, '0')}
-                </div>
-                <div>
-                  {step.name && <h3 className="mb-1.5 text-sm font-black">{step.name}</h3>}
-                  {step.desc && <MarkdownContent text={step.desc} variant="compact" />}
-                  {step.image?.url && (
-                    <figure className="mt-4 overflow-hidden rounded-2xl bg-zinc-100">
-                      <FramedImage image={step.image} frameRatio={imageFrameRatio(step.image)} />
-                      {step.image.caption && <figcaption className="px-4 py-3 text-xs font-bold text-zinc-600">{step.image.caption}</figcaption>}
-                    </figure>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ol>
+          <ProcessBlock block={block} />
         </BlockShell>
       );
     case 'gallery':

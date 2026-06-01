@@ -26,7 +26,11 @@ import {
   SERVICE_DETAIL_BLOCK_LABELS,
   SERVICE_DETAIL_BLOCK_TYPES,
   SERVICE_DETAIL_BLOCKS_SCHEMA_VERSION,
+  SERVICE_DETAIL_EFFECT_VARIANTS,
+  SERVICE_DETAIL_PROCESS_VARIANTS,
   SERVICE_DETAIL_STORY_BLOCK_TYPES,
+  SERVICE_DETAIL_STORY_TEXT_SIZES,
+  SERVICE_DETAIL_STORY_TEXT_WEIGHTS,
   createServiceDetailBlock,
   legacyDetailsToServiceDetailBlocks,
   parseYouTubeUrl,
@@ -76,6 +80,30 @@ const STORY_ITEM_TYPES = [
   { type: 'quote', label: '후기', icon: Quote },
   { type: 'metric', label: '성과', icon: BarChart3 },
   { type: 'cta', label: '상담 CTA', icon: LinkIcon },
+];
+const STORY_TEXT_SIZE_OPTIONS = [
+  { value: 'sm', label: '작게' },
+  { value: 'md', label: '기본' },
+  { value: 'lg', label: '크게' },
+  { value: 'xl', label: '강조' },
+];
+const STORY_TEXT_WEIGHT_OPTIONS = [
+  { value: 'regular', label: '보통' },
+  { value: 'medium', label: '중간' },
+  { value: 'bold', label: '굵게' },
+  { value: 'black', label: '매우 굵게' },
+];
+const EFFECT_VARIANT_OPTIONS = [
+  { value: 'benefit_cards', label: '효과 카드형', description: '여러 효과를 균형 있게 보여주는 기본형입니다.' },
+  { value: 'metric_focus', label: '성과 수치 강조형', description: '수치나 핵심 키워드를 크게 보여줍니다.' },
+  { value: 'before_after', label: 'Before / After형', description: '도입 전 문제와 도입 후 변화를 대비합니다.' },
+  { value: 'problem_solution', label: '문제 해결형', description: '문제와 해결 방향을 연결해 설득합니다.' },
+];
+const PROCESS_VARIANT_OPTIONS = [
+  { value: 'timeline', label: '타임라인형', description: '연결선과 단계 번호로 순서를 강조합니다.' },
+  { value: 'step_cards', label: '스텝 카드형', description: '각 절차를 독립 카드처럼 크게 보여줍니다.' },
+  { value: 'alternating', label: '좌우 교차형', description: '이미지가 있는 절차를 데스크톱에서 교차 배치합니다.' },
+  { value: 'checklist', label: '체크리스트형', description: '짧은 실행 항목을 빠르게 훑게 합니다.' },
 ];
 
 function asBlocks(details) {
@@ -237,7 +265,7 @@ function createStoryItem(type) {
   const id = `story-${type}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
   switch (type) {
     case 'text':
-      return { id, type, body: '' };
+      return { id, type, body: '', text_size: 'md', text_weight: 'medium' };
     case 'image':
       return { id, type, image: createBlankImage(`${id}-image`) };
     case 'image_group':
@@ -870,16 +898,38 @@ function MediaEditor({ label = '선택 미디어', media, onChange, uploadFolder
 
 function StoryItemEditor({ item, onChange, uploadFolder }) {
   if (item.type === 'text') {
+    const textSize = SERVICE_DETAIL_STORY_TEXT_SIZES.includes(item.text_size) ? item.text_size : 'md';
+    const textWeight = SERVICE_DETAIL_STORY_TEXT_WEIGHTS.includes(item.text_weight) ? item.text_weight : 'medium';
     return (
-      <label>
-        <span className={LABEL}>본문</span>
-        <textarea
-          className={`${FIELD} min-h-36 resize-y leading-relaxed`}
-          value={item.body || ''}
-          onChange={(e) => onChange({ body: e.target.value })}
-          placeholder="문단을 입력하세요. 모바일 줄 길이는 엔터로 직접 조절할 수 있습니다."
-        />
-      </label>
+      <div className="grid gap-3">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <label>
+            <span className={LABEL}>텍스트 크기</span>
+            <select className={FIELD} value={textSize} onChange={(e) => onChange({ text_size: e.target.value })}>
+              {STORY_TEXT_SIZE_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+          </label>
+          <label>
+            <span className={LABEL}>굵기</span>
+            <select className={FIELD} value={textWeight} onChange={(e) => onChange({ text_weight: e.target.value })}>
+              {STORY_TEXT_WEIGHT_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+          </label>
+        </div>
+        <label>
+          <span className={LABEL}>본문</span>
+          <textarea
+            className={`${FIELD} min-h-36 resize-y leading-relaxed`}
+            value={item.body || ''}
+            onChange={(e) => onChange({ body: e.target.value })}
+            placeholder="문단을 입력하세요. 모바일 줄 길이는 엔터로 직접 조절할 수 있습니다."
+          />
+        </label>
+      </div>
     );
   }
 
@@ -1199,6 +1249,95 @@ function CardsEditor({ label, items = [], onChange, titlePlaceholder = '제목',
   );
 }
 
+function EffectCardsEditor({ items = [], onChange }) {
+  const addEffect = () => onChange(addArrayItem(items, {
+    title: '',
+    desc: '',
+    icon: '',
+    metric: '',
+    before: '',
+    after: '',
+    is_featured: false,
+  }));
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <span className={LABEL}>효과 항목</span>
+        <button
+          type="button"
+          onClick={addEffect}
+          className="rounded-lg border border-zinc-300 px-3 py-2 text-[11px] font-black text-zinc-800 hover:bg-zinc-100"
+        >
+          효과 추가
+        </button>
+      </div>
+      {items.map((item, index) => (
+        <div key={index} className="grid gap-3 rounded-2xl border border-zinc-200 bg-white p-3">
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-[1fr_150px_120px]">
+            <input
+              className={FIELD}
+              placeholder="효과 제목"
+              value={item.title || ''}
+              onChange={(e) => onChange(updateArrayItem(items, index, { title: e.target.value }))}
+            />
+            <input
+              className={FIELD}
+              placeholder="수치/키워드"
+              value={item.metric || ''}
+              onChange={(e) => onChange(updateArrayItem(items, index, { metric: e.target.value }))}
+            />
+            <input
+              className={FIELD}
+              placeholder="라벨"
+              value={item.icon || ''}
+              onChange={(e) => onChange(updateArrayItem(items, index, { icon: e.target.value }))}
+            />
+          </div>
+          <textarea
+            className={`${FIELD} min-h-24 resize-y`}
+            placeholder="효과 설명"
+            value={item.desc || ''}
+            onChange={(e) => onChange(updateArrayItem(items, index, { desc: e.target.value }))}
+          />
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+            <textarea
+              className={`${FIELD} min-h-20 resize-y`}
+              placeholder="도입 전 문제"
+              value={item.before || ''}
+              onChange={(e) => onChange(updateArrayItem(items, index, { before: e.target.value }))}
+            />
+            <textarea
+              className={`${FIELD} min-h-20 resize-y`}
+              placeholder="도입 후 변화"
+              value={item.after || ''}
+              onChange={(e) => onChange(updateArrayItem(items, index, { after: e.target.value }))}
+            />
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <label className="inline-flex items-center gap-2 text-xs font-black text-zinc-700">
+              <input
+                type="checkbox"
+                checked={item.is_featured === true}
+                onChange={(e) => onChange(updateArrayItem(items, index, { is_featured: e.target.checked }))}
+                className="h-4 w-4 rounded border-zinc-300 text-zinc-900"
+              />
+              대표 효과로 강조
+            </label>
+            <button
+              type="button"
+              onClick={() => onChange(removeArrayItem(items, index))}
+              className="rounded-lg px-3 py-1.5 text-[11px] font-black text-zinc-500 hover:bg-red-50 hover:text-red-600"
+            >
+              삭제
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function StepsEditor({ items = [], onChange, uploadFolder }) {
   return (
     <div className="space-y-3">
@@ -1232,6 +1371,20 @@ function StepsEditor({ items = [], onChange, uploadFolder }) {
               value={item.desc || ''}
               onChange={(e) => onChange(updateArrayItem(items, index, { desc: e.target.value }))}
             />
+            <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+              <input
+                className={FIELD}
+                placeholder="기간/타이밍"
+                value={item.duration || ''}
+                onChange={(e) => onChange(updateArrayItem(items, index, { duration: e.target.value }))}
+              />
+              <input
+                className={FIELD}
+                placeholder="산출물/결과물"
+                value={item.deliverable || ''}
+                onChange={(e) => onChange(updateArrayItem(items, index, { deliverable: e.target.value }))}
+              />
+            </div>
             <button
               type="button"
               onClick={() => onChange(removeArrayItem(items, index))}
@@ -1425,11 +1578,41 @@ function BlockFields({ block, onChange, uploadFolder, magazines = [] }) {
   }
 
   if (block.type === 'effects') {
-    return <CardsEditor label="효과 카드" items={block.cards || []} onChange={(cards) => onChange({ cards })} />;
+    const variant = SERVICE_DETAIL_EFFECT_VARIANTS.includes(block.variant) ? block.variant : 'benefit_cards';
+    const selected = EFFECT_VARIANT_OPTIONS.find((option) => option.value === variant);
+    return (
+      <div className="grid gap-4">
+        <label>
+          <span className={LABEL}>표시 방식</span>
+          <select className={FIELD} value={variant} onChange={(e) => onChange({ variant: e.target.value })}>
+            {EFFECT_VARIANT_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>{option.label}</option>
+            ))}
+          </select>
+          {selected?.description && <p className={`${HELP} mt-2`}>{selected.description}</p>}
+        </label>
+        <EffectCardsEditor items={block.cards || []} onChange={(cards) => onChange({ cards })} />
+      </div>
+    );
   }
 
   if (block.type === 'process') {
-    return <StepsEditor items={block.steps || []} uploadFolder={uploadFolder} onChange={(steps) => onChange({ steps })} />;
+    const variant = SERVICE_DETAIL_PROCESS_VARIANTS.includes(block.variant) ? block.variant : 'timeline';
+    const selected = PROCESS_VARIANT_OPTIONS.find((option) => option.value === variant);
+    return (
+      <div className="grid gap-4">
+        <label>
+          <span className={LABEL}>표시 방식</span>
+          <select className={FIELD} value={variant} onChange={(e) => onChange({ variant: e.target.value })}>
+            {PROCESS_VARIANT_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>{option.label}</option>
+            ))}
+          </select>
+          {selected?.description && <p className={`${HELP} mt-2`}>{selected.description}</p>}
+        </label>
+        <StepsEditor items={block.steps || []} uploadFolder={uploadFolder} onChange={(steps) => onChange({ steps })} />
+      </div>
+    );
   }
 
   if (block.type === 'gallery') {
