@@ -12,6 +12,13 @@
       "reference_type": "high_engagement_reference",
       "source": "user_provided",
       "notes": "정욱님 제공 고반응 레퍼런스. 짧은 관계형 micro-post. 줄을 잘게 끊는 호흡, 부담 없는 반말, '~없을까?' 로 열어두는 마감. engagement_intent=relate 톤 학습용."
+    },
+    "tone_meta": {
+      "hook_pattern": "confession_story",
+      "engagement_intent": "relate",
+      "rhythm": "short",
+      "register": "ban",
+      "structure_template_affinity": ["question_engagement"]
     }
   },
   {
@@ -27,6 +34,13 @@
       "reference_type": "high_engagement_reference",
       "source": "user_provided",
       "notes": "정욱님 제공 고반응 레퍼런스. 정보형 해설 → 핵심 기능 나열 → '여러분은 ~?' 질문으로 마감해 참여 유도. 이모지(👀🤔)로 호흡. 단정 대신 '~인데요/~한다고 합니다' 전달체. content_treatment=news_commentary 톤 학습용."
+    },
+    "tone_meta": {
+      "hook_pattern": "niche_expert",
+      "engagement_intent": "trust",
+      "rhythm": "long",
+      "register": "jon",
+      "structure_template_affinity": ["numbers_then_meaning", "question_engagement"]
     }
   },
   {
@@ -48,6 +62,13 @@
       "reference_type": "high_engagement_reference",
       "source": "user_provided",
       "notes": "정욱님 제공 고반응 레퍼런스. 루트에서 '너희 자랑해봐' 로 판을 깔고 '일단 나는!' 으로 연속글에서 직접 사례 공개. 참여를 먼저 유도하고 본인이 시범을 보이는 구조. engagement_intent=relate 톤 학습용."
+    },
+    "tone_meta": {
+      "hook_pattern": "micro_humor",
+      "engagement_intent": "relate",
+      "rhythm": "short",
+      "register": "ban",
+      "structure_template_affinity": ["question_engagement"]
     }
   },
   {
@@ -63,6 +84,13 @@
       "reference_type": "high_engagement_reference",
       "source": "user_provided",
       "notes": "정욱님 제공 고반응 레퍼런스. '바뀐 이유 5가지' 로 번호 나열, 이유를 쌓아 '결과:' 로 수렴, '진짜 시작해야함' 으로 날선 마감. 현장 용어(스블·AEO·GEO) 그대로. content_pillar=current_observation / treatment=news_commentary / engagement_intent=trust 톤 학습용."
+    },
+    "tone_meta": {
+      "hook_pattern": "niche_expert",
+      "engagement_intent": "trust",
+      "rhythm": "short",
+      "register": "jon",
+      "structure_template_affinity": ["numbers_then_meaning", "info_vs_criterion"]
     }
   }
 ]

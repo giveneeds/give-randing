@@ -12,6 +12,13 @@
       "reference_type": "high_engagement_reference",
       "source": "user_provided",
       "notes": "정욱님 제공 고반응 레퍼런스. 본문에 파이프라인 구현 영상 첨부됨. 고백형 도입('사람 손 필요한 영역이라 생각했다') → '근데 80% 이미 자동화' 반전 → ❶~❺ 나열 → '판단만 사람, 실행은 MCP' 통찰 → '댓글로 저요!' 부드러운 CTA. hook=confession_story / engagement_intent=convert 톤 학습용."
+    },
+    "tone_meta": {
+      "hook_pattern": "confession_story",
+      "engagement_intent": "convert",
+      "rhythm": "mid",
+      "register": "jon",
+      "structure_template_affinity": ["command_to_output", "before_after"]
     }
   },
   {
@@ -33,6 +40,13 @@
       "reference_type": "high_engagement_reference",
       "source": "user_provided",
       "notes": "정욱님 제공 고반응 레퍼런스. ㅋㅋ 가득한 구어체 도발/유머. '맛있어도 릴스 없으면 존재감 없음' '전국민이 마케터 시대' 같은 현장어 FOMO. 짧은 문장 난사 + 반말. hook=micro_humor/provocation / engagement_intent=relate 톤 학습용. (날조 1인칭 아님 — 일반론 관찰체이므로 봇이 흉내내도 안전한 범위는 '현장 관찰' 톤까지만.)"
+    },
+    "tone_meta": {
+      "hook_pattern": "provocation",
+      "engagement_intent": "relate",
+      "rhythm": "short",
+      "register": "ban",
+      "structure_template_affinity": ["observation_breaks_norm", "counter_argument"]
     }
   },
   {
@@ -54,6 +68,13 @@
       "reference_type": "high_engagement_reference",
       "source": "user_provided",
       "notes": "정욱님 제공 고반응 레퍼런스. 루트에서 '정보는 고마워하지만 기준은 지갑을 연다' 후킹 → 연속글에서 정보/기준 1)2)3) 대비 예시로 알맹이. 추상 주장을 즉시 구체 대비로 증명하는 구조. post_role=criterion / hook=niche_expert / engagement_intent=trust 톤 학습용."
+    },
+    "tone_meta": {
+      "hook_pattern": "niche_expert",
+      "engagement_intent": "trust",
+      "rhythm": "short",
+      "register": "jon",
+      "structure_template_affinity": ["info_vs_criterion", "numbers_then_meaning"]
     }
   }
 ]
