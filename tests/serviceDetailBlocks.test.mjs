@@ -77,6 +77,7 @@ test('story mode blocks keep ordered text, media, grouped images, and CTA items'
   assert.equal(blocks[0].story_items[0].body, '첫 문단\n직접 줄바꿈');
   assert.equal(blocks[0].story_items[0].text_size, 'xl');
   assert.equal(blocks[0].story_items[0].text_weight, 'black');
+  assert.deepEqual(blocks[0].story_items[0].text_style, { role: 'h3', color: 'default' });
   assert.equal(blocks[0].story_items[1].image.object_position, '80% 25%');
   assert.equal(blocks[0].story_items[1].image.object_scale, 250);
   assert.equal(blocks[0].story_items[1].image.natural_width, 1280);
@@ -85,8 +86,77 @@ test('story mode blocks keep ordered text, media, grouped images, and CTA items'
   assert.equal(blocks[0].story_items[3].media_items.length, 2);
   assert.equal(blocks[0].story_items[3].media.type, 'video');
   assert.equal(blocks[0].story_items[3].media.autoplay, false);
+  assert.deepEqual(blocks[0].story_items[3].quote_style, { role: 'quote', color: 'default' });
   assert.equal(blocks[0].story_items[4].media_items[0].image.natural_width, 1200);
+  assert.deepEqual(blocks[0].story_items[4].title_style, { role: 'h3', color: 'strong' });
   assert.equal(blocks[0].story_items[5].button_href, 'https://pf.kakao.com/example');
+  assert.deepEqual(blocks[0].story_items[5].copy_style, { role: 'body', color: 'inverse' });
+});
+
+test('text style settings normalize across service detail writing fields', () => {
+  const { blocks, errors } = normalizeServiceDetailBlocks({
+    blocks: [
+      {
+        id: 'intro-style',
+        type: 'intro',
+        display_title: '섹션 제목',
+        display_title_style: { role: 'h1', color: 'brand' },
+        headline: '지도에도 없는 노점상',
+        headline_style: { role: 'h2', color: 'red' },
+        summary: '사진 속 줄이 길지 않습니다.',
+        summary_style: { role: 'unknown', color: 'unknown' },
+      },
+      {
+        id: 'cards-style',
+        type: 'sub_products',
+        items: [
+          {
+            title: '요식업 바이럴',
+            title_style: { role: 'h4', color: 'green' },
+            desc: '본문 설명',
+            desc_style: { role: 'caption', color: 'muted' },
+          },
+        ],
+      },
+      {
+        id: 'case-style',
+        type: 'case_proof',
+        metrics: [{
+          title: '문의 240%',
+          title_style: { role: 'h2', color: 'amber' },
+          desc: '성과 설명',
+          desc_style: { role: 'body', color: 'blue' },
+        }],
+        testimonials: [{
+          quote: '진짜 사례처럼 보입니다.',
+          quote_style: { role: 'quote', color: 'strong' },
+          author: '담당자',
+          author_style: { role: 'caption', color: 'green' },
+          role: '브랜드팀',
+          role_style: { role: 'caption', color: 'red' },
+        }],
+      },
+      {
+        id: 'cta-style',
+        type: 'cta',
+        copy: '카카오톡으로 바로 문의하세요.',
+        copy_style: { role: 'h4', color: 'inverse' },
+      },
+    ],
+  });
+
+  assert.deepEqual(errors, []);
+  assert.deepEqual(blocks[0].display_title_style, { role: 'h1', color: 'brand' });
+  assert.deepEqual(blocks[0].headline_style, { role: 'h2', color: 'red' });
+  assert.deepEqual(blocks[0].summary_style, { role: 'body', color: 'muted' });
+  assert.deepEqual(blocks[1].items[0].title_style, { role: 'h4', color: 'green' });
+  assert.deepEqual(blocks[1].items[0].desc_style, { role: 'caption', color: 'muted' });
+  assert.deepEqual(blocks[2].metrics[0].title_style, { role: 'h2', color: 'amber' });
+  assert.deepEqual(blocks[2].metrics[0].desc_style, { role: 'body', color: 'blue' });
+  assert.deepEqual(blocks[2].testimonials[0].quote_style, { role: 'quote', color: 'strong' });
+  assert.deepEqual(blocks[2].testimonials[0].author_style, { role: 'caption', color: 'green' });
+  assert.deepEqual(blocks[2].testimonials[0].role_style, { role: 'caption', color: 'red' });
+  assert.deepEqual(blocks[3].copy_style, { role: 'h4', color: 'inverse' });
 });
 
 test('gallery and story image groups support mixed legacy-named media items', () => {

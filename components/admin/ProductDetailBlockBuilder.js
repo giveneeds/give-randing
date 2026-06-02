@@ -29,13 +29,19 @@ import {
   SERVICE_DETAIL_EFFECT_VARIANTS,
   SERVICE_DETAIL_PROCESS_VARIANTS,
   SERVICE_DETAIL_STORY_BLOCK_TYPES,
-  SERVICE_DETAIL_STORY_TEXT_SIZES,
-  SERVICE_DETAIL_STORY_TEXT_WEIGHTS,
   createServiceDetailBlock,
   legacyDetailsToServiceDetailBlocks,
   parseYouTubeUrl,
 } from '@/lib/serviceDetailBlocks';
 import { getSupabaseAuthHeaders } from '@/lib/clientAuthHeaders';
+import {
+  SERVICE_TEXT_COLOR_OPTIONS,
+  SERVICE_TEXT_ROLE_OPTIONS,
+  legacyStoryTextStyle,
+  normalizeServiceTextStyle,
+  serviceTextColorClassName,
+  serviceTextRoleClassName,
+} from '@/lib/serviceTextStyles';
 
 const TYPE_DESCRIPTIONS = {
   intro: '상품의 핵심 메시지와 요약을 넣습니다.',
@@ -80,18 +86,6 @@ const STORY_ITEM_TYPES = [
   { type: 'quote', label: '후기', icon: Quote },
   { type: 'metric', label: '성과', icon: BarChart3 },
   { type: 'cta', label: '상담 CTA', icon: LinkIcon },
-];
-const STORY_TEXT_SIZE_OPTIONS = [
-  { value: 'sm', label: '작게' },
-  { value: 'md', label: '기본' },
-  { value: 'lg', label: '크게' },
-  { value: 'xl', label: '강조' },
-];
-const STORY_TEXT_WEIGHT_OPTIONS = [
-  { value: 'regular', label: '보통' },
-  { value: 'medium', label: '중간' },
-  { value: 'bold', label: '굵게' },
-  { value: 'black', label: '매우 굵게' },
 ];
 const EFFECT_VARIANT_OPTIONS = [
   { value: 'benefit_cards', label: '효과 카드형', description: '여러 효과를 균형 있게 보여주는 기본형입니다.' },
@@ -413,7 +407,7 @@ function createStoryItem(type) {
   const id = `story-${type}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
   switch (type) {
     case 'text':
-      return { id, type, body: '', text_size: 'md', text_weight: 'medium' };
+      return { id, type, body: '', text_size: 'md', text_weight: 'medium', text_style: { role: 'body', color: 'default' } };
     case 'image':
       return { id, type, image: createBlankImage(`${id}-image`) };
     case 'image_group':
@@ -421,11 +415,30 @@ function createStoryItem(type) {
     case 'video':
       return { id, type, media_type: 'video', url: '', title: '', aspect_ratio: '16:9', fit: 'contain', object_position: '50% 50%', object_scale: 100, autoplay: true };
     case 'quote':
-      return { id, type, quote: '', author: '', role: '', media: null };
+      return {
+        id,
+        type,
+        quote: '',
+        quote_style: { role: 'quote', color: 'default' },
+        author: '',
+        author_style: { role: 'caption', color: 'muted' },
+        role: '',
+        role_style: { role: 'caption', color: 'muted' },
+        media: null,
+      };
     case 'metric':
-      return { id, type, title: '', desc: '', icon: '', media: null };
+      return {
+        id,
+        type,
+        title: '',
+        title_style: { role: 'h3', color: 'strong' },
+        desc: '',
+        desc_style: { role: 'body', color: 'default' },
+        icon: '',
+        media: null,
+      };
     case 'cta':
-      return { id, type, copy: '', button_label: '카카오톡 문의', button_href: '' };
+      return { id, type, copy: '', copy_style: { role: 'body', color: 'inverse' }, button_label: '카카오톡 문의', button_href: '' };
     default:
       return { id, type: 'text', body: '' };
   }
@@ -446,17 +459,21 @@ function seedStoryItemsFromBlock(block) {
   if (Array.isArray(block.story_items) && block.story_items.length > 0) return block.story_items;
 
   if (block.type === 'intro') {
-    const body = [block.headline, block.summary].filter(Boolean).join('\n\n');
-    return body ? [{ ...createStoryItem('text'), body }] : [];
+    return [
+      block.headline ? { ...createStoryItem('text'), body: block.headline, text_style: block.headline_style || { role: 'h2', color: 'default' } } : null,
+      block.summary ? { ...createStoryItem('text'), body: block.summary, text_style: block.summary_style || { role: 'body', color: 'muted' } } : null,
+    ].filter(Boolean);
   }
   if (block.type === 'rich_text') {
-    return block.body ? [{ ...createStoryItem('text'), body: block.body }] : [];
+    return block.body ? [{ ...createStoryItem('text'), body: block.body, text_style: block.body_style || { role: 'body', color: 'default' } }] : [];
   }
   if (block.type === 'effects') {
     return (block.cards || []).map((card) => ({
       ...createStoryItem('metric'),
       title: card.title || '',
+      title_style: card.title_style || card.metric_style || { role: 'h3', color: 'strong' },
       desc: card.desc || '',
+      desc_style: card.desc_style || { role: 'body', color: 'default' },
       icon: card.icon || '',
     }));
   }
@@ -464,6 +481,7 @@ function seedStoryItemsFromBlock(block) {
     return (block.steps || []).map((step) => ({
       ...createStoryItem('text'),
       body: [step.name, step.desc].filter(Boolean).join('\n'),
+      text_style: step.name_style || { role: 'body', color: 'default' },
     })).filter((item) => item.body);
   }
   if (block.type === 'case_proof') {
@@ -471,9 +489,23 @@ function seedStoryItemsFromBlock(block) {
       ...(block.metrics || []).map((metric) => ({
         ...createStoryItem('metric'),
         title: metric.title || '',
+        title_style: metric.title_style || { role: 'h3', color: 'strong' },
         desc: metric.desc || '',
+        desc_style: metric.desc_style || { role: 'body', color: 'default' },
         icon: metric.icon || '',
         media: metric.media || null,
+        media_items: metric.media_items || [],
+      })),
+      ...(block.testimonials || []).map((testimonial) => ({
+        ...createStoryItem('quote'),
+        quote: testimonial.quote || '',
+        quote_style: testimonial.quote_style || { role: 'quote', color: 'default' },
+        author: testimonial.author || '',
+        author_style: testimonial.author_style || { role: 'caption', color: 'muted' },
+        role: testimonial.role || '',
+        role_style: testimonial.role_style || { role: 'caption', color: 'muted' },
+        media: testimonial.media || null,
+        media_items: testimonial.media_items || [],
       })),
       ...(block.quote ? [{ ...createStoryItem('quote'), quote: block.quote }] : []),
     ];
@@ -568,6 +600,80 @@ function LandingContentJsonEditor({ content, onCommit }) {
       />
       {error && <p className="rounded-xl bg-red-50 px-3 py-2 text-xs font-bold text-red-600">{error}</p>}
       <p className={HELP}>랜딩페이지 빌더의 고급 편집과 같은 구조입니다. 일반 문구는 위의 제목/서브타이틀에서 수정하고, 섹션 내부 항목은 JSON으로 조정합니다.</p>
+    </div>
+  );
+}
+
+function StyledTextEditor({
+  label,
+  value = '',
+  onTextChange,
+  style,
+  onStyleChange,
+  placeholder = '',
+  multiline = true,
+  minHeight = 'min-h-28',
+  defaultRole = 'body',
+  defaultColor = 'default',
+  help,
+}) {
+  const currentStyle = normalizeServiceTextStyle(style, { role: defaultRole, color: defaultColor });
+  const FieldTag = multiline ? 'textarea' : 'input';
+  const previewText = value || placeholder || '미리보기 텍스트';
+  const previewDark = currentStyle.color === 'inverse';
+  const updateStyle = (patch) => {
+    onStyleChange?.(normalizeServiceTextStyle({ ...currentStyle, ...patch }, { role: defaultRole, color: defaultColor }));
+  };
+
+  return (
+    <div className="grid gap-2 rounded-2xl border border-zinc-200 bg-white p-3">
+      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <span className={LABEL}>{label}</span>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <select
+            className={`${FIELD} py-2 text-xs`}
+            value={currentStyle.role}
+            onChange={(e) => updateStyle({ role: e.target.value })}
+            aria-label={`${label} 글 형식`}
+          >
+            {SERVICE_TEXT_ROLE_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>{option.label}</option>
+            ))}
+          </select>
+          <select
+            className={`${FIELD} py-2 text-xs`}
+            value={currentStyle.color}
+            onChange={(e) => updateStyle({ color: e.target.value })}
+            aria-label={`${label} 글 색`}
+          >
+            {SERVICE_TEXT_COLOR_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>{option.label}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+      <FieldTag
+        className={`${FIELD} ${multiline ? `${minHeight} resize-y leading-relaxed` : ''}`}
+        value={value || ''}
+        onChange={(e) => onTextChange(e.target.value)}
+        placeholder={placeholder}
+      />
+      <div className={`rounded-xl border p-3 ${previewDark ? 'border-zinc-800 bg-zinc-900' : 'border-zinc-100 bg-zinc-50'}`}>
+        <div className="mb-2 flex flex-wrap items-center gap-1.5">
+          <span className="text-[10px] font-black uppercase tracking-[0.14em] text-zinc-400">Preview</span>
+          {SERVICE_TEXT_COLOR_OPTIONS.map((option) => (
+            option.value === currentStyle.color ? (
+              <span key={option.value} className={`h-3 w-3 rounded-full ${option.swatch}`} />
+            ) : null
+          ))}
+        </div>
+        <div
+          className={`whitespace-pre-line break-keep ${serviceTextRoleClassName(currentStyle.role)} ${serviceTextColorClassName(currentStyle.color, previewDark ? 'dark' : 'default')}`}
+        >
+          {previewText}
+        </div>
+      </div>
+      {help && <p className={HELP}>{help}</p>}
     </div>
   );
 }
@@ -1011,7 +1117,16 @@ function imageFromMedia(media) {
   return null;
 }
 
-function VideoAssetEditor({ label = '업로드 영상', media, onChange, uploadFolder, allowRemove = false, onRemove }) {
+function VideoAssetEditor({
+  label = '업로드 영상',
+  media,
+  onChange,
+  uploadFolder,
+  allowRemove = false,
+  onRemove,
+  titleStyle,
+  onTitleStyleChange,
+}) {
   const fileInputRef = useRef(null);
   const [uploading, setUploading] = useState(false);
   const current = {
@@ -1130,12 +1245,26 @@ function VideoAssetEditor({ label = '업로드 영상', media, onChange, uploadF
             value={current.url || ''}
             onChange={(e) => updateVideo({ url: e.target.value })}
           />
-          <input
-            className={FIELD}
-            placeholder="영상 제목"
-            value={current.title || ''}
-            onChange={(e) => updateVideo({ title: e.target.value })}
-          />
+          {onTitleStyleChange ? (
+            <StyledTextEditor
+              label="영상 제목"
+              value={current.title || ''}
+              onTextChange={(title) => updateVideo({ title })}
+              style={titleStyle}
+              onStyleChange={onTitleStyleChange}
+              placeholder="영상 제목"
+              multiline={false}
+              defaultRole="h3"
+              defaultColor="default"
+            />
+          ) : (
+            <input
+              className={FIELD}
+              placeholder="영상 제목"
+              value={current.title || ''}
+              onChange={(e) => updateVideo({ title: e.target.value })}
+            />
+          )}
           <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
             <label>
               <span className={LABEL}>비율</span>
@@ -1333,38 +1462,19 @@ function ProofMediaItemsEditor({
 
 function StoryItemEditor({ item, onChange, uploadFolder }) {
   if (item.type === 'text') {
-    const textSize = SERVICE_DETAIL_STORY_TEXT_SIZES.includes(item.text_size) ? item.text_size : 'md';
-    const textWeight = SERVICE_DETAIL_STORY_TEXT_WEIGHTS.includes(item.text_weight) ? item.text_weight : 'medium';
     return (
-      <div className="grid gap-3">
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          <label>
-            <span className={LABEL}>텍스트 크기</span>
-            <select className={FIELD} value={textSize} onChange={(e) => onChange({ text_size: e.target.value })}>
-              {STORY_TEXT_SIZE_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>{option.label}</option>
-              ))}
-            </select>
-          </label>
-          <label>
-            <span className={LABEL}>굵기</span>
-            <select className={FIELD} value={textWeight} onChange={(e) => onChange({ text_weight: e.target.value })}>
-              {STORY_TEXT_WEIGHT_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>{option.label}</option>
-              ))}
-            </select>
-          </label>
-        </div>
-        <label>
-          <span className={LABEL}>본문</span>
-          <textarea
-            className={`${FIELD} min-h-36 resize-y leading-relaxed`}
-            value={item.body || ''}
-            onChange={(e) => onChange({ body: e.target.value })}
-            placeholder="문단을 입력하세요. 모바일 줄 길이는 엔터로 직접 조절할 수 있습니다."
-          />
-        </label>
-      </div>
+      <StyledTextEditor
+        label="본문"
+        value={item.body || ''}
+        onTextChange={(body) => onChange({ body })}
+        style={item.text_style || legacyStoryTextStyle(item.text_size, item.text_weight)}
+        onStyleChange={(text_style) => onChange({ text_style })}
+        placeholder="문단을 입력하세요. 모바일 줄 길이는 엔터로 직접 조절할 수 있습니다."
+        minHeight="min-h-36"
+        defaultRole="body"
+        defaultColor="default"
+        help="문단 하나를 H1~H6, 본문, 인용문 중 하나로 설정합니다. 엔터로 만든 줄바꿈은 모바일에도 유지됩니다."
+      />
     );
   }
 
@@ -1470,19 +1580,37 @@ function StoryItemEditor({ item, onChange, uploadFolder }) {
   if (item.type === 'quote') {
     return (
       <div className="grid gap-3">
-        <label>
-          <span className={LABEL}>후기/인용문</span>
-          <textarea className={`${FIELD} min-h-28 resize-y`} value={item.quote || ''} onChange={(e) => onChange({ quote: e.target.value })} />
-        </label>
+        <StyledTextEditor
+          label="후기/인용문"
+          value={item.quote || ''}
+          onTextChange={(quote) => onChange({ quote })}
+          style={item.quote_style}
+          onStyleChange={(quote_style) => onChange({ quote_style })}
+          placeholder="후기 또는 인용문"
+          defaultRole="quote"
+          defaultColor="default"
+        />
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          <label>
-            <span className={LABEL}>이름</span>
-            <input className={FIELD} value={item.author || ''} onChange={(e) => onChange({ author: e.target.value })} />
-          </label>
-          <label>
-            <span className={LABEL}>역할/소속</span>
-            <input className={FIELD} value={item.role || ''} onChange={(e) => onChange({ role: e.target.value })} />
-          </label>
+          <StyledTextEditor
+            label="이름"
+            value={item.author || ''}
+            onTextChange={(author) => onChange({ author })}
+            style={item.author_style}
+            onStyleChange={(author_style) => onChange({ author_style })}
+            multiline={false}
+            defaultRole="caption"
+            defaultColor="muted"
+          />
+          <StyledTextEditor
+            label="역할/소속"
+            value={item.role || ''}
+            onTextChange={(role) => onChange({ role })}
+            style={item.role_style}
+            onStyleChange={(role_style) => onChange({ role_style })}
+            multiline={false}
+            defaultRole="caption"
+            defaultColor="muted"
+          />
         </div>
         <ProofMediaItemsEditor
           label="후기에 붙일 사진/영상"
@@ -1500,19 +1628,31 @@ function StoryItemEditor({ item, onChange, uploadFolder }) {
     return (
       <div className="grid gap-3">
         <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_96px]">
-          <label>
-            <span className={LABEL}>성과 수치/제목</span>
-            <input className={FIELD} value={item.title || ''} onChange={(e) => onChange({ title: e.target.value })} />
-          </label>
+          <StyledTextEditor
+            label="성과 수치/제목"
+            value={item.title || ''}
+            onTextChange={(title) => onChange({ title })}
+            style={item.title_style}
+            onStyleChange={(title_style) => onChange({ title_style })}
+            multiline={false}
+            defaultRole="h3"
+            defaultColor="strong"
+          />
           <label>
             <span className={LABEL}>아이콘</span>
             <input className={FIELD} value={item.icon || ''} onChange={(e) => onChange({ icon: e.target.value })} placeholder="선택" />
           </label>
         </div>
-        <label>
-          <span className={LABEL}>설명</span>
-          <textarea className={`${FIELD} min-h-24 resize-y`} value={item.desc || ''} onChange={(e) => onChange({ desc: e.target.value })} />
-        </label>
+        <StyledTextEditor
+          label="설명"
+          value={item.desc || ''}
+          onTextChange={(desc) => onChange({ desc })}
+          style={item.desc_style}
+          onStyleChange={(desc_style) => onChange({ desc_style })}
+          placeholder="성과 설명"
+          defaultRole="body"
+          defaultColor="default"
+        />
         <ProofMediaItemsEditor
           label="성과 근거 사진/영상"
           item={item}
@@ -1528,10 +1668,16 @@ function StoryItemEditor({ item, onChange, uploadFolder }) {
   if (item.type === 'cta') {
     return (
       <div className="grid gap-3">
-        <label>
-          <span className={LABEL}>유도 문구</span>
-          <textarea className={`${FIELD} min-h-24 resize-y`} value={item.copy || ''} onChange={(e) => onChange({ copy: e.target.value })} />
-        </label>
+        <StyledTextEditor
+          label="유도 문구"
+          value={item.copy || ''}
+          onTextChange={(copy) => onChange({ copy })}
+          style={item.copy_style}
+          onStyleChange={(copy_style) => onChange({ copy_style })}
+          placeholder="상담 문의를 유도하는 문구"
+          defaultRole="body"
+          defaultColor="inverse"
+        />
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           <label>
             <span className={LABEL}>버튼 라벨</span>
@@ -1679,17 +1825,26 @@ function CardsEditor({ label, items = [], onChange, titlePlaceholder = '제목',
       </div>
       {items.map((item, index) => (
         <div key={index} className="grid gap-2 rounded-2xl border border-zinc-200 bg-white p-3">
-          <input
-            className={FIELD}
-            placeholder={titlePlaceholder}
+          <StyledTextEditor
+            label={titlePlaceholder}
             value={item.title || ''}
-            onChange={(e) => onChange(updateArrayItem(items, index, { title: e.target.value }))}
+            onTextChange={(title) => onChange(updateArrayItem(items, index, { title }))}
+            style={item.title_style}
+            onStyleChange={(title_style) => onChange(updateArrayItem(items, index, { title_style }))}
+            placeholder={titlePlaceholder}
+            multiline={false}
+            defaultRole="h4"
+            defaultColor="default"
           />
-          <textarea
-            className={`${FIELD} min-h-24 resize-y`}
-            placeholder={descPlaceholder}
+          <StyledTextEditor
+            label={descPlaceholder}
             value={item.desc || ''}
-            onChange={(e) => onChange(updateArrayItem(items, index, { desc: e.target.value }))}
+            onTextChange={(desc) => onChange(updateArrayItem(items, index, { desc }))}
+            style={item.desc_style}
+            onStyleChange={(desc_style) => onChange(updateArrayItem(items, index, { desc_style }))}
+            placeholder={descPlaceholder}
+            defaultRole="body"
+            defaultColor="default"
           />
           <button
             type="button"
@@ -1707,11 +1862,16 @@ function CardsEditor({ label, items = [], onChange, titlePlaceholder = '제목',
 function EffectCardsEditor({ items = [], onChange }) {
   const addEffect = () => onChange(addArrayItem(items, {
     title: '',
+    title_style: { role: 'h4', color: 'default' },
     desc: '',
+    desc_style: { role: 'body', color: 'default' },
     icon: '',
     metric: '',
+    metric_style: { role: 'h2', color: 'strong' },
     before: '',
+    before_style: { role: 'body', color: 'muted' },
     after: '',
+    after_style: { role: 'body', color: 'inverse' },
     is_featured: false,
   }));
 
@@ -1729,18 +1889,40 @@ function EffectCardsEditor({ items = [], onChange }) {
       </div>
       {items.map((item, index) => (
         <div key={index} className="grid gap-3 rounded-2xl border border-zinc-200 bg-white p-3">
-          <div className="grid grid-cols-1 gap-2 md:grid-cols-[1fr_150px_120px]">
-            <input
-              className={FIELD}
-              placeholder="효과 제목"
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <StyledTextEditor
+              label="효과 제목"
               value={item.title || ''}
-              onChange={(e) => onChange(updateArrayItem(items, index, { title: e.target.value }))}
+              onTextChange={(title) => onChange(updateArrayItem(items, index, { title }))}
+              style={item.title_style}
+              onStyleChange={(title_style) => onChange(updateArrayItem(items, index, { title_style }))}
+              placeholder="효과 제목"
+              multiline={false}
+              defaultRole="h4"
+              defaultColor="default"
             />
-            <input
-              className={FIELD}
-              placeholder="수치/키워드"
+            <StyledTextEditor
+              label="수치/키워드"
               value={item.metric || ''}
-              onChange={(e) => onChange(updateArrayItem(items, index, { metric: e.target.value }))}
+              onTextChange={(metric) => onChange(updateArrayItem(items, index, { metric }))}
+              style={item.metric_style}
+              onStyleChange={(metric_style) => onChange(updateArrayItem(items, index, { metric_style }))}
+              placeholder="수치/키워드"
+              multiline={false}
+              defaultRole="h2"
+              defaultColor="strong"
+            />
+          </div>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_120px]">
+            <StyledTextEditor
+              label="효과 설명"
+              value={item.desc || ''}
+              onTextChange={(desc) => onChange(updateArrayItem(items, index, { desc }))}
+              style={item.desc_style}
+              onStyleChange={(desc_style) => onChange(updateArrayItem(items, index, { desc_style }))}
+              placeholder="효과 설명"
+              defaultRole="body"
+              defaultColor="default"
             />
             <input
               className={FIELD}
@@ -1749,24 +1931,26 @@ function EffectCardsEditor({ items = [], onChange }) {
               onChange={(e) => onChange(updateArrayItem(items, index, { icon: e.target.value }))}
             />
           </div>
-          <textarea
-            className={`${FIELD} min-h-24 resize-y`}
-            placeholder="효과 설명"
-            value={item.desc || ''}
-            onChange={(e) => onChange(updateArrayItem(items, index, { desc: e.target.value }))}
-          />
-          <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-            <textarea
-              className={`${FIELD} min-h-20 resize-y`}
-              placeholder="도입 전 문제"
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <StyledTextEditor
+              label="도입 전 문제"
               value={item.before || ''}
-              onChange={(e) => onChange(updateArrayItem(items, index, { before: e.target.value }))}
+              onTextChange={(before) => onChange(updateArrayItem(items, index, { before }))}
+              style={item.before_style}
+              onStyleChange={(before_style) => onChange(updateArrayItem(items, index, { before_style }))}
+              placeholder="도입 전 문제"
+              defaultRole="body"
+              defaultColor="muted"
             />
-            <textarea
-              className={`${FIELD} min-h-20 resize-y`}
-              placeholder="도입 후 변화"
+            <StyledTextEditor
+              label="도입 후 변화"
               value={item.after || ''}
-              onChange={(e) => onChange(updateArrayItem(items, index, { after: e.target.value }))}
+              onTextChange={(after) => onChange(updateArrayItem(items, index, { after }))}
+              style={item.after_style}
+              onStyleChange={(after_style) => onChange(updateArrayItem(items, index, { after_style }))}
+              placeholder="도입 후 변화"
+              defaultRole="body"
+              defaultColor="inverse"
             />
           </div>
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1800,7 +1984,13 @@ function StepsEditor({ items = [], onChange, uploadFolder }) {
         <span className={LABEL}>절차</span>
         <button
           type="button"
-          onClick={() => onChange(addArrayItem(items, { step: String(items.length + 1).padStart(2, '0'), name: '', desc: '' }))}
+          onClick={() => onChange(addArrayItem(items, {
+            step: String(items.length + 1).padStart(2, '0'),
+            name: '',
+            name_style: { role: 'h4', color: 'default' },
+            desc: '',
+            desc_style: { role: 'body', color: 'default' },
+          }))}
           className="rounded-lg border border-zinc-300 px-3 py-2 text-[11px] font-black text-zinc-800 hover:bg-zinc-100"
         >
           절차 추가
@@ -1814,17 +2004,26 @@ function StepsEditor({ items = [], onChange, uploadFolder }) {
             onChange={(e) => onChange(updateArrayItem(items, index, { step: e.target.value }))}
           />
           <div className="grid gap-2">
-            <input
-              className={FIELD}
-              placeholder="절차명"
+            <StyledTextEditor
+              label="절차명"
               value={item.name || ''}
-              onChange={(e) => onChange(updateArrayItem(items, index, { name: e.target.value }))}
+              onTextChange={(name) => onChange(updateArrayItem(items, index, { name }))}
+              style={item.name_style}
+              onStyleChange={(name_style) => onChange(updateArrayItem(items, index, { name_style }))}
+              placeholder="절차명"
+              multiline={false}
+              defaultRole="h4"
+              defaultColor="default"
             />
-            <textarea
-              className={`${FIELD} min-h-20 resize-y`}
-              placeholder="설명"
+            <StyledTextEditor
+              label="설명"
               value={item.desc || ''}
-              onChange={(e) => onChange(updateArrayItem(items, index, { desc: e.target.value }))}
+              onTextChange={(desc) => onChange(updateArrayItem(items, index, { desc }))}
+              style={item.desc_style}
+              onStyleChange={(desc_style) => onChange(updateArrayItem(items, index, { desc_style }))}
+              placeholder="설명"
+              defaultRole="body"
+              defaultColor="default"
             />
             <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
               <input
@@ -1879,7 +2078,16 @@ function ProofMetricsEditor({ items = [], onChange, uploadFolder, frameRatio = '
         <span className={LABEL}>성과 수치</span>
         <button
           type="button"
-          onClick={() => onChange(addArrayItem(items, { id: `metric-${Date.now()}`, title: '', desc: '', icon: '', media: null, media_items: [] }))}
+          onClick={() => onChange(addArrayItem(items, {
+            id: `metric-${Date.now()}`,
+            title: '',
+            title_style: { role: 'h3', color: 'strong' },
+            desc: '',
+            desc_style: { role: 'body', color: 'default' },
+            icon: '',
+            media: null,
+            media_items: [],
+          }))}
           className="rounded-lg border border-zinc-300 px-3 py-2 text-[11px] font-black text-zinc-800 hover:bg-zinc-100"
         >
           성과 추가
@@ -1892,12 +2100,17 @@ function ProofMetricsEditor({ items = [], onChange, uploadFolder, frameRatio = '
       )}
       {items.map((item, index) => (
         <div key={item.id || index} className="grid gap-3 rounded-2xl border border-zinc-200 bg-white p-3">
-          <div className="grid grid-cols-1 gap-2 md:grid-cols-[1fr_96px]">
-            <input
-              className={FIELD}
-              placeholder="수치 또는 제목"
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_96px]">
+            <StyledTextEditor
+              label="수치 또는 제목"
               value={item.title || ''}
-              onChange={(e) => onChange(updateArrayItem(items, index, { title: e.target.value }))}
+              onTextChange={(title) => onChange(updateArrayItem(items, index, { title }))}
+              style={item.title_style}
+              onStyleChange={(title_style) => onChange(updateArrayItem(items, index, { title_style }))}
+              placeholder="수치 또는 제목"
+              multiline={false}
+              defaultRole="h3"
+              defaultColor="strong"
             />
             <input
               className={FIELD}
@@ -1906,11 +2119,15 @@ function ProofMetricsEditor({ items = [], onChange, uploadFolder, frameRatio = '
               onChange={(e) => onChange(updateArrayItem(items, index, { icon: e.target.value }))}
             />
           </div>
-          <textarea
-            className={`${FIELD} min-h-24 resize-y`}
-            placeholder="성과 설명"
+          <StyledTextEditor
+            label="성과 설명"
             value={item.desc || ''}
-            onChange={(e) => onChange(updateArrayItem(items, index, { desc: e.target.value }))}
+            onTextChange={(desc) => onChange(updateArrayItem(items, index, { desc }))}
+            style={item.desc_style}
+            onStyleChange={(desc_style) => onChange(updateArrayItem(items, index, { desc_style }))}
+            placeholder="성과 설명"
+            defaultRole="body"
+            defaultColor="default"
           />
           <ProofMediaItemsEditor
             label="성과 근거 사진/영상"
@@ -1940,7 +2157,17 @@ function TestimonialsEditor({ items = [], onChange, uploadFolder, frameRatio = '
         <span className={LABEL}>후기 / 인용문</span>
         <button
           type="button"
-          onClick={() => onChange(addArrayItem(items, { id: `testimonial-${Date.now()}`, quote: '', author: '', role: '', media: null, media_items: [] }))}
+          onClick={() => onChange(addArrayItem(items, {
+            id: `testimonial-${Date.now()}`,
+            quote: '',
+            quote_style: { role: 'quote', color: 'default' },
+            author: '',
+            author_style: { role: 'caption', color: 'muted' },
+            role: '',
+            role_style: { role: 'caption', color: 'muted' },
+            media: null,
+            media_items: [],
+          }))}
           className="rounded-lg border border-zinc-300 px-3 py-2 text-[11px] font-black text-zinc-800 hover:bg-zinc-100"
         >
           후기 추가
@@ -1953,24 +2180,38 @@ function TestimonialsEditor({ items = [], onChange, uploadFolder, frameRatio = '
       )}
       {items.map((item, index) => (
         <div key={item.id || index} className="grid gap-3 rounded-2xl border border-zinc-200 bg-white p-3">
-          <textarea
-            className={`${FIELD} min-h-28 resize-y`}
-            placeholder="후기 또는 인용문"
+          <StyledTextEditor
+            label="후기 또는 인용문"
             value={item.quote || ''}
-            onChange={(e) => onChange(updateArrayItem(items, index, { quote: e.target.value }))}
+            onTextChange={(quote) => onChange(updateArrayItem(items, index, { quote }))}
+            style={item.quote_style}
+            onStyleChange={(quote_style) => onChange(updateArrayItem(items, index, { quote_style }))}
+            placeholder="후기 또는 인용문"
+            defaultRole="quote"
+            defaultColor="default"
           />
-          <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-            <input
-              className={FIELD}
-              placeholder="이름"
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <StyledTextEditor
+              label="이름"
               value={item.author || ''}
-              onChange={(e) => onChange(updateArrayItem(items, index, { author: e.target.value }))}
+              onTextChange={(author) => onChange(updateArrayItem(items, index, { author }))}
+              style={item.author_style}
+              onStyleChange={(author_style) => onChange(updateArrayItem(items, index, { author_style }))}
+              placeholder="이름"
+              multiline={false}
+              defaultRole="caption"
+              defaultColor="muted"
             />
-            <input
-              className={FIELD}
-              placeholder="역할/소속"
+            <StyledTextEditor
+              label="역할/소속"
               value={item.role || ''}
-              onChange={(e) => onChange(updateArrayItem(items, index, { role: e.target.value }))}
+              onTextChange={(role) => onChange(updateArrayItem(items, index, { role }))}
+              style={item.role_style}
+              onStyleChange={(role_style) => onChange(updateArrayItem(items, index, { role_style }))}
+              placeholder="역할/소속"
+              multiline={false}
+              defaultRole="caption"
+              defaultColor="muted"
             />
           </div>
           <ProofMediaItemsEditor
@@ -1998,41 +2239,43 @@ function BlockFields({ block, onChange, uploadFolder, magazines = [] }) {
   if (block.type === 'intro') {
     return (
       <div className="grid gap-3">
-        <label>
-          <span className={LABEL}>헤드라인</span>
-          <textarea
-            className={`${FIELD} min-h-28 resize-y leading-relaxed`}
-            value={block.headline || ''}
-            onChange={(e) => onChange({ headline: e.target.value })}
-          />
-          <p className={`${HELP} mt-2`}>
-            모바일에서 문장이 애매하게 끊기지 않도록 원하는 위치에 엔터를 넣어 줄 길이를 직접 조절할 수 있습니다.
-          </p>
-        </label>
-        <label>
-          <span className={LABEL}>요약</span>
-          <textarea
-            className={`${FIELD} min-h-28 resize-y leading-relaxed`}
-            value={block.summary || ''}
-            onChange={(e) => onChange({ summary: e.target.value })}
-          />
-          <p className={`${HELP} mt-2`}>
-            엔터로 만든 줄바꿈은 데스크톱과 모바일 프리뷰, 저장 후 공개 화면에서도 유지됩니다.
-          </p>
-        </label>
+        <StyledTextEditor
+          label="헤드라인"
+          value={block.headline || ''}
+          onTextChange={(headline) => onChange({ headline })}
+          style={block.headline_style}
+          onStyleChange={(headline_style) => onChange({ headline_style })}
+          defaultRole="h2"
+          defaultColor="default"
+          help="모바일에서 문장이 애매하게 끊기지 않도록 원하는 위치에 엔터를 넣어 줄 길이를 직접 조절할 수 있습니다."
+        />
+        <StyledTextEditor
+          label="요약"
+          value={block.summary || ''}
+          onTextChange={(summary) => onChange({ summary })}
+          style={block.summary_style}
+          onStyleChange={(summary_style) => onChange({ summary_style })}
+          defaultRole="body"
+          defaultColor="muted"
+          help="엔터로 만든 줄바꿈은 데스크톱과 모바일 프리뷰, 저장 후 공개 화면에서도 유지됩니다."
+        />
       </div>
     );
   }
 
   if (block.type === 'rich_text') {
     return (
-      <label>
-        <span className={LABEL}>본문</span>
-        <textarea className={`${FIELD} min-h-40 resize-y`} value={block.body || ''} onChange={(e) => onChange({ body: e.target.value })} />
-        <p className={`${HELP} mt-2`}>
-          문장 중간에서 엔터를 넣으면 그 줄바꿈이 모바일에도 그대로 반영됩니다.
-        </p>
-      </label>
+      <StyledTextEditor
+        label="본문"
+        value={block.body || ''}
+        onTextChange={(body) => onChange({ body })}
+        style={block.body_style}
+        onStyleChange={(body_style) => onChange({ body_style })}
+        minHeight="min-h-40"
+        defaultRole="body"
+        defaultColor="default"
+        help="문장 중간에서 엔터를 넣으면 그 줄바꿈이 모바일에도 그대로 반영됩니다."
+      />
     );
   }
 
@@ -2149,10 +2392,16 @@ function BlockFields({ block, onChange, uploadFolder, magazines = [] }) {
         </label>
         {block.url && !parsed.ok && <p className="rounded-xl bg-red-50 px-3 py-2 text-xs font-bold text-red-600">{parsed.error}</p>}
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          <label>
-            <span className={LABEL}>제목</span>
-            <input className={FIELD} value={block.title || ''} onChange={(e) => onChange({ title: e.target.value })} />
-          </label>
+          <StyledTextEditor
+            label="제목"
+            value={block.title || ''}
+            onTextChange={(title) => onChange({ title })}
+            style={block.title_style}
+            onStyleChange={(title_style) => onChange({ title_style })}
+            multiline={false}
+            defaultRole="h3"
+            defaultColor="default"
+          />
           <label>
             <span className={LABEL}>비율</span>
             <select className={FIELD} value={block.aspect_ratio || '16:9'} onChange={(e) => onChange({ aspect_ratio: e.target.value })}>
@@ -2163,10 +2412,15 @@ function BlockFields({ block, onChange, uploadFolder, magazines = [] }) {
             </select>
           </label>
         </div>
-        <label>
-          <span className={LABEL}>설명</span>
-          <textarea className={`${FIELD} min-h-24 resize-y`} value={block.description || ''} onChange={(e) => onChange({ description: e.target.value })} />
-        </label>
+        <StyledTextEditor
+          label="설명"
+          value={block.description || ''}
+          onTextChange={(description) => onChange({ description })}
+          style={block.description_style}
+          onStyleChange={(description_style) => onChange({ description_style })}
+          defaultRole="body"
+          defaultColor="muted"
+        />
       </div>
     );
   }
@@ -2177,6 +2431,8 @@ function BlockFields({ block, onChange, uploadFolder, magazines = [] }) {
         label="일반 영상"
         media={{ ...block, type: 'video' }}
         uploadFolder={uploadFolder}
+        titleStyle={block.title_style}
+        onTitleStyleChange={(title_style) => onChange({ title_style })}
         onChange={(video) => onChange(video)}
       />
     );
@@ -2242,10 +2498,16 @@ function BlockFields({ block, onChange, uploadFolder, magazines = [] }) {
           </select>
           {selected?.slug && <p className={`${HELP} mt-2`}>저장값은 기존 구조와 동일하게 slug `{selected.slug}`로 보관됩니다.</p>}
         </label>
-        <label>
-          <span className={LABEL}>헤더 텍스트</span>
-          <input className={FIELD} value={block.header || ''} onChange={(e) => onChange({ header: e.target.value })} />
-        </label>
+        <StyledTextEditor
+          label="헤더 텍스트"
+          value={block.header || ''}
+          onTextChange={(header) => onChange({ header })}
+          style={block.header_style}
+          onStyleChange={(header_style) => onChange({ header_style })}
+          multiline={false}
+          defaultRole="caption"
+          defaultColor="muted"
+        />
       </div>
     );
   }
@@ -2297,10 +2559,15 @@ function BlockFields({ block, onChange, uploadFolder, magazines = [] }) {
   if (block.type === 'cta') {
     return (
       <div className="grid gap-3">
-        <label>
-          <span className={LABEL}>문구</span>
-          <textarea className={`${FIELD} min-h-24 resize-y`} value={block.copy || ''} onChange={(e) => onChange({ copy: e.target.value })} />
-        </label>
+        <StyledTextEditor
+          label="문구"
+          value={block.copy || ''}
+          onTextChange={(copy) => onChange({ copy })}
+          style={block.copy_style}
+          onStyleChange={(copy_style) => onChange({ copy_style })}
+          defaultRole="body"
+          defaultColor="inverse"
+        />
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           <label>
             <span className={LABEL}>버튼 라벨</span>
@@ -2327,18 +2594,18 @@ function BlockEditorFields({ block, onChange, uploadFolder, magazines = [] }) {
 
   return (
     <div className="space-y-5">
-      <label className="block rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
-        <span className={LABEL}>페이지에 보일 섹션 제목</span>
-        <input
-          className={FIELD}
-          value={block.display_title || ''}
-          onChange={(e) => onChange({ display_title: e.target.value })}
-          placeholder={`비워두면 "${defaultTitle}"로 표시됩니다.`}
-        />
-        <p className={`${HELP} mt-2`}>
-          이 이름이 오른쪽 미리보기와 실제 상세 페이지의 큰 제목 타일에 표시됩니다. 블록 종류 이름은 관리용으로만 남습니다.
-        </p>
-      </label>
+      <StyledTextEditor
+        label="페이지에 보일 섹션 제목"
+        value={block.display_title || ''}
+        onTextChange={(display_title) => onChange({ display_title })}
+        style={block.display_title_style}
+        onStyleChange={(display_title_style) => onChange({ display_title_style })}
+        placeholder={`비워두면 "${defaultTitle}"로 표시됩니다.`}
+        multiline={false}
+        defaultRole="h2"
+        defaultColor="default"
+        help="이 이름이 오른쪽 미리보기와 실제 상세 페이지의 큰 제목 타일에 표시됩니다. 블록 종류 이름은 관리용으로만 남습니다."
+      />
       {supportsStoryMode && (
         <div className="rounded-2xl border border-zinc-200 bg-white p-4">
           <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">

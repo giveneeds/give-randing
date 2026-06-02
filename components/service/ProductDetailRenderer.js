@@ -18,6 +18,12 @@ import {
 import MarkdownContent from '@/lib/markdownRender';
 import { getServiceVideoPlaybackProps } from '@/lib/serviceVideoPlayback';
 import {
+  normalizeServiceTextStyle,
+  serviceTextColorClassName,
+  serviceTextRoleClassName,
+  serviceTextStyleTag,
+} from '@/lib/serviceTextStyles';
+import {
   SERVICE_DETAIL_EFFECT_VARIANTS,
   SERVICE_DETAIL_PROCESS_VARIANTS,
   getVisibleServiceDetailBlocks,
@@ -150,9 +156,47 @@ function blockDisplayTitle(block) {
   return block.display_title || (block.type === 'landing_section' ? block.title : '') || labelMap[block.type] || block.type;
 }
 
-function ManualLineText({ as: Tag = 'span', className = '', children }) {
-  if (!children) return null;
-  return <Tag className={`whitespace-pre-line break-keep ${className}`}>{children}</Tag>;
+function StyledTextElement({ tag, className, children }) {
+  switch (tag) {
+    case 'h2':
+      return <h2 className={className}>{children}</h2>;
+    case 'h3':
+      return <h3 className={className}>{children}</h3>;
+    case 'h4':
+      return <h4 className={className}>{children}</h4>;
+    case 'h5':
+      return <h5 className={className}>{children}</h5>;
+    case 'h6':
+      return <h6 className={className}>{children}</h6>;
+    case 'blockquote':
+      return <blockquote className={className}>{children}</blockquote>;
+    case 'span':
+      return <span className={className}>{children}</span>;
+    default:
+      return <p className={className}>{children}</p>;
+  }
+}
+
+function StyledText({
+  as,
+  text,
+  textStyle,
+  fallbackRole = 'body',
+  fallbackColor = 'default',
+  variant = 'default',
+  className = '',
+}) {
+  if (!text) return null;
+  const normalizedStyle = normalizeServiceTextStyle(textStyle, { role: fallbackRole, color: fallbackColor });
+  const tag = as || serviceTextStyleTag(normalizedStyle.role);
+  return (
+    <StyledTextElement
+      tag={tag}
+      className={`whitespace-pre-line break-keep ${serviceTextRoleClassName(normalizedStyle.role)} ${serviceTextColorClassName(normalizedStyle.color, variant)} ${className}`}
+    >
+      {text}
+    </StyledTextElement>
+  );
 }
 
 export function getProductDetailBlockToc(details) {
@@ -180,10 +224,17 @@ function BlockShell({ block, index, children, dark = false }) {
         }`}>
           {String(index + 1).padStart(2, '0')}
         </div>
-        <h2 className="flex items-center gap-2 text-base font-black uppercase tracking-tight md:text-lg">
+        <div className="flex min-w-0 items-center gap-2">
           <Icon size={16} />
-          <ManualLineText>{blockDisplayTitle(block)}</ManualLineText>
-        </h2>
+          <StyledText
+            as="h2"
+            text={blockDisplayTitle(block)}
+            textStyle={block.display_title_style}
+            fallbackRole="h4"
+            fallbackColor={dark ? 'inverse' : 'default'}
+            variant={dark ? 'dark' : 'default'}
+          />
+        </div>
       </div>
       {children}
     </section>
@@ -309,8 +360,8 @@ function CardsBlock({ items = [] }) {
     <div className="grid gap-3 sm:grid-cols-2">
       {items.map((item, index) => (
         <div key={index} className="rounded-2xl border border-zinc-100 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-800/60">
-          {item.title && <h3 className="mb-2 text-sm font-black text-zinc-900 dark:text-white">{item.title}</h3>}
-          {item.desc && <MarkdownContent text={item.desc} variant="compact" />}
+          <StyledText as="h3" text={item.title} textStyle={item.title_style} fallbackRole="h4" className="mb-2" />
+          {item.desc && <MarkdownContent text={item.desc} textStyle={item.desc_style} variant="compact" />}
         </div>
       ))}
     </div>
@@ -345,24 +396,25 @@ function EffectTitle({ item, dark = false, large = false }) {
   return (
     <div>
       {item.metric && (
-        <ManualLineText
+        <StyledText
           as="p"
-          className={`${large ? 'text-3xl md:text-4xl' : 'text-xl md:text-2xl'} font-black leading-none tracking-tight ${
-            dark ? 'text-white' : 'text-zinc-950 dark:text-white'
-          }`}
-        >
-          {item.metric}
-        </ManualLineText>
+          text={item.metric}
+          textStyle={item.metric_style}
+          fallbackRole={large ? 'h2' : 'h3'}
+          fallbackColor={dark ? 'inverse' : 'strong'}
+          variant={dark ? 'dark' : 'default'}
+        />
       )}
       {item.title && (
-        <ManualLineText
+        <StyledText
           as="h3"
-          className={`${item.metric ? 'mt-2' : ''} ${large ? 'text-lg md:text-xl' : 'text-sm'} font-black leading-tight ${
-            dark ? 'text-zinc-100' : 'text-zinc-900 dark:text-white'
-          }`}
-        >
-          {item.title}
-        </ManualLineText>
+          text={item.title}
+          textStyle={item.title_style}
+          fallbackRole={large ? 'h4' : 'h5'}
+          fallbackColor={dark ? 'inverse' : 'default'}
+          variant={dark ? 'dark' : 'default'}
+          className={item.metric ? 'mt-2' : ''}
+        />
       )}
     </div>
   );
@@ -370,7 +422,7 @@ function EffectTitle({ item, dark = false, large = false }) {
 
 function EffectDescription({ item, dark = false }) {
   if (!item.desc) return null;
-  return <div className="mt-3"><MarkdownContent text={item.desc} variant={dark ? 'dark' : 'compact'} /></div>;
+  return <div className="mt-3"><MarkdownContent text={item.desc} textStyle={item.desc_style} variant={dark ? 'dark' : 'compact'} /></div>;
 }
 
 function BenefitCards({ items }) {
@@ -437,16 +489,25 @@ function BeforeAfterEffects({ items }) {
           <div className="grid gap-3 md:grid-cols-[1fr_auto_1fr] md:items-stretch">
             <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
               <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-zinc-400">Before</p>
-              <ManualLineText as="p" className="text-sm font-bold leading-relaxed text-zinc-700 dark:text-zinc-200">
-                {item.before || item.title}
-              </ManualLineText>
+              <StyledText
+                as="p"
+                text={item.before || item.title}
+                textStyle={item.before ? item.before_style : item.title_style}
+                fallbackRole="body"
+                fallbackColor="muted"
+              />
             </div>
             <div className="hidden items-center text-zinc-400 md:flex"><ArrowRight size={18} /></div>
             <div className="rounded-2xl border border-zinc-900 bg-zinc-900 p-4 text-white">
               <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-zinc-400">After</p>
-              <ManualLineText as="p" className="text-sm font-bold leading-relaxed">
-                {item.after || item.desc}
-              </ManualLineText>
+              <StyledText
+                as="p"
+                text={item.after || item.desc}
+                textStyle={item.after ? item.after_style : item.desc_style}
+                fallbackRole="body"
+                fallbackColor="inverse"
+                variant="dark"
+              />
             </div>
           </div>
           {(item.before || item.after) && <EffectDescription item={item} />}
@@ -463,18 +524,26 @@ function ProblemSolutionEffects({ items }) {
         <article key={index} className="grid gap-3 rounded-2xl border border-zinc-100 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900 md:grid-cols-[1fr_1.15fr]">
           <div className="rounded-2xl bg-zinc-50 p-4 dark:bg-zinc-800/60">
             <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-zinc-400">Problem</p>
-            <ManualLineText as="h3" className="text-sm font-black leading-tight text-zinc-900 dark:text-white">
-              {item.before || item.title}
-            </ManualLineText>
+            <StyledText
+              as="h3"
+              text={item.before || item.title}
+              textStyle={item.before ? item.before_style : item.title_style}
+              fallbackRole="h5"
+            />
           </div>
           <div className="rounded-2xl bg-zinc-900 p-4 text-white">
             <div className="mb-2 flex items-center justify-between gap-3">
               <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Solution</p>
               {item.metric && <span className="shrink-0 rounded-full bg-white/10 px-2 py-1 text-[10px] font-black dark:bg-zinc-900/10">{item.metric}</span>}
             </div>
-            <ManualLineText as="p" className="text-sm font-bold leading-relaxed">
-              {item.after || item.desc}
-            </ManualLineText>
+            <StyledText
+              as="p"
+              text={item.after || item.desc}
+              textStyle={item.after ? item.after_style : item.desc_style}
+              fallbackRole="body"
+              fallbackColor="inverse"
+              variant="dark"
+            />
           </div>
         </article>
       ))}
@@ -527,11 +596,15 @@ function StepText({ step, headingClassName = 'text-sm', dark = false }) {
   return (
     <div>
       {step.name && (
-        <ManualLineText as="h3" className={`mb-2 font-black leading-tight ${headingClassName}`}>
-          {step.name}
-        </ManualLineText>
+        <StyledText
+          as="h3"
+          text={step.name}
+          textStyle={step.name_style}
+          fallbackRole={headingClassName === 'text-lg' ? 'h4' : 'h5'}
+          className="mb-2"
+        />
       )}
-      {step.desc && <MarkdownContent text={step.desc} variant={dark ? 'dark' : 'compact'} />}
+      {step.desc && <MarkdownContent text={step.desc} textStyle={step.desc_style} variant={dark ? 'dark' : 'compact'} />}
       <StepMeta step={step} dark={dark} />
     </div>
   );
@@ -604,10 +677,13 @@ function ChecklistProcess({ steps }) {
             <CheckCircle2 size={14} />
           </div>
           <div>
-            <ManualLineText as="h3" className="text-sm font-black leading-tight">
-              {step.name || step.deliverable || `Step ${index + 1}`}
-            </ManualLineText>
-            {step.desc && <MarkdownContent text={step.desc} variant="compact" />}
+            <StyledText
+              as="h3"
+              text={step.name || step.deliverable || `Step ${index + 1}`}
+              textStyle={step.name ? step.name_style : undefined}
+              fallbackRole="h5"
+            />
+            {step.desc && <MarkdownContent text={step.desc} textStyle={step.desc_style} variant="compact" />}
             <StepMeta step={step} />
           </div>
         </li>
@@ -812,6 +888,7 @@ function StoryRenderer({ items = [], preview }) {
             <MarkdownContent
               key={item.id || index}
               text={item.body}
+              textStyle={item.text_style}
               textSize={item.text_size || 'md'}
               textWeight={item.text_weight || 'medium'}
             />
@@ -842,10 +919,18 @@ function StoryRenderer({ items = [], preview }) {
                 preview={preview}
               />
               <Quote size={16} className="mb-2" />
-              <ManualLineText>{item.quote}</ManualLineText>
+              <StyledText
+                as="p"
+                text={item.quote}
+                textStyle={item.quote_style}
+                fallbackRole="quote"
+                fallbackColor="default"
+              />
               {(item.author || item.role) && (
-                <footer className="mt-4 text-xs font-black text-zinc-500">
-                  {item.author}{item.author && item.role ? ' · ' : ''}{item.role}
+                <footer className="mt-4 flex flex-wrap items-center gap-1.5">
+                  <StyledText as="span" text={item.author} textStyle={item.author_style} fallbackRole="caption" fallbackColor="muted" />
+                  {item.author && item.role ? <span className="text-xs font-black text-zinc-400">·</span> : null}
+                  <StyledText as="span" text={item.role} textStyle={item.role_style} fallbackRole="caption" fallbackColor="muted" />
                 </footer>
               )}
             </blockquote>
@@ -861,15 +946,22 @@ function StoryRenderer({ items = [], preview }) {
                 className="mb-4"
                 preview={preview}
               />
-              {item.title && <h3 className="mb-2 text-lg font-black text-zinc-900 dark:text-white">{item.title}</h3>}
-              {item.desc && <MarkdownContent text={item.desc} variant="compact" />}
+              <StyledText as="h3" text={item.title} textStyle={item.title_style} fallbackRole="h3" fallbackColor="strong" className="mb-2" />
+              {item.desc && <MarkdownContent text={item.desc} textStyle={item.desc_style} variant="compact" />}
             </div>
           );
         }
         if (item.type === 'cta') {
           return (
             <div key={item.id || index} className="rounded-2xl border border-zinc-900 bg-zinc-900 p-5 text-white">
-              <ManualLineText as="p" className="text-sm font-semibold leading-relaxed text-zinc-100">{item.copy}</ManualLineText>
+              <StyledText
+                as="p"
+                text={item.copy}
+                textStyle={item.copy_style}
+                fallbackRole="body"
+                fallbackColor="inverse"
+                variant="dark"
+              />
               <PreviewSafeLink
                 href={item.button_href || '/contact'}
                 preview={preview}
@@ -900,8 +992,8 @@ function ProofMetricsBlock({ metrics = [], frameRatio = '16:9', fitMode = 'conta
             className="mb-4"
             preview={preview}
           />
-          {item.title && <h3 className="mb-2 text-sm font-black text-zinc-900 dark:text-white">{item.title}</h3>}
-          {item.desc && <MarkdownContent text={item.desc} variant="compact" />}
+          <StyledText as="h3" text={item.title} textStyle={item.title_style} fallbackRole="h4" fallbackColor="strong" className="mb-2" />
+          {item.desc && <MarkdownContent text={item.desc} textStyle={item.desc_style} variant="compact" />}
         </div>
       ))}
     </div>
@@ -922,10 +1014,18 @@ function TestimonialsBlock({ testimonials = [], frameRatio = '16:9', fitMode = '
             preview={preview}
           />
           <Quote size={16} className="mb-2" />
-          <ManualLineText>{item.quote}</ManualLineText>
+          <StyledText
+            as="p"
+            text={item.quote}
+            textStyle={item.quote_style}
+            fallbackRole="quote"
+            fallbackColor="default"
+          />
           {(item.author || item.role) && (
-            <footer className="mt-4 text-xs font-black text-zinc-500">
-              {item.author}{item.author && item.role ? ' · ' : ''}{item.role}
+            <footer className="mt-4 flex flex-wrap items-center gap-1.5">
+              <StyledText as="span" text={item.author} textStyle={item.author_style} fallbackRole="caption" fallbackColor="muted" />
+              {item.author && item.role ? <span className="text-xs font-black text-zinc-400">·</span> : null}
+              <StyledText as="span" text={item.role} textStyle={item.role_style} fallbackRole="caption" fallbackColor="muted" />
             </footer>
           )}
         </blockquote>
@@ -955,18 +1055,8 @@ function renderBlock(block, index, context = {}) {
     case 'intro':
       return (
         <BlockShell block={block} index={index}>
-          <ManualLineText
-            as="h2"
-            className="text-2xl font-black leading-tight tracking-tight md:text-3xl"
-          >
-            {block.headline}
-          </ManualLineText>
-          <ManualLineText
-            as="p"
-            className="mt-4 text-base font-semibold leading-relaxed text-zinc-600 dark:text-zinc-300"
-          >
-            {block.summary}
-          </ManualLineText>
+          <StyledText as="h2" text={block.headline} textStyle={block.headline_style} fallbackRole="h2" />
+          <StyledText as="p" text={block.summary} textStyle={block.summary_style} fallbackRole="body" fallbackColor="muted" className="mt-4" />
           {Array.isArray(block.badges) && block.badges.length > 0 && (
             <div className="mt-5 flex flex-wrap gap-2">
               {block.badges.map((badge) => (
@@ -979,7 +1069,7 @@ function renderBlock(block, index, context = {}) {
     case 'rich_text':
       return (
         <BlockShell block={block} index={index}>
-          <MarkdownContent text={block.body} />
+          <MarkdownContent text={block.body} textStyle={block.body_style} />
         </BlockShell>
       );
     case 'effects':
@@ -1011,9 +1101,7 @@ function renderBlock(block, index, context = {}) {
       if (!parsed.ok) return null;
       return (
         <BlockShell block={block} index={index}>
-          <ManualLineText as="h3" className="mb-3 text-lg font-black leading-tight">
-            {block.title}
-          </ManualLineText>
+          <StyledText as="h3" text={block.title} textStyle={block.title_style} fallbackRole="h3" className="mb-3" />
           <div className={`overflow-hidden rounded-2xl bg-zinc-950 ${ratioClass(block.aspect_ratio)}`}>
             <iframe
               src={parsed.embedUrl}
@@ -1023,12 +1111,7 @@ function renderBlock(block, index, context = {}) {
               allowFullScreen
             />
           </div>
-          <ManualLineText
-            as="p"
-            className="mt-4 text-sm font-semibold leading-relaxed text-zinc-600 dark:text-zinc-300"
-          >
-            {block.description}
-          </ManualLineText>
+          <StyledText as="p" text={block.description} textStyle={block.description_style} fallbackRole="body" fallbackColor="muted" className="mt-4" />
         </BlockShell>
       );
     }
@@ -1036,9 +1119,7 @@ function renderBlock(block, index, context = {}) {
       if (!block.url) return null;
       return (
         <BlockShell block={block} index={index}>
-          <ManualLineText as="h3" className="mb-3 text-lg font-black leading-tight">
-            {block.title}
-          </ManualLineText>
+          <StyledText as="h3" text={block.title} textStyle={block.title_style} fallbackRole="h3" className="mb-3" />
           <MediaDisplay
             media={{
               type: 'video',
@@ -1101,7 +1182,14 @@ function renderBlock(block, index, context = {}) {
             )}
             <div className="flex min-w-0 flex-1 items-center justify-between gap-4 p-5">
               <div className="min-w-0">
-                <p className="text-xs font-black uppercase tracking-widest text-zinc-500">{block.header || 'Related Magazine'}</p>
+                <StyledText
+                  as="p"
+                  text={block.header || 'Related Magazine'}
+                  textStyle={block.header_style}
+                  fallbackRole="caption"
+                  fallbackColor="muted"
+                  className="uppercase"
+                />
                 <p className="mt-2 text-sm font-black text-zinc-900 dark:text-white">
                   {magazine?.title || block.title || block.magazine_slug}
                 </p>
@@ -1136,9 +1224,7 @@ function renderBlock(block, index, context = {}) {
     case 'cta':
       return (
         <BlockShell block={block} index={index} dark>
-          <ManualLineText as="p" className="text-base font-semibold leading-relaxed text-zinc-100">
-            {block.copy}
-          </ManualLineText>
+          <StyledText as="p" text={block.copy} textStyle={block.copy_style} fallbackRole="body" fallbackColor="inverse" variant="dark" />
           <PreviewSafeLink
             href={block.button_href || '/contact'}
             preview={preview}
