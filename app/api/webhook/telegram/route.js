@@ -5,6 +5,10 @@ import { parseUserDecision } from '@/lib/agent/parseUserDecision';
 import { finishPlanningSession } from '@/lib/agent/finishPlanningSession';
 import { composeFreeChatReply } from '@/lib/agent/replyToFreeChat';
 import {
+  fetchIssueCandidatesForTelegram,
+  sendIssueCandidatesToChat,
+} from '@/lib/agent/sendIssueResearchCandidates';
+import {
   verifyWebhookSecret, sendInlineMessage, editInlineMessage,
   answerCallbackQuery, buildItemCard, tgEscape,
 } from '@/lib/telegram';
@@ -41,7 +45,7 @@ export async function POST(request) {
     if (update.callback_query) {
       await handleCallback(update.callback_query);
     } else if (update.message) {
-      await handleMessage(update.message, { syncFinish });
+      await handleMessage(update.message, { syncFinish, requestOrigin: request.nextUrl.origin });
     }
   } catch (e) {
     console.error('webhook 처리 실패', e);
@@ -51,7 +55,7 @@ export async function POST(request) {
   return NextResponse.json({ ok: true });
 }
 
-async function handleMessage(message, { syncFinish = false } = {}) {
+async function handleMessage(message, { syncFinish = false, requestOrigin = '' } = {}) {
   const chat = message.chat;
   const from = message.from;
   if (!chat || chat.type !== 'private') return; // 그룹·채널은 무시
@@ -99,15 +103,21 @@ async function handleMessage(message, { syncFinish = false } = {}) {
     return;
   }
 
-  // 1) 진행 중 세션이 있으면 의사결정 답변으로 처리.
+  // 1) 짧은 명령어 "리서치"는 즉시 issue_explainer 후보 수집으로 처리.
+  if (isIssueResearchCommand(text)) {
+    await handleIssueResearchCommand({ chatId, requestOrigin });
+    return;
+  }
+
+  // 2) 진행 중 세션이 있으면 의사결정 답변으로 처리.
   const handled = await handleDailyReportReply({ chatId, text, message, syncFinish });
   if (handled) return;
 
-  // 2) 이미 완료된 보고에 "후보 4도"처럼 추가 생성을 요청하면 최근 완료 세션에서 후보를 다시 집어 처리.
+  // 3) 이미 완료된 보고에 "후보 4도"처럼 추가 생성을 요청하면 최근 완료 세션에서 후보를 다시 집어 처리.
   const handledCompletedFollowup = await handleCompletedSessionFollowup({ chatId, text, message, syncFinish });
   if (handledCompletedFollowup) return;
 
-  // 3) 진행 중 세션이 없으면 일반 LLM 자유 채팅으로 응답.
+  // 4) 진행 중 세션이 없으면 일반 LLM 자유 채팅으로 응답.
   try {
     const { replyText } = await composeFreeChatReply({
       chatId,
@@ -120,6 +130,50 @@ async function handleMessage(message, { syncFinish = false } = {}) {
     await sendInlineMessage({
       chatId,
       text: '답변 생성 중 문제가 발생했습니다. 잠시 후 다시 보내주세요.',
+    });
+  }
+}
+
+function isIssueResearchCommand(text) {
+  const normalized = String(text || '').trim().replace(/\s+/g, ' ');
+  return [
+    '리서치',
+    '/리서치',
+    '이슈 리서치',
+    '뉴스 리서치',
+    '최근 이슈',
+  ].includes(normalized);
+}
+
+async function handleIssueResearchCommand({ chatId, requestOrigin }) {
+  try {
+    await sendInlineMessage({
+      chatId,
+      text:
+        '<b>이슈 리서치 시작</b>\n' +
+        '최근 뉴스기사/릴리스 기준으로 후보를 찾고 있습니다. 잠시만 기다려 주세요.',
+    });
+
+    const { issues } = await fetchIssueCandidatesForTelegram({
+      origin: requestOrigin,
+      recency: 'week',
+    });
+
+    await sendIssueCandidatesToChat({
+      chatId,
+      issues,
+      introText:
+        '<b>기브니즈 이슈 후보</b>\n' +
+        '텔레그램에서 `리서치` 명령으로 가져온 최근 후보입니다.\n' +
+        '하나를 고르면 워크벤치에서 Claude 해석부터 이어갈 수 있습니다.',
+    });
+  } catch (error) {
+    console.error('[telegram webhook] issue research command 실패', error);
+    await sendInlineMessage({
+      chatId,
+      text:
+        '이슈 후보를 가져오지 못했습니다.\n' +
+        `사유: ${tgEscape(error.message || '알 수 없는 오류')}`,
     });
   }
 }
