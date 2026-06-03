@@ -408,6 +408,11 @@ async function handleCallback(cb) {
   const messageId = msg?.message_id;
 
   const [action, itemId] = data.split(':');
+  if (action === 'issue_select') {
+    await handleIssueSelectCallback({ cb, callbackId, chatId, messageId, issueId: itemId });
+    return;
+  }
+
   if (!['approve', 'reject'].includes(action) || !itemId) {
     await answerCallbackQuery({ callbackId, text: '알 수 없는 액션' });
     return;
@@ -500,4 +505,78 @@ async function handleCallback(cb) {
       });
     }
   }
+}
+
+async function handleIssueSelectCallback({ cb, callbackId, chatId, messageId, issueId }) {
+  if (!chatId || !messageId || !issueId) {
+    await answerCallbackQuery({ callbackId, text: '선택 정보를 읽지 못했습니다.' });
+    return;
+  }
+
+  const { data: recipient } = await supabaseAdmin
+    .from('agent_telegram_recipients')
+    .select('id, active')
+    .eq('chat_id', chatId)
+    .maybeSingle();
+  if (!recipient || !recipient.active) {
+    await answerCallbackQuery({ callbackId, text: '활성화되지 않은 수신자입니다.' });
+    return;
+  }
+
+  const issue = parseIssueCardText(cb.message?.text || '');
+  const workbenchUrl = buildIssueWorkbenchUrl({ issueId, issue });
+
+  try {
+    await editInlineMessage({
+      chatId,
+      messageId,
+      text:
+        `${tgEscape(cb.message?.text || '')}\n\n` +
+        '<b>✅ 이슈 선택됨</b>\n' +
+        '워크벤치에서 Claude 해석, Sonar 연계 리서치, R1/R2 작성으로 이어가세요.',
+      buttons: null,
+    });
+  } catch (error) {
+    console.error('[telegram webhook] issue_select 메시지 편집 실패', error.message);
+  }
+
+  await answerCallbackQuery({ callbackId, text: '이슈 선택 완료' });
+  await sendInlineMessage({
+    chatId,
+    text:
+      '<b>선택한 이슈로 이어가기</b>\n' +
+      `${tgEscape(issue.title || issueId)}\n\n` +
+      '아래 버튼을 누르면 워크벤치에 이 이슈가 선택된 상태로 열립니다.',
+    buttons: [[{ text: '워크벤치 열기', url: workbenchUrl }]],
+  });
+}
+
+function parseIssueCardText(text) {
+  const result = {};
+  for (const line of String(text || '').split('\n')) {
+    const trimmed = line.trim();
+    if (trimmed.startsWith('제목:')) result.title = trimmed.replace(/^제목:\s*/, '').trim();
+    if (trimmed.startsWith('훅:')) result.hook = trimmed.replace(/^훅:\s*/, '').trim();
+    if (trimmed.startsWith('왜 볼 만한가:')) result.why = trimmed.replace(/^왜 볼 만한가:\s*/, '').trim();
+    if (trimmed.startsWith('무엇이 바뀌었나:')) result.changed = trimmed.replace(/^무엇이 바뀌었나:\s*/, '').trim();
+    if (trimmed.startsWith('출처 신호:')) result.source = trimmed.replace(/^출처 신호:\s*/, '').trim();
+  }
+  return result;
+}
+
+function buildIssueWorkbenchUrl({ issueId, issue }) {
+  const base = (
+    process.env.CONTENT_STUDIO_BASE_URL ||
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    'http://localhost:3000'
+  ).replace(/\/+$/, '');
+  const params = new URLSearchParams();
+  params.set('telegramIssue', '1');
+  params.set('issueId', issueId);
+  if (issue.title) params.set('issueTitle', issue.title);
+  if (issue.hook) params.set('issueHook', issue.hook);
+  if (issue.why) params.set('issueWhy', issue.why);
+  if (issue.changed) params.set('issueChanged', issue.changed);
+  if (issue.source) params.set('issueSource', issue.source);
+  return `${base}/admin/content-studio/research-workbench?${params.toString()}`;
 }

@@ -81,5 +81,6 @@ async function loadInternalDocs() {
 
 export default async function ResearchWorkbenchPage() {
   const internalDocs = await loadInternalDocs();
-  return <ResearchWorkbenchClient internalDocs={internalDocs} />;
+  const writerModel = process.env.OPENAI_THREAD_MODEL || 'gpt-4o-mini';
+  return <ResearchWorkbenchClient internalDocs={internalDocs} writerModel={writerModel} />;
 }
