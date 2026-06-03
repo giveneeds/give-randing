@@ -376,6 +376,15 @@ export default function ResearchWorkbenchClient({ internalDocs, writerModel }) {
     };
     setIssueCandidates([issue]);
     setSelectedIssue(issue);
+    rememberIssueSelectionFromStorage({
+      id: issue.issue_id,
+      type: 'telegram_issue_candidate',
+      title: issue.issue_title,
+      url: '',
+      source_domain: issue.source_summary || 'telegram',
+      category: issue.category,
+      selected_at: new Date().toISOString(),
+    });
     setIssueStatus((prev) => ({
       ...prev,
       meta: { ...(prev.meta || {}), issuesCount: 1, promptSource: 'telegram' },
@@ -389,6 +398,25 @@ export default function ResearchWorkbenchClient({ internalDocs, writerModel }) {
       window.localStorage.setItem(ISSUE_HISTORY_STORAGE_KEY, JSON.stringify(clipped));
     } catch {
       // localStorage unavailable — UI state still keeps the current session history.
+    }
+  }
+
+  function rememberIssueSelectionFromStorage(entry) {
+    if (!entry?.id && !entry?.title) return;
+    try {
+      const raw = window.localStorage.getItem(ISSUE_HISTORY_STORAGE_KEY);
+      const parsed = JSON.parse(raw || '[]');
+      const current = Array.isArray(parsed) ? parsed : [];
+      const next = [
+        entry,
+        ...current.filter((item) => {
+          if (entry.url && item.url) return item.url !== entry.url;
+          return String(item.title || '').trim() !== String(entry.title || '').trim();
+        }),
+      ].slice(0, 30);
+      persistIssueHistory(next);
+    } catch {
+      persistIssueHistory([entry]);
     }
   }
 
