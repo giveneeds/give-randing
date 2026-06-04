@@ -1,11 +1,9 @@
 name: Daily Content Collection
 
-# 매일 KST 06:00 (UTC 21:00) 자동 실행 + 수동 트리거.
+# 수동 트리거 전용. (매일 06:00 자동 스케줄은 제거됨)
 # 운영(Vercel)의 /api/cron/collect 를 Bearer 토큰으로 호출.
 
 on:
-  schedule:
-    - cron: '0 21 * * *'   # UTC 21:00 = KST 06:00
   workflow_dispatch:        # Actions 탭에서 수동 실행 가능
 
 permissions:
