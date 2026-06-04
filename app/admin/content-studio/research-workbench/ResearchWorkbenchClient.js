@@ -2520,7 +2520,7 @@ function WriterDraftPreview({ plan, acceptedFindings, writerModel, drafts, polis
           <button
             type="button"
             onClick={onGenerate}
-            disabled={status.loading || !acceptedFindings.length}
+            disabled={status.loading}
             className="inline-flex items-center gap-2 px-4 py-2 rounded bg-zinc-900 text-white text-xs font-bold disabled:opacity-50"
           >
             <Sparkles size={14} />
@@ -2590,8 +2590,9 @@ function WriterDraftPreview({ plan, acceptedFindings, writerModel, drafts, polis
               <div>
                 <div className="text-xs font-bold text-zinc-900">아직 실제 Writer 초안이 없다</div>
                 <p className="text-[11px] text-zinc-500 mt-1 leading-relaxed">
-                  Sonar 리서치에서 채택한 근거가 생기면 `GPT-5 Writer 초안 생성` 버튼이 활성화된다.
-                  버튼을 누른 뒤 실제 GPT-5 응답만 이 영역에 표시한다.
+                  버튼을 누르면 실제 GPT Writer 응답만 이 영역에 표시된다.
+                  채택 근거가 0개면 Claude 기획과 금지 주장만 바탕으로 초안이 생성되므로,
+                  사실 단정이 약하고 Sonar 리서치 후 다시 생성하는 편이 안전하다.
                 </p>
               </div>
             </div>
