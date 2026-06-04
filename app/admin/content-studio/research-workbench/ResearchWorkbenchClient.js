@@ -306,6 +306,7 @@ function normalizeResearchFindings(results) {
         item_id: result.item_id || `r${resultIndex + 1}`,
         finding_text: finding.finding_text || '',
         source_domain: finding.source_domain || '',
+        source_url: finding.source_url || '',
         evidence_type: finding.evidence_type || 'expert_quote',
         recency_note: finding.recency_note || '',
         quality_signal: quality,
@@ -333,6 +334,9 @@ export default function ResearchWorkbenchClient({ internalDocs, writerModel }) {
   const [selectedIssue, setSelectedIssue] = useState(null);
   const [issueSearchIntent, setIssueSearchIntent] = useState('');
   const [issueSearchPrompt, setIssueSearchPrompt] = useState('');
+  // 대화형 수정 — 사용자가 *생성된 Sonar 프롬프트* 를 보고 자연어로 수정 요청.
+  // Claude 가 기존 프롬프트 + 수정 요청 받아 다듬은 새 버전 반환.
+  const [issueSearchRefineRequest, setIssueSearchRefineRequest] = useState('');
   const [articleUrl, setArticleUrl] = useState('');
   const [sourceArticle, setSourceArticle] = useState(null);
   const [researchResults, setResearchResults] = useState(null);
@@ -503,18 +507,28 @@ export default function ResearchWorkbenchClient({ internalDocs, writerModel }) {
     ));
   }
 
-  async function generateIssueSearchPrompt() {
+  // mode: 'create' (처음 생성) | 'refine' (기존 + 자연어 수정 요청을 Claude 가 반영).
+  async function generateIssueSearchPrompt(mode = 'create') {
     setIssuePromptStatus({ loading: true, error: '', meta: null, startedAt: Date.now() });
     try {
+      const isRefine = mode === 'refine' && issueSearchPrompt.trim() && issueSearchRefineRequest.trim();
       const res = await fetch('/api/admin/content-studio/research-workbench/issue-search-prompt', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ searchIntent: issueSearchIntent, excludeHistory: issueHistory }),
+        body: JSON.stringify({
+          searchIntent: issueSearchIntent,
+          excludeHistory: issueHistory,
+          ...(isRefine ? {
+            currentPrompt: issueSearchPrompt.trim(),
+            refineInstruction: issueSearchRefineRequest.trim(),
+          } : {}),
+        }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'Claude 검색 프롬프트 생성 실패');
       const prompt = json.searchPrompt?.sonar_user_prompt || '';
       setIssueSearchPrompt(prompt);
+      if (isRefine) setIssueSearchRefineRequest(''); // refine 성공 후 입력칸 비움.
       if (Array.isArray(json.searchPrompt?.preferred_categories) && json.searchPrompt.preferred_categories.length) {
         setIssueCategories(json.searchPrompt.preferred_categories);
       }
@@ -687,7 +701,7 @@ export default function ResearchWorkbenchClient({ internalDocs, writerModel }) {
         item_id: finding.item_id,
         finding_text: finding.finding_text,
         source_domain: finding.source_domain,
-        source_url: Array.isArray(finding.citations) ? finding.citations[0] : '',
+        source_url: finding.source_url || (Array.isArray(finding.citations) ? finding.citations[0] : ''),
         evidence_type: finding.evidence_type,
         recency_note: finding.recency_note,
         accepted_by_user: true,
@@ -835,6 +849,8 @@ export default function ResearchWorkbenchClient({ internalDocs, writerModel }) {
         selectedIssue={selectedIssue}
         issueSearchIntent={issueSearchIntent}
         issueSearchPrompt={issueSearchPrompt}
+        issueSearchRefineRequest={issueSearchRefineRequest}
+        onIssueSearchRefineRequestChange={setIssueSearchRefineRequest}
         articleUrl={articleUrl}
         sourceArticle={sourceArticle}
         articleStatus={articleStatus}
@@ -1430,6 +1446,8 @@ function PlanningFlowPreview({
   selectedIssue,
   issueSearchIntent,
   issueSearchPrompt,
+  issueSearchRefineRequest,
+  onIssueSearchRefineRequestChange,
   articleUrl,
   sourceArticle,
   articleStatus,
@@ -1486,6 +1504,8 @@ function PlanningFlowPreview({
           selectedIssue={selectedIssue}
           issueSearchIntent={issueSearchIntent}
           issueSearchPrompt={issueSearchPrompt}
+          issueSearchRefineRequest={issueSearchRefineRequest}
+          onIssueSearchRefineRequestChange={onIssueSearchRefineRequestChange}
           articleUrl={articleUrl}
           sourceArticle={sourceArticle}
           articleStatus={articleStatus}
@@ -1592,6 +1612,8 @@ function IssueScoutPanel({
   selectedIssue,
   issueSearchIntent,
   issueSearchPrompt,
+  issueSearchRefineRequest,
+  onIssueSearchRefineRequestChange,
   articleUrl,
   sourceArticle,
   articleStatus,
@@ -1755,6 +1777,31 @@ function IssueScoutPanel({
               placeholder="Claude가 만든 Sonar 검색 프롬프트가 여기에 표시된다. 필요하면 사용자가 직접 수정한 뒤 검색할 수 있다."
               className="mt-2 min-h-[180px] w-full rounded border border-zinc-200 bg-white px-3 py-2 font-mono text-[11px] leading-relaxed text-zinc-900 outline-none focus:border-zinc-500"
             />
+            {/* 대화형 수정 — 위 프롬프트에 대한 자연어 수정 요청. Claude 가 기존 의도 유지하며 다듬음. */}
+            {issueSearchPrompt.trim() && (
+              <div className="mt-3 border-t border-zinc-200 pt-3">
+                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                  자연어로 프롬프트 수정 요청
+                </label>
+                <textarea
+                  value={issueSearchRefineRequest || ''}
+                  onChange={(event) => onIssueSearchRefineRequestChange(event.target.value)}
+                  placeholder="예: 국내 사례 위주로 좁혀줘 / 작년 데이터 제외 / 공식 발표만 / 더 짧고 명확하게 / 카테고리 plugin 흐름 추가"
+                  className="mt-2 min-h-[60px] w-full rounded border border-zinc-200 bg-white px-3 py-2 text-xs leading-relaxed text-zinc-900 outline-none focus:border-zinc-500"
+                />
+                <div className="mt-2 flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => onGenerateIssueSearchPrompt('refine')}
+                    disabled={promptStatus.loading || !(issueSearchRefineRequest && issueSearchRefineRequest.trim())}
+                    className="inline-flex items-center gap-2 rounded border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800 hover:border-emerald-500 disabled:opacity-50"
+                  >
+                    <Sparkles size={14} />
+                    {promptStatus.loading ? 'Claude 수정 중' : 'Claude 가 수정 반영'}
+                  </button>
+                </div>
+              </div>
+            )}
             <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
               <p className="text-[11px] text-zinc-500">
                 이 프롬프트는 `/issues`의 기본 넓은 검색을 대체한다. 선택/발행 이력 제외 조건은 Claude 생성 단계에도 반영된다.
