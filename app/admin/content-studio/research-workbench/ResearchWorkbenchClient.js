@@ -339,6 +339,9 @@ export default function ResearchWorkbenchClient({ internalDocs, writerModel }) {
   const [writerDrafts, setWriterDrafts] = useState(null);
   const [writerPolishedDraft, setWriterPolishedDraft] = useState(null);
   const [planStatus, setPlanStatus] = useState({ loading: false, error: '', meta: null, startedAt: 0 });
+  // 기획 단계 Claude 모델 — 사용자가 UI 드롭다운에서 선택. 환경변수 기본값 무시하고 명시 선택.
+  // Sonnet 4.5 = 균형(빠름·저렴), Opus 4.8 = 더 깊은 추론·5배 비용. 같은 입력에 두 모델 비교용.
+  const [planModel, setPlanModel] = useState('claude-sonnet-4-5-20250929');
   const [issueStatus, setIssueStatus] = useState({ loading: false, error: '', meta: null, startedAt: 0 });
   const [issueNotifyStatus, setIssueNotifyStatus] = useState({ loading: false, error: '', meta: null, startedAt: 0 });
   const [issuePromptStatus, setIssuePromptStatus] = useState({ loading: false, error: '', meta: null, startedAt: 0 });
@@ -625,11 +628,14 @@ export default function ResearchWorkbenchClient({ internalDocs, writerModel }) {
       const res = await fetch('/api/admin/content-studio/research-workbench/plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(sourceArticle
-          ? { sourceArticle }
-          : targetIssue
-            ? { issueCandidate: targetIssue }
-            : {}),
+        body: JSON.stringify({
+          ...(sourceArticle
+            ? { sourceArticle }
+            : targetIssue
+              ? { issueCandidate: targetIssue }
+              : {}),
+          claudeModel: planModel,  // 사용자가 UI 에서 고른 모델로 호출.
+        }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'Claude 기획 생성 실패');
@@ -748,7 +754,7 @@ export default function ResearchWorkbenchClient({ internalDocs, writerModel }) {
           className="inline-flex items-center gap-2 rounded border border-zinc-200 bg-white px-3 py-2 text-xs font-bold text-zinc-700 hover:border-zinc-400"
         >
           {showAdvancedPanels ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-          {showAdvancedPanels ? '진단 패널 숨기기' : '숨긴 패널 보기'}
+          {showAdvancedPanels ? '상세 박스 접기' : '상세 박스 펼치기'}
         </button>
       </div>
 
@@ -800,6 +806,28 @@ export default function ResearchWorkbenchClient({ internalDocs, writerModel }) {
         </div>
       </section>
       )}
+
+      {/* 기획 모델 선택 — 같은 입력으로 두 모델 비교 가능. fetch body 의 claudeModel 로 전달. */}
+      <div className="border border-zinc-200 rounded-lg bg-white p-3 mb-4 flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-black uppercase tracking-widest text-zinc-700">
+            기획 모델
+          </span>
+          <select
+            value={planModel}
+            onChange={(e) => setPlanModel(e.target.value)}
+            className="text-xs border border-zinc-300 rounded px-2 py-1 bg-white"
+          >
+            <option value="claude-sonnet-4-5-20250929">Sonnet 4.5 (균형 · 약 75원/회)</option>
+            <option value="claude-sonnet-4-6">Sonnet 4.6 (최신 · 같은 가격)</option>
+            <option value="claude-opus-4-8">Opus 4.8 (강력 · 약 375원/회)</option>
+            <option value="claude-opus-4-7">Opus 4.7 (강력 · 같은 가격)</option>
+          </select>
+        </div>
+        <span className="text-[10px] text-zinc-500 flex-1">
+          같은 입력으로 모델 바꿔 호출하면 비교 가능. 응답 메타에 실제 사용된 모델이 표시됨.
+        </span>
+      </div>
 
       <PlanningFlowPreview
         showAdvancedPanels={showAdvancedPanels}
@@ -1484,9 +1512,25 @@ function PlanningFlowPreview({
         {planStatus.loading && <LoadingPing startedAt={planStatus.startedAt} phase="Claude 가 ContentPlan + 보강 리서치 질문 생성 중" />}
         {contentPlan ? (
           <>
+            {/* 4개 핵심 카드 — 항상 보임. 각 카드 *내부* 가 요약 vs 상세 토글. */}
+            <ContentPlanCard plan={contentPlan} status={planStatus} showDetail={showAdvancedPanels} />
+            <ResearchReviewCards
+              items={researchItems}
+              findings={findings}
+              onRunResearch={onRunResearch}
+              status={researchStatus}
+              disabled={contentPlan.stop_condition === 'stop'}
+              showDetail={showAdvancedPanels}
+            />
+            <WriterHandoffPreview
+              plan={contentPlan}
+              acceptedFindings={acceptedFindings}
+              rejectedFindings={rejectedFindings}
+              showDetail={showAdvancedPanels}
+            />
+            {/* 검수 게이트 패널만 토글 — 사용자가 *상세 보기* 켰을 때 검토 체크리스트로 보임. */}
             {showAdvancedPanels && (
               <>
-                <ContentPlanCard plan={contentPlan} status={planStatus} />
                 <GatePanel
                   title="Gate 1 — 기획 방향 검토"
                   description="여기서 통과하지 않으면 Sonar 보강 리서치를 실행하지 않는다."
@@ -1502,13 +1546,6 @@ function PlanningFlowPreview({
                     { label: '중단', icon: PauseCircle, tone: 'danger' },
                   ]}
                 />
-                <ResearchReviewCards
-                  items={researchItems}
-                  findings={findings}
-                  onRunResearch={onRunResearch}
-                  status={researchStatus}
-                  disabled={contentPlan.stop_condition === 'stop'}
-                />
                 <GatePanel
                   title="Gate 2 — 자료 채택 검토"
                   description="채택된 findings만 Writer handoff payload로 넘어간다."
@@ -1523,11 +1560,6 @@ function PlanningFlowPreview({
                     { label: '재검색', icon: RefreshCw, tone: 'warn' },
                     { label: '폐기', icon: XCircle, tone: 'danger' },
                   ]}
-                />
-                <WriterHandoffPreview
-                  plan={contentPlan}
-                  acceptedFindings={acceptedFindings}
-                  rejectedFindings={rejectedFindings}
                 />
               </>
             )}
@@ -1948,7 +1980,7 @@ function IssueScoutPanel({
   );
 }
 
-function ContentPlanCard({ plan, status }) {
+function ContentPlanCard({ plan, status, showDetail }) {
   return (
     <div className="border border-zinc-200 rounded bg-white overflow-hidden">
       <div className="px-4 py-3 border-b border-zinc-200 bg-zinc-50 flex items-center justify-between gap-3">
@@ -1974,6 +2006,32 @@ function ContentPlanCard({ plan, status }) {
           <div className="text-lg font-black leading-snug mt-2">{plan.content_angle}</div>
         </div>
 
+        {/* 서술문 요약 — 항상 보임. issue_plan 의 핵심 필드를 *문장 단위* 로 보여줌. */}
+        {plan.content_pattern === 'issue_explainer' && plan.issue_plan && (
+          <div className="border border-zinc-200 rounded bg-zinc-50 p-4 leading-relaxed text-sm text-zinc-800 space-y-2">
+            {plan.issue_plan.audience_callout && (
+              <p><span className="font-bold text-zinc-500 text-[10px] uppercase tracking-widest mr-2">대상</span>{plan.issue_plan.audience_callout}</p>
+            )}
+            {plan.issue_plan.issue_summary && (
+              <p><span className="font-bold text-zinc-500 text-[10px] uppercase tracking-widest mr-2">사건</span>{plan.issue_plan.issue_summary}</p>
+            )}
+            {plan.issue_plan.key_reversal && (
+              <p><span className="font-bold text-zinc-500 text-[10px] uppercase tracking-widest mr-2">핵심 반전</span>{plan.issue_plan.key_reversal}</p>
+            )}
+            {plan.issue_plan.why_it_matters && (
+              <p><span className="font-bold text-zinc-500 text-[10px] uppercase tracking-widest mr-2">왜 중요</span>{plan.issue_plan.why_it_matters}</p>
+            )}
+            {plan.issue_plan.reader_takeaway && (
+              <p><span className="font-bold text-zinc-500 text-[10px] uppercase tracking-widest mr-2">독자 takeaway</span>{plan.issue_plan.reader_takeaway}</p>
+            )}
+            {plan.promised_takeaway && (
+              <p><span className="font-bold text-zinc-500 text-[10px] uppercase tracking-widest mr-2">약속</span>{plan.promised_takeaway}</p>
+            )}
+          </div>
+        )}
+
+        {/* 이하 상세 박스/그리드는 showDetail=true 일 때만 — "진단 패널 보기" 토글. */}
+        {showDetail && (<>
         {plan.content_pattern === 'issue_explainer' && plan.issue_plan && (
           <div className="grid md:grid-cols-3 gap-3">
             <PlanField title="대상 호출" value={plan.issue_plan.audience_callout} emphasis />
@@ -2064,6 +2122,7 @@ function ContentPlanCard({ plan, status }) {
         </div>
 
         <ListBox title="사용자 확인 질문" icon={ClipboardCheck} items={plan.user_review_questions} />
+        </>)}
       </div>
     </div>
   );
@@ -2185,9 +2244,10 @@ function GatePanel({ title, description, checks, actions }) {
   );
 }
 
-function ResearchReviewCards({ items, findings, onRunResearch, status, disabled }) {
+function ResearchReviewCards({ items, findings, onRunResearch, status, disabled, showDetail }) {
   const acceptedCount = findings.filter((finding) => finding.status === 'accepted').length;
   const rejectedCount = findings.filter((finding) => finding.status === 'rejected').length;
+  const itemsWithResults = items.filter((item) => findings.some((f) => f.item_id === item.item_id)).length;
 
   return (
     <div className="border border-zinc-200 rounded bg-white overflow-hidden">
@@ -2221,7 +2281,14 @@ function ResearchReviewCards({ items, findings, onRunResearch, status, disabled 
           Sonar 응답 완료 · model: <span className="font-mono">{status.meta.model}</span>
         </div>
       )}
-      <div className="p-4 space-y-3">
+      {/* 진행 상태 요약 — 항상 보임. */}
+      <div className="px-4 pt-3 text-xs text-zinc-700 leading-relaxed">
+        {items.length === 0
+          ? <>아직 [2] ContentPlan 의 보강 리서치 질문이 없다. Claude 가 deep_research_questions 를 만들어야 이 단계가 채워진다.</>
+          : <>총 <span className="font-bold">{items.length}개</span> 자료 요청 중 <span className="font-bold">{itemsWithResults}개</span>에 Sonar 결과 있음 · 채택 <span className="font-bold">{acceptedCount}</span> · 폐기 <span className="font-bold">{rejectedCount}</span></>}
+      </div>
+      {/* 카드 그리드 — showDetail 일 때만. 평소엔 상단 요약만 보임. */}
+      {showDetail && <div className="p-4 space-y-3">
         {items.map((item) => {
           const itemFindings = findings.filter((finding) => finding.item_id === item.item_id);
           const itemAccepted = itemFindings.filter((finding) => finding.status === 'accepted').length;
@@ -2279,7 +2346,7 @@ function ResearchReviewCards({ items, findings, onRunResearch, status, disabled 
             </div>
           );
         })}
-      </div>
+      </div>}
     </div>
   );
 }
@@ -2323,7 +2390,7 @@ function FindingReviewCard({ finding }) {
   );
 }
 
-function WriterHandoffPreview({ plan, acceptedFindings, rejectedFindings }) {
+function WriterHandoffPreview({ plan, acceptedFindings, rejectedFindings, showDetail }) {
   const payload = {
     content_plan: {
       planning_title: plan.planning_title,
@@ -2365,14 +2432,23 @@ function WriterHandoffPreview({ plan, acceptedFindings, rejectedFindings }) {
         </div>
       </div>
       <div className="p-4">
+        {/* 항상 보임 — 요약 카운트 + 핵심 한 줄. */}
         <div className="flex flex-wrap gap-2 mb-3">
           <StatusPill label={`evidence ${acceptedFindings.length}개 전달`} tone="ok" />
           <StatusPill label={`폐기 ${rejectedFindings.length}개 제외`} tone="warn" />
           <StatusPill label={`do_not_claim ${(plan.do_not_claim || []).length}개`} tone="muted" />
         </div>
-        <pre className="max-h-[420px] overflow-auto whitespace-pre-wrap break-words rounded bg-zinc-950 p-4 text-[11px] leading-relaxed text-zinc-100 font-mono">
-          {JSON.stringify(payload, null, 2)}
-        </pre>
+        <div className="text-xs text-zinc-700 leading-relaxed">
+          {acceptedFindings.length === 0
+            ? <>아직 Writer 에 넘길 채택 자료가 없다. 위 [3] Sonar 리서치 결과에서 자료를 채택해야 한다.</>
+            : <>채택된 자료 <span className="font-bold">{acceptedFindings.length}개</span>와 금지 주장 <span className="font-bold">{(plan.do_not_claim || []).length}개</span>가 GPT Writer 에 전달될 예정. 폐기 자료 {rejectedFindings.length}개는 payload 에 포함되지 않는다.</>}
+        </div>
+        {/* JSON 원본은 토글 — 보통은 안 봐도 됨. 디버그 시에만. */}
+        {showDetail && (
+          <pre className="mt-3 max-h-[420px] overflow-auto whitespace-pre-wrap break-words rounded bg-zinc-950 p-4 text-[11px] leading-relaxed text-zinc-100 font-mono">
+            {JSON.stringify(payload, null, 2)}
+          </pre>
+        )}
       </div>
     </div>
   );

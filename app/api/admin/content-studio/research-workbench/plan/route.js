@@ -287,6 +287,10 @@ export async function POST(request) {
     const body = await request.json();
     const issueCandidate = body.issueCandidate && typeof body.issueCandidate === 'object' ? body.issueCandidate : null;
     const sourceArticle = body.sourceArticle && typeof body.sourceArticle === 'object' ? body.sourceArticle : null;
+    // 사용자가 UI 에서 고른 모델 우선. 없으면 env 기본값. claude-* 화이트리스트로 안전 확보.
+    const requestedModel = typeof body.claudeModel === 'string' && /^claude-/.test(body.claudeModel.trim())
+      ? body.claudeModel.trim()
+      : DEFAULT_CLAUDE_MODEL;
 
     if (!sourceArticle && !issueCandidate) {
       return NextResponse.json(
@@ -375,7 +379,7 @@ export async function POST(request) {
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: DEFAULT_CLAUDE_MODEL,
+        model: requestedModel,
         max_tokens: 4500,
         temperature: 0.2,
         system,
