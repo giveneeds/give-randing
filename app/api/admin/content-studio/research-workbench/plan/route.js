@@ -107,7 +107,7 @@ const CONTENT_PLAN_SCHEMA = {
           purpose: { type: 'string' },
           expected_evidence_type: {
             type: 'string',
-            enum: ['source_origin', 'case_detail', 'mechanism', 'official_position', 'public_reaction', 'risk_check'],
+            enum: ['source_origin', 'case_detail', 'mechanism', 'official_position', 'public_reaction', 'risk_check', 'original_quote', 'concept_backbone', 'practical_example'],
           },
           priority: { type: 'string', enum: ['required', 'optional'] },
         },
@@ -184,6 +184,9 @@ const CONTENT_PLAN_SCHEMA = {
               'official_position',
               'public_reaction',
               'risk_check',
+              'original_quote',
+              'concept_backbone',
+              'practical_example',
             ],
           },
           priority: { type: 'string', enum: ['required', 'optional'] },
@@ -310,7 +313,7 @@ export async function POST(request) {
           String(sourceArticle.article_text || '').slice(0, 16000),
           '</source_article_text>',
           '',
-          '이 원문 하나를 중심축으로 삼아 issue_explainer Threads 글감을 만드세요.',
+          '이 원문 하나를 중심축으로 삼아 Threads 글감을 만드세요.',
           '원문에서 충분히 확인되는 내용과 추가 리서치가 필요한 내용을 분리하세요.',
         ].join('\n')
       : issueCandidate
@@ -323,7 +326,7 @@ export async function POST(request) {
           `출처 요약: ${issueCandidate.source_summary || ''}`,
           `최신성: ${issueCandidate.recency_note || ''}`,
           '',
-          '이 이슈를 issue_explainer 형식의 Threads 글감으로 만들기 위한 기획과 연계 리서치 질문을 작성하세요.',
+          '이 이슈를 Threads 글감으로 만들기 위한 기획과 연계 리서치 질문을 작성하세요.',
         ].join('\n')
       : '';
 
@@ -331,11 +334,16 @@ export async function POST(request) {
     const system = [
       '당신은 기브니즈 Threads/X/LinkedIn 콘텐츠 기획 에이전트입니다.',
       '역할은 글을 바로 쓰는 것이 아니라, 내부 기준 문서를 바탕으로 콘텐츠 방향과 보강 리서치 항목을 설계하는 것입니다.',
-      '이번 워크벤치 v1의 글 형식은 content_pattern=issue_explainer로 고정합니다.',
-      '최근 이슈를 일반 실무자/창업자/운영자가 이해할 수 있게 풀어주는 것이 목적입니다. 독자를 소상공인으로 단정하지 마세요.',
+      '이번 워크벤치의 글 형식은 content_pattern=issue_explainer로 유지합니다.',
+      'issue_explainer는 최근 뉴스/릴리즈/규제/기업 사건뿐 아니라, 전문가 발언/팁/강의/개념을 원천 근거와 함께 풀어주는 글도 포함합니다.',
+      '즉 전문가가 주는 팁과 발언도 이슈형 안에서 원천 근거, 맥락, 적용 장면으로 풀어낼 수 있습니다.',
+      '최근 이슈를 일반 실무자/창업자/운영자가 이해할 수 있게 풀어주는 것이 목적입니다. 독자를 소상공인, 마케터, 사장님으로 자동 단정하지 마세요.',
+      '이슈마다 가장 먼저 멈출 독자 하나를 정하세요. 기준은 직업명이 아니라 “지금 이 주제가 자기 얘기처럼 꽂히는 상황”입니다.',
+      '예: AI 광고 제재는 “AI 솔루션 광고 문구 쓰는 사람”, 피지컬 AI 채용은 “제조, 로봇, 반도체 진로 보는 사람”, 글쓰기 개념은 “머릿속 생각은 많은데 말로 못 꺼내는 사람”.',
       'Claude가 사실을 새로 만들면 안 됩니다. 후보에 있는 사실도 검증 전에는 주장/언급/보도 수준으로 다루고, deep_research_questions에 위임하세요.',
       'sourceArticle이 있으면 원문을 중심축으로 삼으세요. 여러 검색 결과를 섞어 중심을 흐리지 말고, 원문에서 뽑은 장면/숫자/인물/회사/시간축을 우선합니다.',
-      'article_slot_map에는 원문에서 뽑은 멈추게 하는 첫 장면, 오래된 질서, 새 신호, 동시에 움직인 플레이어, 숫자, 고유명사, 직접 인용, 과거 맥락, 불확실성을 반드시 채우세요.',
+      'article_slot_map에는 원문에서 뽑은 멈추게 하는 첫 장면, 오래된 질서, 새 신호, 동시에 움직인 플레이어, 숫자, 고유명사, 직접 인용, 과거 맥락, 불확실성을 채우세요.',
+      '전문가 팁/발언 이슈에서는 article_slot_map을 이렇게 재해석하세요: strange_scene=멈추는 첫 말, old_order=대부분의 착각, new_signal=그 말을 뒤집는 핵심, hard_numbers=강의/책/연구/사례에서 확인할 근거, direct_quotes=원문 인용.',
       '기획 단계에서는 외부 자료를 검색한 척하거나 수치/사례를 단정하지 마세요.',
       '자료가 필요한 주장은 required_research_items에 위임하세요.',
       'IssuePlan은 고정 슬롯 나열이 아니라 독자의 심리 이동을 설계하기 위한 기획입니다.',
@@ -348,6 +356,8 @@ export async function POST(request) {
       '각 설명 필드는 1~2문장으로 압축하세요.',
       'deep_research_questions는 4~6개 작성하세요. psychological_arc의 credibility_hook, pattern_shift, structural_meaning, proof_needed를 입증하거나 반박할 질문을 우선합니다.',
       '질문은 “기능이 무엇인가”보다 “첫 화면에서 멈추게 하는 구체 장면을 믿게 하는 디테일”, “단발 사건이 아니라 흐름이라는 증거”, “돈/권한/데이터/역할이 어디서 어디로 이동하는지”를 확인하게 만드세요.',
+      '전문가 팁/발언 이슈의 리서치 질문은 원문 인용, 그 말이 나온 맥락, 개념의 핵심 논리, 일상 적용 사례, 반론/오해를 찾게 만드세요.',
+      '전문가 팁/발언 이슈는 독자 심리 이동이 중요합니다. 도입은 오싹한 말/이상한 질문/강한 주장, 중간은 “왜 이게 중요한가”, “대부분이 오해하는 지점”, “일상에서 벌어지는 장면”, 마지막은 “오늘 한 번 해볼 행동”으로 설계하세요.',
       'required_research_items는 deep_research_questions와 같은 내용을 기존 UI 호환용으로 4개 이하만 압축해 작성하세요.',
       'risk_flags, do_not_claim, user_review_questions는 각각 최대 5개까지만 작성하세요.',
     ].join('\n');

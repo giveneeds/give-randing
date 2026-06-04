@@ -242,12 +242,12 @@ function buildClientSonarPrompt(item, contentPlan) {
   if (contentPlan.content_pattern === 'issue_explainer') {
     const issuePlan = contentPlan.issue_plan || {};
     return [
-      '이 글은 최근 이슈를 풀어주는 issue_explainer입니다.',
+      '이 글은 최근 이슈 또는 전문가 팁을 풀어주는 issue_explainer입니다.',
       '',
       'IssuePlan:',
       `- 대상 호출: ${issuePlan.audience_callout || ''}`,
-      `- 사건 요약: ${issuePlan.issue_summary || ''}`,
-      `- 핵심 반전: ${issuePlan.key_reversal || ''}`,
+      `- 핵심 요약: ${issuePlan.issue_summary || ''}`,
+      `- 뒤집는 지점: ${issuePlan.key_reversal || ''}`,
       `- 왜 중요한가: ${issuePlan.why_it_matters || ''}`,
       '',
       '이번에 확인할 질문:',
@@ -256,7 +256,8 @@ function buildClientSonarPrompt(item, contentPlan) {
       `- 필요한 증거 유형: ${item.expected_evidence_type}`,
       '',
       '결과 조건:',
-      '- 최근 7일~30일 자료와 원천 출처 우선',
+      '- 최근 이슈면 최근 7일~30일 자료와 원천 출처 우선',
+      '- 전문가 팁/발언이면 원문 인용, 나온 맥락, 핵심 논리, 일상 적용 사례 우선',
       '- 원천 발언/공식 발표/주요 보도/커뮤니티 반응 구분',
       '- 검증 부족 내용은 단정하지 말고 표시',
     ].join('\n');
@@ -1180,7 +1181,7 @@ const CURRENT_LOGIC_GROUPS = [
     title: 'GPT-5 Writer',
     badge: 'writer',
     items: [
-      '초안 포스트 개수는 7~8개로 고정한다. 이슈의 장면과 근거 밀도를 그 안에서 배치한다.',
+      '초안 포스트 개수는 소재에 따라 달라진다. 뉴스/릴리즈/규제 사건은 7~8개, 전문가 팁/발언 이슈는 10~15개까지 허용한다.',
       'posts 배열은 문장 단위가 아니라 실제 Threads 포스트 단위다.',
       '문장 하나씩 1~13개 카드로 쪼개면 실패다. 한 포스트 안에 4~9개 짧은 줄을 묶는다.',
       '포스트 1개는 독자가 한 화면에서 읽는 작은 장면이다.',
@@ -1239,7 +1240,7 @@ const PROMPT_INTERNALS = [
     badge: 'claude-system',
     body: [
       'Claude는 글을 바로 쓰지 않는다. 역할은 콘텐츠 방향, Article Slot Map, 추가 리서치 질문을 설계하는 것이다.',
-      'v1에서는 content_pattern=issue_explainer로 고정한다.',
+      'v1에서는 content_pattern=issue_explainer로 유지한다.',
       'sourceArticle이 있으면 원문을 중심축으로 삼는다. 여러 검색 결과를 섞어 중심이 흐려지지 않게 한다.',
       'Claude는 원문에서 확인된 사실과 추가 리서치가 필요한 질문을 분리한다.',
       '숫자, 고유명사, 직접 인용, 과거 맥락, 불확실성을 Article Slot Map으로 강제 추출한다.',
@@ -1284,8 +1285,9 @@ const PROMPT_INTERNALS = [
     title: 'Writer 구조 프롬프트',
     badge: 'writer-structure',
     body: [
-      '초안 포스트 개수는 7~8개로 고정한다.',
-      '이슈의 장면, 근거, 반전 밀도를 7~8개 포스트 안에 배치한다.',
+      '초안 포스트 개수는 소재에 따라 달라진다.',
+      '뉴스/릴리즈/규제 사건은 이슈의 장면, 근거, 반전 밀도를 7~8개 포스트 안에 배치한다.',
+      '전문가 팁/발언 이슈는 강한 첫 말, 진짜 질문, 오해, 핵심 논리, 일상 장면, 적용 행동을 10~15개 포스트로 풀 수 있다.',
       'posts 배열은 문장 단위가 아니라 실제 Threads 포스트 단위다.',
       '문장 하나씩 1~13개 카드로 쪼개지 않는다.',
       '한 포스트 안에는 4~9개의 짧은 줄을 넣을 수 있다.',
@@ -1572,7 +1574,7 @@ function PlanningFlowPreview({
                   checks={[
                     '출처가 추적 가능한가?',
                     '2024년 이후 자료이거나 현재 유효한 공식 문서인가?',
-                    '작은 사업자에게 적용 가능한가?',
+                    '선택한 독자에게 실제로 적용 가능한가?',
                     '추측/과장 표현이 섞이지 않았는가?',
                   ]}
                   actions={[
