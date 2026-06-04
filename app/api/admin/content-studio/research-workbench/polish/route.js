@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server';
 
+// R2 한국어 보정(gpt-5)도 길게 걸려 Vercel 기본 타임아웃을 넘긴다. webhook 패턴과 동일하게 한도 상향.
+export const runtime = 'nodejs';
+export const maxDuration = 300;
+
 const OPENAI_BASE = 'https://api.openai.com/v1';
 const DEFAULT_POLISH_MODEL = process.env.OPENAI_THREAD_MODEL || 'gpt-5';
 

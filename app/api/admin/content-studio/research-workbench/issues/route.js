@@ -10,6 +10,10 @@ import {
   normalizeIssueCategories,
 } from '@/lib/research/issueSourceDirectory';
 
+// Sonar 이슈 후보 수집도 외부 호출이라 Vercel 기본 타임아웃을 넘길 수 있다. webhook 패턴과 동일하게 한도 상향.
+export const runtime = 'nodejs';
+export const maxDuration = 300;
+
 const PERPLEXITY_ENDPOINT = 'https://api.perplexity.ai/v1/sonar';
 const DEFAULT_SONAR_MODEL = process.env.PERPLEXITY_ISSUE_MODEL || process.env.PERPLEXITY_RESEARCH_MODEL || process.env.PERPLEXITY_MODEL || 'sonar-pro';
 

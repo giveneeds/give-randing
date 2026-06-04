@@ -2,6 +2,11 @@ import fs from 'fs/promises';
 import path from 'path';
 import { NextResponse } from 'next/server';
 
+// Claude ContentPlan 생성이 큰 스키마를 강제 출력하느라 ~70초까지 걸린다.
+// Vercel 기본 함수 타임아웃에 걸려 죽지 않도록 webhook 라우트와 동일하게 한도를 올린다.
+export const runtime = 'nodejs';
+export const maxDuration = 300;
+
 const ANTHROPIC_ENDPOINT = 'https://api.anthropic.com/v1/messages';
 const DEFAULT_CLAUDE_MODEL = process.env.CLAUDE_PLANNING_MODEL || 'claude-sonnet-4-5-20250929';
 

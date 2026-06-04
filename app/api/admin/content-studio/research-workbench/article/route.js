@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server';
 
+// 원문 기사 추출도 외부 페이지 fetch라 느린 사이트에선 기본 타임아웃을 넘길 수 있다. webhook 패턴과 동일하게 한도 상향.
+export const runtime = 'nodejs';
+export const maxDuration = 300;
+
 function decodeEntities(text) {
   return String(text || '')
     .replace(/&nbsp;/g, ' ')

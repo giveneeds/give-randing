@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import { buildKnowledgeContext, getThreadsBadExamples, getThreadsRealBodySamples } from '@/lib/knowledge/loader';
 
+// R1 초안(gpt-5) 생성도 길게 걸려 Vercel 기본 타임아웃을 넘긴다. webhook 패턴과 동일하게 한도 상향.
+export const runtime = 'nodejs';
+export const maxDuration = 300;
+
 const OPENAI_BASE = 'https://api.openai.com/v1';
 const DEFAULT_WRITER_MODEL = process.env.OPENAI_THREAD_MODEL || 'gpt-5';
 
