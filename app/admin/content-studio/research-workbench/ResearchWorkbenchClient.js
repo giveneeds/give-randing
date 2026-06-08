@@ -357,6 +357,7 @@ export default function ResearchWorkbenchClient({ internalDocs, writerModel }) {
   const [critiqueStatus, setCritiqueStatus] = useState({ loading: false, error: '', meta: null, startedAt: 0 });
   const [polishStatus, setPolishStatus] = useState({ loading: false, error: '', meta: null, startedAt: 0 });
   const [issueHistory, setIssueHistory] = useState([]);
+  const [autoRunStatus, setAutoRunStatus] = useState(null); // null | {running, mode, step, log, error}
 
   useEffect(() => {
     try {
@@ -796,6 +797,168 @@ export default function ResearchWorkbenchClient({ internalDocs, writerModel }) {
     }
   }
 
+  async function runAutoPublish(mode) {
+    const logs = [];
+    function addLog(msg) {
+      logs.push(msg);
+      setAutoRunStatus((prev) => ({ ...prev, step: msg, log: [...logs] }));
+    }
+
+    setAutoRunStatus({ running: true, mode, step: '시작', log: [], error: null });
+    setContentPlan(null);
+    setIssueCandidates([]);
+    setSelectedIssue(null);
+    setResearchResults(null);
+    setWriterDrafts(null);
+    setWriterPolishedDraft(null);
+    setWriterCritiqueReport(null);
+
+    try {
+      // ① 이슈 후보 수집
+      addLog('① 이슈 후보 수집 중...');
+      const issuesRes = await fetch('/api/admin/content-studio/research-workbench/issues', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          categories: issueCategories,
+          recency: issueRecency,
+          excludeHistory: issueHistory,
+          customPrompt: issueSearchPrompt || '',
+        }),
+      });
+      const issuesJson = await issuesRes.json();
+      if (!issuesRes.ok) throw new Error(issuesJson.error || '이슈 수집 실패');
+      const candidates = Array.isArray(issuesJson.issues) ? issuesJson.issues : [];
+      if (!candidates.length) throw new Error('수집된 이슈 후보가 없습니다');
+      setIssueCandidates(candidates);
+
+      // ② reversal_score 최고 이슈 자동 선택
+      const best = [...candidates].sort((a, b) => (b.reversal_score || 0) - (a.reversal_score || 0))[0];
+      setSelectedIssue(best);
+      addLog(`② 이슈 선택: "${best.issue_title}" (반전 ${best.reversal_score || '?'}/5)`);
+      rememberIssueSelection({ issueCandidate: best });
+
+      // ③ ContentPlan 생성
+      addLog('③ ContentPlan 생성 중...');
+      const planRes = await fetch('/api/admin/content-studio/research-workbench/plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ issueCandidate: best, claudeModel: planModel }),
+      });
+      const planJson = await planRes.json();
+      if (!planRes.ok) throw new Error(planJson.error || 'ContentPlan 생성 실패');
+      const plan = planJson.contentPlan;
+      setContentPlan(plan);
+
+      // ④ (B안) 소나르 보강 리서치
+      let evidenceSnapshot = [];
+      if (mode === 'b') {
+        addLog('④ 소나르 보강 리서치 중...');
+        const resItems = Array.isArray(plan.deep_research_questions)
+          ? plan.deep_research_questions.map((q, i) => ({
+              item_id: q.question_id || `q${i + 1}`,
+              item_title: q.question || '',
+              research_purpose: q.purpose || '',
+              expected_evidence_type: q.expected_evidence_type || 'source_origin',
+              priority: q.priority || 'optional',
+              sonar_user_prompt: q.question || '',
+            }))
+          : [];
+        if (resItems.length) {
+          const researchRes = await fetch('/api/admin/content-studio/research-workbench/research', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contentPlan: plan, researchItems: resItems }),
+          });
+          const researchJson = await researchRes.json();
+          if (!researchRes.ok) throw new Error(researchJson.error || '리서치 실패');
+          setResearchResults(researchJson.results);
+          const normalized = normalizeResearchFindings(researchJson.results);
+          evidenceSnapshot = normalized
+            .filter((f) => f.status === 'accepted')
+            .map((f) => ({
+              item_id: f.item_id,
+              finding_text: f.finding_text,
+              source_domain: f.source_domain,
+              source_url: f.source_url || (Array.isArray(f.citations) ? f.citations[0] : ''),
+              evidence_type: f.evidence_type,
+              recency_note: f.recency_note,
+              accepted_by_user: true,
+            }));
+        }
+      }
+
+      // R1 초안 생성
+      const stepR1 = mode === 'b' ? '⑤' : '④';
+      addLog(`${stepR1} R1 초안 생성 중...`);
+      const writeRes = await fetch('/api/admin/content-studio/research-workbench/write', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contentPlan: plan, evidenceSnapshot }),
+      });
+      const writeJson = await writeRes.json();
+      if (!writeRes.ok) throw new Error(writeJson.error || 'R1 초안 생성 실패');
+      const drafts = writeJson.drafts || [];
+      setWriterDrafts(drafts);
+      const r1Draft = drafts[0];
+      if (!r1Draft) throw new Error('R1 초안이 비어 있습니다');
+
+      // Claude 비평
+      const stepCritique = mode === 'b' ? '⑥' : '⑤';
+      addLog(`${stepCritique} Claude 비평 중...`);
+      let critique = null;
+      try {
+        const critiqueRes = await fetch('/api/admin/content-studio/research-workbench/critique', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contentPlan: plan, draft: r1Draft }),
+        });
+        const critiqueJson = await critiqueRes.json();
+        critique = critiqueJson.critique || null;
+        if (critique) setWriterCritiqueReport(critique);
+      } catch {
+        // 비평 실패해도 보정 계속
+      }
+
+      // R2 보정
+      const stepPolish = mode === 'b' ? '⑦' : '⑥';
+      addLog(`${stepPolish} R2 보정 중...`);
+      const polishRes = await fetch('/api/admin/content-studio/research-workbench/polish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contentPlan: plan, draft: r1Draft, critiqueReport: critique }),
+      });
+      const polishJson = await polishRes.json();
+      if (!polishRes.ok) throw new Error(polishJson.error || 'R2 보정 실패');
+      const polished = polishJson.draft;
+      setWriterPolishedDraft(polished);
+
+      // 텔레그램 발송
+      const stepNotify = mode === 'b' ? '⑧' : '⑦';
+      addLog(`${stepNotify} 텔레그램 발송 중...`);
+      try {
+        await fetch('/api/admin/content-studio/research-workbench/drafts/notify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            polishedDraft: polished,
+            contentPlan: plan,
+            issueTitle: best.issue_title,
+            mode,
+            critiqueScore: critique?.score ?? null,
+          }),
+        });
+      } catch {
+        // 발송 실패해도 완료 처리
+      }
+
+      addLog('✓ 완료');
+      setAutoRunStatus((prev) => ({ ...prev, running: false, step: '완료' }));
+    } catch (error) {
+      setAutoRunStatus((prev) => ({ ...prev, running: false, error: error.message }));
+    }
+  }
+
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -821,6 +984,63 @@ export default function ResearchWorkbenchClient({ internalDocs, writerModel }) {
           {showAdvancedPanels ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
           {showAdvancedPanels ? '상세 박스 접기' : '상세 박스 펼치기'}
         </button>
+      </div>
+
+      {/* 자동 발행 A/B 버튼 */}
+      <div className="border border-zinc-200 rounded-lg bg-white p-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex-1 min-w-0">
+            <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-0.5">자동 발행</div>
+            <div className="text-xs text-zinc-500">이슈 자동 선정 → ContentPlan → R1 초안 → Claude 비평 → R2 보정 → 텔레그램 발송</div>
+          </div>
+          <div className="flex gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => runAutoPublish('a')}
+              disabled={autoRunStatus?.running}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded bg-zinc-900 text-white text-xs font-bold disabled:opacity-50"
+            >
+              <Sparkles size={13} />
+              A안 — 소나르 없이
+            </button>
+            <button
+              type="button"
+              onClick={() => runAutoPublish('b')}
+              disabled={autoRunStatus?.running}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded border border-zinc-300 bg-white text-zinc-900 text-xs font-bold disabled:opacity-50"
+            >
+              <Database size={13} />
+              B안 — 소나르 리서치 포함
+            </button>
+          </div>
+        </div>
+
+        {autoRunStatus && (
+          <div className="mt-3 border-t border-zinc-100 pt-3">
+            <div className="flex flex-col gap-1">
+              {autoRunStatus.log.map((msg, i) => (
+                <div key={i} className="text-xs text-zinc-600 font-mono">
+                  {msg}
+                </div>
+              ))}
+              {autoRunStatus.running && (
+                <div className="flex items-center gap-1.5 text-xs text-zinc-400">
+                  <Loader2 size={12} className="animate-spin" />
+                  {autoRunStatus.step}
+                </div>
+              )}
+              {autoRunStatus.error && (
+                <div className="text-xs text-red-600 font-bold">오류: {autoRunStatus.error}</div>
+              )}
+              {!autoRunStatus.running && !autoRunStatus.error && autoRunStatus.log.length > 0 && (
+                <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-bold">
+                  <CheckCircle2 size={12} />
+                  발행 완료 — 아래 R2 보정 결과를 확인하세요
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {showAdvancedPanels && (
