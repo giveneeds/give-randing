@@ -343,6 +343,7 @@ export default function ResearchWorkbenchClient({ internalDocs, writerModel }) {
   const [researchResults, setResearchResults] = useState(null);
   const [writerDrafts, setWriterDrafts] = useState(null);
   const [writerPolishedDraft, setWriterPolishedDraft] = useState(null);
+  const [writerCritiqueReport, setWriterCritiqueReport] = useState(null);
   const [planStatus, setPlanStatus] = useState({ loading: false, error: '', meta: null, startedAt: 0 });
   // 기획 단계 Claude 모델 — 사용자가 UI 드롭다운에서 선택. 환경변수 기본값 무시하고 명시 선택.
   // Sonnet 4.5 = 균형(빠름·저렴), Opus 4.8 = 더 깊은 추론·5배 비용. 같은 입력에 두 모델 비교용.
@@ -353,6 +354,7 @@ export default function ResearchWorkbenchClient({ internalDocs, writerModel }) {
   const [articleStatus, setArticleStatus] = useState({ loading: false, error: '', meta: null, startedAt: 0 });
   const [researchStatus, setResearchStatus] = useState({ loading: false, error: '', meta: null, startedAt: 0 });
   const [writerStatus, setWriterStatus] = useState({ loading: false, error: '', meta: null, startedAt: 0 });
+  const [critiqueStatus, setCritiqueStatus] = useState({ loading: false, error: '', meta: null, startedAt: 0 });
   const [polishStatus, setPolishStatus] = useState({ loading: false, error: '', meta: null, startedAt: 0 });
   const [issueHistory, setIssueHistory] = useState([]);
 
@@ -710,6 +712,8 @@ export default function ResearchWorkbenchClient({ internalDocs, writerModel }) {
 
     setWriterStatus({ loading: true, error: '', meta: null, startedAt: Date.now() });
     setWriterPolishedDraft(null);
+    setWriterCritiqueReport(null);
+    setCritiqueStatus({ loading: false, error: '', meta: null, startedAt: 0 });
     setPolishStatus({ loading: false, error: '', meta: null, startedAt: 0 });
     try {
       const res = await fetch('/api/admin/content-studio/research-workbench/write', {
@@ -726,6 +730,52 @@ export default function ResearchWorkbenchClient({ internalDocs, writerModel }) {
     }
   }
 
+  async function generateWriterDraftsDirectly() {
+    if (!contentPlan || !sourceArticle?.article_text) return;
+    setWriterStatus({ loading: true, error: '', meta: null, startedAt: Date.now() });
+    setWriterPolishedDraft(null);
+    setWriterCritiqueReport(null);
+    setCritiqueStatus({ loading: false, error: '', meta: null, startedAt: 0 });
+    setPolishStatus({ loading: false, error: '', meta: null, startedAt: 0 });
+    try {
+      const res = await fetch('/api/admin/content-studio/research-workbench/write', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contentPlan,
+          evidenceSnapshot: [],
+          sourceArticleText: sourceArticle.article_text,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Writer 초안 생성 실패');
+      setWriterDrafts(json.drafts);
+      setWriterStatus({ loading: false, error: '', meta: { model: json.model, usage: json.usage, referenceMeta: json.referenceMeta } });
+    } catch (error) {
+      setWriterStatus({ loading: false, error: error.message, meta: null });
+    }
+  }
+
+  async function runCritique() {
+    const draft = Array.isArray(writerDrafts) ? writerDrafts[0] : null;
+    if (!draft) return;
+
+    setCritiqueStatus({ loading: true, error: '', meta: null, startedAt: Date.now() });
+    try {
+      const res = await fetch('/api/admin/content-studio/research-workbench/critique', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contentPlan, draft }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Claude 비평 실패');
+      setWriterCritiqueReport(json.critique);
+      setCritiqueStatus({ loading: false, error: '', meta: { model: json.model, usage: json.usage } });
+    } catch (error) {
+      setCritiqueStatus({ loading: false, error: error.message, meta: null });
+    }
+  }
+
   async function polishWriterDraft() {
     const draft = Array.isArray(writerDrafts) ? writerDrafts[0] : null;
     if (!draft) return;
@@ -735,7 +785,7 @@ export default function ResearchWorkbenchClient({ internalDocs, writerModel }) {
       const res = await fetch('/api/admin/content-studio/research-workbench/polish', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contentPlan, draft }),
+        body: JSON.stringify({ contentPlan, draft, critiqueReport: writerCritiqueReport }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'R2 한국어 보정 실패');
@@ -869,7 +919,9 @@ export default function ResearchWorkbenchClient({ internalDocs, writerModel }) {
         writerModel={writerModel}
         writerDrafts={writerDrafts}
         writerPolishedDraft={writerPolishedDraft}
+        writerCritiqueReport={writerCritiqueReport}
         writerStatus={writerStatus}
+        critiqueStatus={critiqueStatus}
         polishStatus={polishStatus}
         onIssueSearchIntentChange={setIssueSearchIntent}
         onIssueSearchPromptChange={setIssueSearchPrompt}
@@ -886,6 +938,8 @@ export default function ResearchWorkbenchClient({ internalDocs, writerModel }) {
         onGenerateContentPlan={generateContentPlan}
         onRunResearch={runResearch}
         onGenerateWriterDrafts={generateWriterDrafts}
+        onGenerateWriterDraftsDirectly={generateWriterDraftsDirectly}
+        onRunCritique={runCritique}
         onPolishWriterDraft={polishWriterDraft}
       />
 
@@ -1463,7 +1517,9 @@ function PlanningFlowPreview({
   writerModel,
   writerDrafts,
   writerPolishedDraft,
+  writerCritiqueReport,
   writerStatus,
+  critiqueStatus,
   polishStatus,
   onIssueSearchIntentChange,
   onIssueSearchPromptChange,
@@ -1480,6 +1536,8 @@ function PlanningFlowPreview({
   onGenerateContentPlan,
   onRunResearch,
   onGenerateWriterDrafts,
+  onGenerateWriterDraftsDirectly,
+  onRunCritique,
   onPolishWriterDraft,
 }) {
   const acceptedFindings = findings.filter((finding) => finding.status === 'accepted');
@@ -1591,9 +1649,14 @@ function PlanningFlowPreview({
               writerModel={writerModel}
               drafts={writerDrafts}
               polishedDraft={writerPolishedDraft}
+              critiqueReport={writerCritiqueReport}
               status={writerStatus}
+              critiqueStatus={critiqueStatus}
               polishStatus={polishStatus}
+              sourceArticle={sourceArticle}
               onGenerate={onGenerateWriterDrafts}
+              onGenerateDirectly={onGenerateWriterDraftsDirectly}
+              onCritique={onRunCritique}
               onPolish={onPolishWriterDraft}
             />
           </>
@@ -2503,19 +2566,26 @@ function WriterHandoffPreview({ plan, acceptedFindings, rejectedFindings, showDe
   );
 }
 
-function WriterDraftPreview({ plan, acceptedFindings, writerModel, drafts, polishedDraft, status, polishStatus, onGenerate, onPolish }) {
+function WriterDraftPreview({ plan, acceptedFindings, writerModel, drafts, polishedDraft, critiqueReport, status, critiqueStatus, polishStatus, sourceArticle, onGenerate, onGenerateDirectly, onCritique, onPolish }) {
   const hasRealDrafts = Array.isArray(drafts) && drafts.length > 0;
   const r1Draft = hasRealDrafts ? drafts[0] : null;
+  const critiqueVerdict = critiqueReport?.overall_verdict;
+  const critiqueScore = critiqueReport?.score;
+  const verdictStyles = critiqueVerdict === 'pass'
+    ? { border: 'border-emerald-200', bg: 'bg-emerald-50', text: 'text-emerald-700', badge: 'bg-emerald-100 text-emerald-800' }
+    : critiqueVerdict === 'needs_revision'
+      ? { border: 'border-amber-200', bg: 'bg-amber-50', text: 'text-amber-700', badge: 'bg-amber-100 text-amber-800' }
+      : { border: 'border-red-200', bg: 'bg-red-50', text: 'text-red-700', badge: 'bg-red-100 text-red-800' };
 
   return (
     <div className="border border-zinc-200 rounded bg-white overflow-hidden">
       <div className="px-4 py-3 border-b border-zinc-200 bg-zinc-50 flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
-            [5] R1 Writer 초안 → R2 한국어 보정
+            [5] R1 Writer 초안 → Claude 비평 → R2 한국어 보정
           </div>
           <div className="text-xs text-zinc-600 mt-1">
-            R1은 근거 기반 초안이다. R2는 같은 사실을 유지한 채 외국 기사식 문장 배열을 한국어 발행문으로 다시 보정한다.
+            R1은 근거 기반 초안. Claude 비평은 반전/독자호출/수치앵커/한국관점/마무리 5가지를 채점. R2는 비평 지시서를 반영해 보정한다.
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -2527,6 +2597,25 @@ function WriterDraftPreview({ plan, acceptedFindings, writerModel, drafts, polis
           >
             <Sparkles size={14} />
             {status.loading ? 'R1 생성 중' : 'R1 초안 생성'}
+          </button>
+          <button
+            type="button"
+            onClick={onGenerateDirectly}
+            disabled={status.loading || !sourceArticle?.article_text}
+            title={!sourceArticle?.article_text ? '기사 URL을 먼저 입력하세요' : '소나르 없이 기사 원문으로 바로 초안 생성'}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded border border-sky-300 bg-sky-50 text-sky-900 text-xs font-bold disabled:opacity-50"
+          >
+            <ArrowRightCircle size={14} />
+            원문 직접 초안
+          </button>
+          <button
+            type="button"
+            onClick={onCritique}
+            disabled={critiqueStatus.loading || !r1Draft}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded border border-purple-300 bg-purple-50 text-purple-900 text-xs font-bold disabled:opacity-50"
+          >
+            <ShieldCheck size={14} />
+            {critiqueStatus.loading ? 'Claude 비평 중' : 'Claude 비평'}
           </button>
           <button
             type="button"
@@ -2576,6 +2665,44 @@ function WriterDraftPreview({ plan, acceptedFindings, writerModel, drafts, polis
         )}
         {status.meta?.referenceMeta && (
           <WriterReferenceMeta meta={status.meta.referenceMeta} />
+        )}
+        {critiqueStatus.loading && <LoadingPing startedAt={critiqueStatus.startedAt} phase="Claude 편집장이 초안을 5가지 기준으로 채점 중" />}
+        {critiqueStatus.error && <ErrorBox message={critiqueStatus.error} />}
+        {critiqueReport && (
+          <div className={`rounded border ${verdictStyles.border} ${verdictStyles.bg} p-3 space-y-2`}>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className={`text-[10px] font-black uppercase tracking-widest ${verdictStyles.text}`}>
+                Claude 비평 결과
+              </span>
+              <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${verdictStyles.badge}`}>
+                {critiqueVerdict?.toUpperCase()} {typeof critiqueScore === 'number' ? `· ${critiqueScore}점` : ''}
+              </span>
+            </div>
+            {critiqueReport.revision_brief && (
+              <div className="text-xs text-zinc-700 bg-white rounded border border-zinc-100 px-2 py-1.5 leading-relaxed">
+                <span className="font-bold text-zinc-500 text-[10px] uppercase tracking-wider">수정 지시서 </span>
+                {critiqueReport.revision_brief}
+              </div>
+            )}
+            {Array.isArray(critiqueReport.weak_points) && critiqueReport.weak_points.filter((p) => p.status !== 'pass').length > 0 && (
+              <div className="space-y-1">
+                <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500">약점</div>
+                {critiqueReport.weak_points.filter((p) => p.status !== 'pass').map((point, idx) => (
+                  <div key={idx} className="text-[11px] text-zinc-700 bg-white rounded border border-zinc-100 px-2 py-1 leading-relaxed">
+                    <span className={`font-bold mr-1 ${point.status === 'fail' ? 'text-red-600' : 'text-amber-600'}`}>
+                      [{point.criterion}]
+                    </span>
+                    {point.fix_direction}
+                  </div>
+                ))}
+              </div>
+            )}
+            {Array.isArray(critiqueReport.strong_points) && critiqueReport.strong_points.length > 0 && (
+              <div className="text-[11px] text-emerald-700">
+                ✓ {critiqueReport.strong_points.join(' · ')}
+              </div>
+            )}
+          </div>
         )}
         {polishStatus.loading && <LoadingPing startedAt={polishStatus.startedAt} phase="GPT가 R1을 한국어 발행문 호흡으로 보정 중" />}
         {polishStatus.error && <ErrorBox message={polishStatus.error} />}

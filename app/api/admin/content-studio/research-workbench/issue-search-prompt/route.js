@@ -130,8 +130,13 @@ export async function POST(request) {
     const clientExcludeHistory = Array.isArray(body.excludeHistory) ? body.excludeHistory.slice(0, 20) : [];
     const localExcludeHistory = loadLocalIssueHistory();
     const excludeHistory = mergeIssueHistory(clientExcludeHistory, localExcludeHistory);
+    // 대화형 수정 모드: 직전에 만든 프롬프트 + 사용자의 자연어 수정 요청을 함께 받으면
+    // Claude 가 *기존 프롬프트* 를 *수정 요청대로* 다듬어 반환. 처음 작성과 흐름 통일.
+    const currentPrompt = String(body.currentPrompt || '').trim();
+    const refineInstruction = String(body.refineInstruction || '').trim();
+    const isRefineMode = currentPrompt.length > 0 && refineInstruction.length > 0;
 
-    if (!searchIntent) {
+    if (!searchIntent && !isRefineMode) {
       return NextResponse.json({ error: '찾고 싶은 이슈 방향을 입력해야 합니다.' }, { status: 400 });
     }
 
@@ -149,11 +154,19 @@ export async function POST(request) {
     const system = [
       '당신은 기브니즈 research workbench의 Sonar 이슈 탐색 프롬프트 설계자입니다.',
       '역할은 글을 기획하거나 작성하는 것이 아닙니다.',
-      '사용자의 짧은 탐색 의도를 Perplexity/Sonar가 최근 뉴스기사를 잘 찾을 수 있는 user prompt로 바꾸는 것입니다.',
+      isRefineMode
+        ? '이번 호출은 *수정 모드* 입니다. <current_prompt> 의 기존 Sonar 프롬프트를 <refine_request> 의 사용자 자연어 요청대로 다듬어서 새 버전을 만드세요. 처음부터 새로 쓰지 말고 *기존 의도를 유지하면서 요청된 부분만 정밀히 반영* 하세요. 결과는 동일한 JSON 형식.'
+        : '사용자의 짧은 탐색 의도를 Perplexity/Sonar가 최근 뉴스기사를 잘 찾을 수 있는 user prompt로 바꾸는 것입니다.',
       '결과는 뉴스기사 기준이어야 합니다. 단순 블로그, 출처 약한 루머, 오래된 일반론은 제외하세요.',
       '다만 뉴스기사만 고집하지 말고 공식 릴리즈, 규제기관 발표, 기업 공식 블로그, 데이터 리포트처럼 원문 발췌 가능한 출처를 우선하게 만드세요.',
       '찾을 이슈는 Threads issue_explainer 글감이어야 합니다.',
       '좋은 후보 기준은 기존 상식이 깨지는 지점, 구체 사건/변화, 독자가 궁금해할 이유, 원천 추적 가능성입니다.',
+      '',
+      '[이슈 선별 우선순위 — 3가지 신호를 반드시 살피세요]',
+      '① 반전/역설 우선: 기존 통념과 반대되는 행동을 한 이슈를 최우선으로 선택하세요. 특히 동일 주체(같은 사람/회사)가 짧은 기간 내 모순된 행동을 한 사건은 매우 강력한 후보입니다. 예: "AI로 일자리 없어진다던 회사가 AI 때문에 신입 채용 시작", "Windows 만드는 회사가 Windows 없는 기기 발표".',
+      '② 좁은 독자 호출 가능: "취업 준비생", "직장인", "혼자 마케팅 챙기는 사장님"처럼 매우 특정한 상황에 있는 사람을 한 문장으로 호출할 수 있는 이슈를 우선합니다. "많은 사람", "요즘 사람들"처럼 넓은 독자를 타깃으로 하는 이슈는 하순위입니다.',
+      '③ 한국 관점 번역 가능: 해외 이슈라도 한국 직장인·사업자 관점에서 "그래서 나는?" 번역이 가능한 이슈 우선. 예: 미국 헤지펀드 신입 채용 변화 → 한국 취준생 관점에서 "5년 차 경험이 22살 AI 친숙도보다 싸게 거래되는 시장". 번역 힌트도 이슈 데이터에 포함하세요.',
+      '',
       '주제 축은 AI에만 묶지 않습니다. 마케팅 도구, 플랫폼 정책, 소비자 행동, 브랜드 흥망성쇠, 규제, 돈의 흐름, 일의 방식, 로컬/커머스 실무로 확장할 수 있습니다.',
       '사용자가 특정 소스를 지정하지 않아도 아래 source directory를 참고해 규제기관, 공식 발표, 개발자 릴리스, 비메이저 리서치/뉴스레터를 섞어 탐색하게 만드세요.',
       '뻔한 대형 테크 뉴스만 반복하지 말고 원문 발췌하기 좋은 출처를 우선하세요.',
@@ -162,9 +175,9 @@ export async function POST(request) {
       'sonar_user_prompt 안에는 JSON 출력 형식 요구를 포함하세요.',
     ].join('\n');
 
-    const user = [
+    const userSections = [
       '<search_intent>',
-      searchIntent,
+      searchIntent || '(직접 의도 미지정 — refine 모드)',
       '</search_intent>',
       '<topic_map>',
       formatIssueTopicMap(),
@@ -178,9 +191,15 @@ export async function POST(request) {
       excludedText
         ? ['<selected_or_publish_history>', excludedText, '</selected_or_publish_history>'].join('\n')
         : '<selected_or_publish_history>없음</selected_or_publish_history>',
-      '',
-      '위 탐색 의도를 Sonar 이슈 후보 수집용 프롬프트로 바꾸세요.',
-    ].join('\n\n');
+    ];
+    if (isRefineMode) {
+      userSections.push('<current_prompt>', currentPrompt, '</current_prompt>');
+      userSections.push('<refine_request>', refineInstruction, '</refine_request>');
+      userSections.push('', '<current_prompt> 의 기존 프롬프트를 <refine_request> 의 사용자 자연어 요청대로 다듬어 새 버전을 만드세요. 처음부터 새로 쓰지 말 것.');
+    } else {
+      userSections.push('', '위 탐색 의도를 Sonar 이슈 후보 수집용 프롬프트로 바꾸세요.');
+    }
+    const user = userSections.join('\n\n');
 
     const res = await fetch(ANTHROPIC_ENDPOINT, {
       method: 'POST',

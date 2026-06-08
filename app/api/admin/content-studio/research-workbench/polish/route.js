@@ -67,8 +67,35 @@ function parseDraftResponse(json) {
   return JSON.parse(content.replace(/^```json\s*/i, '').replace(/```$/i, '').trim());
 }
 
-function buildPolishPrompt({ draft, contentPlan }) {
+function buildCritiqueSection(critiqueReport) {
+  if (!critiqueReport || typeof critiqueReport !== 'object') return '';
+  const { overall_verdict, score, weak_points, revision_brief } = critiqueReport;
+  const verdict = overall_verdict || 'unknown';
+  const scoreStr = typeof score === 'number' ? `${score}점` : '?';
+  const lines = [
+    '',
+    `<critique_report verdict="${verdict}" score="${scoreStr}">`,
+    `편집장 종합 평가: ${verdict} (${scoreStr}/100)`,
+    '',
+  ];
+  if (revision_brief) {
+    lines.push('수정 지시서:', revision_brief, '');
+  }
+  const weakPoints = Array.isArray(weak_points) ? weak_points.filter((p) => p.status !== 'pass') : [];
+  if (weakPoints.length) {
+    lines.push('약점 목록 (반드시 보정 시 해결할 것):');
+    for (const p of weakPoints) {
+      lines.push(`- [${p.criterion}] ${p.status.toUpperCase()} @ ${p.location}: ${p.fix_direction}`);
+    }
+    lines.push('');
+  }
+  lines.push('</critique_report>');
+  return lines.join('\n');
+}
+
+function buildPolishPrompt({ draft, contentPlan, critiqueReport }) {
   const postCountRule = 'R2의 posts는 issue_explainer 안에서 소재에 맞게 유지합니다. 뉴스/릴리즈/규제 사건은 7~8개, 전문가 발언/팁/개념 해설 이슈는 10~15개까지 허용합니다. R1이 충분히 길면 7~8개로 억지 압축하지 마세요.';
+  const critiqueSection = buildCritiqueSection(critiqueReport);
   return [
     '당신은 한국어 Threads 발행문 현지화 보정자입니다.',
     '',
@@ -200,7 +227,18 @@ function buildPolishPrompt({ draft, contentPlan }) {
     '<content_plan>',
     JSON.stringify(contentPlan || {}, null, 2),
     '</content_plan>',
+    critiqueSection,
     '',
+    critiqueSection
+      ? [
+          '[critique_report 반영 지시]',
+          '위 <critique_report>의 약점 목록을 반드시 해결하면서 보정하세요.',
+          '- verdict가 needs_revision이면 약점만 고치고 나머지는 그대로 둡니다.',
+          '- verdict가 rewrite이면 revision_brief의 방향대로 post 구조를 재배열합니다. 사실은 그대로 유지합니다.',
+          '- verdict가 pass이면 아래 일반 보정 규칙만 따르세요.',
+          '',
+        ].join('\n')
+      : '',
     '<r1_draft>',
     JSON.stringify(draft || {}, null, 2),
     '</r1_draft>',
@@ -214,6 +252,7 @@ export async function POST(request) {
     const body = await request.json();
     const draft = body.draft && typeof body.draft === 'object' ? body.draft : null;
     const contentPlan = body.contentPlan && typeof body.contentPlan === 'object' ? body.contentPlan : {};
+    const critiqueReport = body.critiqueReport && typeof body.critiqueReport === 'object' ? body.critiqueReport : null;
 
     if (!draft || !Array.isArray(draft.posts)) {
       return NextResponse.json({ error: '한국어 보정할 draft가 필요합니다.' }, { status: 400 });
@@ -232,7 +271,7 @@ export async function POST(request) {
             role: 'system',
             content: 'You localize Korean social posts for natural Korean context, word order, and rhythm. Return valid JSON only.',
           },
-          { role: 'user', content: buildPolishPrompt({ draft, contentPlan }) },
+          { role: 'user', content: buildPolishPrompt({ draft, contentPlan, critiqueReport }) },
         ],
         max_completion_tokens: 5000,
         reasoning_effort: 'minimal',

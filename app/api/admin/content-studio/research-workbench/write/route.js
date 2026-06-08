@@ -160,7 +160,7 @@ function buildReferenceContext({ contentPlan, evidenceSnapshot }) {
   };
 }
 
-function buildWriterPrompt({ contentPlan, evidenceSnapshot, referenceContext }) {
+function buildWriterPrompt({ contentPlan, evidenceSnapshot, referenceContext, sourceArticleText }) {
   const issuePlan = contentPlan.issue_plan || {};
   const isIssueExplainer = contentPlan.content_pattern === 'issue_explainer' || Boolean(issuePlan.issue_summary);
   const evidenceText = evidenceSnapshot.length
@@ -356,6 +356,13 @@ function buildWriterPrompt({ contentPlan, evidenceSnapshot, referenceContext }) 
       evidenceText,
       '</evidence_snapshot>',
       '',
+      ...(sourceArticleText && evidenceSnapshot.length === 0 ? [
+        '<source_article>',
+        '아래 기사 원문에서 사실·수치·인용을 직접 참조하세요. 원문에 없는 내용은 만들지 마세요.',
+        sourceArticleText.slice(0, 8000),
+        '</source_article>',
+        '',
+      ] : []),
       '<source_links>',
       sourceLinksText,
       '</source_links>',
@@ -445,13 +452,14 @@ export async function POST(request) {
     const body = await request.json();
     const contentPlan = body.contentPlan || {};
     const evidenceSnapshot = Array.isArray(body.evidenceSnapshot) ? body.evidenceSnapshot : [];
+    const sourceArticleText = typeof body.sourceArticleText === 'string' ? body.sourceArticleText.slice(0, 12000) : null;
 
     if (!contentPlan.content_angle && !contentPlan.planning_title) {
       return NextResponse.json({ error: 'contentPlan이 필요합니다.' }, { status: 400 });
     }
 
     const referenceContext = buildReferenceContext({ contentPlan, evidenceSnapshot });
-    const prompt = buildWriterPrompt({ contentPlan, evidenceSnapshot, referenceContext });
+    const prompt = buildWriterPrompt({ contentPlan, evidenceSnapshot, referenceContext, sourceArticleText });
     const res = await fetch(`${OPENAI_BASE}/chat/completions`, {
       method: 'POST',
       headers: {
