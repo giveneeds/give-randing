@@ -3,24 +3,7 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { sendInlineMessage } from '@/lib/telegram';
 
 export const runtime = 'nodejs';
-export const maxDuration = 30;
-
-function formatDraftMessage({ polishedDraft, contentPlan, issueTitle, mode, critiqueScore }) {
-  const posts = Array.isArray(polishedDraft?.posts) ? polishedDraft.posts : [];
-  const title = issueTitle || contentPlan?.planning_title || '이슈 발행 완성본';
-  const modeLabel = mode === 'b' ? 'B안 (소나르 리서치)' : 'A안 (소나르 없이)';
-  const scoreText = typeof critiqueScore === 'number' ? ` | 비평 ${critiqueScore}/100` : '';
-
-  const header = `📝 <b>[자동 발행 완성본]</b>\n${title}\n<i>${modeLabel}${scoreText}</i>`;
-
-  // Telegram 4096자 제한 — 앞 4개 포스트만 발송, 나머지는 개수 안내
-  const preview = posts.slice(0, 4);
-  const remaining = posts.length - preview.length;
-  const postsText = preview.map((p, i) => `<b>[${i + 1}]</b>\n${p}`).join('\n\n—\n\n');
-  const footer = remaining > 0 ? `\n\n<i>... 외 ${remaining}개 포스트 (총 ${posts.length}개)</i>` : '';
-
-  return `${header}\n\n${postsText}${footer}`;
-}
+export const maxDuration = 60;
 
 export async function POST(request) {
   try {
@@ -45,13 +28,23 @@ export async function POST(request) {
       return NextResponse.json({ error: '활성 텔레그램 수신자가 없습니다.' }, { status: 400 });
     }
 
-    const text = formatDraftMessage({ polishedDraft, contentPlan, issueTitle, mode, critiqueScore });
+    const posts = polishedDraft.posts;
+    const title = issueTitle || contentPlan?.planning_title || '이슈 발행 완성본';
+    const modeLabel = mode === 'b' ? 'B안 (소나르 리서치)' : 'A안 (소나르 없이)';
+    const scoreText = typeof critiqueScore === 'number' ? ` | 비평 ${critiqueScore}/100` : '';
+    const headerText = `📝 <b>[자동 발행 완성본]</b>\n${title}\n<i>${modeLabel}${scoreText} · 총 ${posts.length}개 포스트</i>`;
 
     let delivered = 0;
     const errors = [];
+
     for (const recipient of recipients) {
       try {
-        await sendInlineMessage({ chatId: recipient.chat_id, text });
+        // 헤더 메시지 먼저
+        await sendInlineMessage({ chatId: recipient.chat_id, text: headerText });
+        // 포스트 1개 = 메시지 1개
+        for (const post of posts) {
+          await sendInlineMessage({ chatId: recipient.chat_id, text: post });
+        }
         delivered += 1;
       } catch (error) {
         errors.push({ chat_id: recipient.chat_id, error: error.message });
@@ -62,6 +55,7 @@ export async function POST(request) {
       ok: delivered > 0,
       delivered_count: delivered,
       recipient_count: recipients.length,
+      post_count: posts.length,
       errors,
     });
   } catch (error) {
