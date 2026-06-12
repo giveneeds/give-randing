@@ -173,13 +173,20 @@ function buildWriterPrompt({ contentPlan, evidenceSnapshot, referenceContext, so
         `- recency: ${item.recency_note || ''}`,
       ].join('\n')).join('\n\n')
     : '채택된 근거 없음';
-  const sourceLinksText = evidenceSnapshot
-    .map((item) => ({
-      url: item.source_url || item.citation_url || '',
-      source_domain: item.source_domain || '',
-      label: item.source_domain || item.item_id || 'source',
-    }))
-    .filter((item) => item.url)
+  // 1차 출처(이슈/기사 원문)가 항상 첫 번째 항목 — evidence가 비어도 원문 링크는 살아야 한다.
+  const primarySourceUrl = String(contentPlan.primary_source_url || '').trim();
+  const sourceLinkRows = [];
+  if (primarySourceUrl) {
+    let primaryLabel = '1차 출처';
+    try { primaryLabel = new URL(primarySourceUrl).hostname.replace(/^www\./, ''); } catch {}
+    sourceLinkRows.push({ url: primarySourceUrl, label: primaryLabel });
+  }
+  for (const item of evidenceSnapshot) {
+    const url = item.source_url || item.citation_url || '';
+    if (!url || url === primarySourceUrl) continue;
+    sourceLinkRows.push({ url, label: item.source_domain || item.item_id || 'source' });
+  }
+  const sourceLinksText = sourceLinkRows
     .map((item, index) => `${index + 1}. ${item.label} — ${item.url}`)
     .join('\n') || '출처 URL 없음';
 
@@ -198,6 +205,7 @@ function buildWriterPrompt({ contentPlan, evidenceSnapshot, referenceContext, so
       '- 한 post 안에는 4~9개의 짧은 줄을 넣어도 됩니다. 줄은 짧게, 포스트는 흐름 단위로 묶으세요.',
       '- 포스트 1개는 독자가 한 화면에서 읽는 작은 장면입니다.',
       '- 빈 슬롯이나 약한 근거는 억지로 문장화하지 마세요. 근거가 없으면 건너뛰고 확인된 장면끼리 연결하세요.',
+      '- 유보/면책 문장(“더 확인이 필요함”, “공개된 범위만 확인됨”, “각자 체크 필요”)은 글 전체에서 최대 1회. 매 post마다 붙으면 글쓴이도 모른다는 인상만 남습니다.',
       '',
       '═══ 말투 DNA (전 구간 적용) ═══',
       '- 뉴스 기사체, 보고서체, 존댓말 설명체 금지.',
@@ -228,6 +236,7 @@ function buildWriterPrompt({ contentPlan, evidenceSnapshot, referenceContext, so
       '  · 사건 장면형: “어제 OO 만든 회사가 SEC에 서류를 냄.”처럼 독자가 장면을 바로 보는 방식.',
       '    post 1 안에 숫자, 주체, 의외성을 짧게 박고 정체는 조금 늦게 풀어도 됨.',
       '- 첫 post는 독자가 머릿속에 장면을 그릴 수 있어야 함. “AI로 최적화한다”처럼 감이 없으면 실패.',
+      '- ★ 사건의 주인공이 따로 있으면(특정 인물/회사 이야기) 작성자 본인 경험처럼 1인칭으로 위장하지 마세요. “내 일을 AI가 먹기 시작했음”처럼 시작했다가 다음 post에서 남 이야기로 바뀌면 독자가 낚인 기분이 듭니다. 그 사람의 장면으로 바로 시작하세요.',
       '- 끝에는 다음 post를 당기는 짧은 전환. 예: “그래서 뭐가 문제냐?”, “이게 핵심인 이유.”, “여기부터 문제가 커짐.”',
       `콘텐츠 플랜 — 훅 방향: ${issuePlan.audience_callout || ''}`,
       `콘텐츠 플랜 — 멈추게 하는 첫 장면: ${slotMap.strange_scene || ''}`,
@@ -240,6 +249,8 @@ function buildWriterPrompt({ contentPlan, evidenceSnapshot, referenceContext, so
       '- 이름, 날짜, 숫자, 장소, 직접 발언으로 “진짜네”를 만들어야 함.',
       '- 규제기관/소송/합의 기사에서는 “확정됨” 금지. “FTC 주장 기준”, “혐의 합의”, “제재 절차”처럼 법적 상태 유지.',
       '- 영문 원문이 있으면 원문 일부를 그대로 써도 됨. 이후 한국 관점 해석 이어져야 함.',
+      '- ★ 숫자/인용이 콘텐츠 플랜과 evidence에 없으면 그 자리를 “얼마인지는 공개된 범위만 확인됨” 같은 유보 문장으로 채우지 마세요. 그 디테일은 통째로 생략하고 확인된 사실로 문장을 만드세요.',
+      '- ★ 기사 자체의 메타데이터(언제 공개됐는지, 인터뷰 형식인지, 1인칭 에세이인지)를 서술하지 마세요. 독자는 기사의 형식이 아니라 내용이 궁금합니다. 그 자리에 인물이 실제로 한 말이나 행동을 쓰세요.',
       `콘텐츠 플랜 — 이슈 요약: ${issuePlan.issue_summary || ''}`,
       `콘텐츠 플랜 — 숫자: ${(slotMap.hard_numbers || []).join(', ')}`,
       `콘텐츠 플랜 — 고유명사: ${(slotMap.named_entities || []).join(', ')}`,
@@ -305,6 +316,7 @@ function buildWriterPrompt({ contentPlan, evidenceSnapshot, referenceContext, so
       '- 팔로우 CTA나 다음 발행 예고는 사용자가 명시적으로 요청한 경우에만 씁니다.',
       '- CTA가 필요해도 후속 주제를 임의로 약속하지 마세요. 허용되는 수준은 “필요하면 저장해두면 됨.” 정도입니다.',
       '- 출처가 하나도 없으면 “출처 확인 필요”라고 쓰지 말고, 초안 risk에 출처 부족을 적으세요.',
+      '- ★ <source_links>가 "출처 URL 없음"이면 본문에 URL을 아예 넣지 마세요. 매체명만 쓰고 risk에 "1차 출처 URL 누락"을 적으세요. businessinsider.com 같은 도메인 홈페이지 주소를 만들어 넣으면 실패입니다.',
       '',
       '<content_plan>',
       JSON.stringify(contentPlan, null, 2),

@@ -64,12 +64,55 @@ export async function POST(request, { params }) {
   const plan = planJson.contentPlan;
   logs.push('① ContentPlan 완료');
 
+  // ①-2 소나르 보강 리서치 — evidence 없이 쓰면 숫자/인용이 비어 hedge·메타 문장으로
+  // 물타기된 글이 나온다. 리서치 실패해도 발행은 계속 (1차 출처 URL은 plan에 있음).
+  let evidenceSnapshot = [];
+  const researchItems = Array.isArray(plan.deep_research_questions)
+    ? plan.deep_research_questions.map((q, i) => ({
+        item_id: q.question_id || `q${i + 1}`,
+        item_title: q.question || '',
+        research_purpose: q.purpose || '',
+        expected_evidence_type: q.expected_evidence_type || 'source_origin',
+        priority: q.priority || 'optional',
+        sonar_user_prompt: q.question || '',
+      }))
+    : [];
+  if (researchItems.length) {
+    logs.push('①-2 소나르 보강 리서치 중...');
+    try {
+      const researchRes = await fetch(`${origin}/api/admin/content-studio/research-workbench/research`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ contentPlan: plan, researchItems }),
+      });
+      const researchJson = await researchRes.json();
+      if (researchRes.ok && Array.isArray(researchJson.results)) {
+        evidenceSnapshot = researchJson.results
+          .filter((r) => r.search_succeeded !== false)
+          .flatMap((r) => (Array.isArray(r.findings) ? r.findings : []).map((f) => ({
+            item_id: r.item_id || '',
+            finding_text: f.finding_text || '',
+            source_domain: f.source_domain || '',
+            source_url: f.source_url || '',
+            evidence_type: f.evidence_type || '',
+            recency_note: f.recency_note || '',
+            accepted_by_user: true,
+          })))
+          .filter((f) => f.finding_text)
+          .slice(0, 12);
+      }
+      logs.push(`①-2 리서치 완료 — 근거 ${evidenceSnapshot.length}건`);
+    } catch {
+      logs.push('①-2 리서치 실패 — 근거 없이 진행');
+    }
+  }
+
   // ② R1 초안
   logs.push('② R1 초안 생성 중...');
   const writeRes = await fetch(`${origin}/api/admin/content-studio/research-workbench/write`, {
     method: 'POST',
     headers,
-    body: JSON.stringify({ contentPlan: plan, evidenceSnapshot: [] }),
+    body: JSON.stringify({ contentPlan: plan, evidenceSnapshot }),
   });
   const writeJson = await writeRes.json();
   if (!writeRes.ok) {

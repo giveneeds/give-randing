@@ -320,10 +320,11 @@ export async function POST(request) {
       ? [
           `선택된 최근 이슈 후보: ${issueCandidate.issue_title || ''}`,
           `한 줄 훅 후보: ${issueCandidate.one_line_hook || ''}`,
-          `카테고리: ${issueCandidate.category || ''}`,
           `왜 흥미로운가: ${issueCandidate.why_interesting || ''}`,
           `무엇이 바뀌었나: ${issueCandidate.what_changed || ''}`,
+          `구조적 이동: ${issueCandidate.structural_shift || ''}`,
           `출처 요약: ${issueCandidate.source_summary || ''}`,
+          `1차 출처 URL: ${issueCandidate.source_url || ''}`,
           `최신성: ${issueCandidate.recency_note || ''}`,
           '',
           '이 이슈를 Threads 글감으로 만들기 위한 기획과 연계 리서치 질문을 작성하세요.',
@@ -414,6 +415,10 @@ export async function POST(request) {
     }
 
     const contentPlan = parseToolInput(json);
+    // 이슈/기사의 1차 출처 URL을 plan에 보존 — write 단계 <source_links>의 최우선 항목이 된다.
+    // 이게 빠지면 evidence 없는 발행에서 모델이 루트 도메인 링크를 지어내는 사고가 난다.
+    const primarySourceUrl = String(issueCandidate?.source_url || sourceArticle?.url || '').trim();
+    if (primarySourceUrl) contentPlan.primary_source_url = primarySourceUrl;
     return NextResponse.json({
       contentPlan,
       model: DEFAULT_CLAUDE_MODEL,
