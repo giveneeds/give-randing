@@ -24,7 +24,6 @@ export async function POST(request) {
 
     const { issues, meta } = await fetchIssueCandidatesForTelegram({
       origin: request.nextUrl.origin,
-      categories: body.categories,
       recency: body.recency,
       excludeHistory: body.excludeHistory,
       customPrompt: body.customPrompt,

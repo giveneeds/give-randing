@@ -175,65 +175,14 @@ const INTEREST_TOPICS = [
   '자영업자 정보 (대출 · 배달비 · 혜택 · 마케팅 사례 · 개선 사례)',
 ];
 
-const ISSUE_CATEGORY_OPTIONS = [
-  {
-    value: 'ai_marketing_tools',
-    label: 'AI 마케팅 도구',
-    short: 'AI tools',
-    description: '광고, CRM, 디자인, 콘텐츠, 자동화 툴 변화',
-  },
-  {
-    value: 'platform_policy',
-    label: '플랫폼 정책 변화',
-    short: 'platform',
-    description: '인스타, 유튜브, 틱톡, 구글, 아마존 정책 변화',
-  },
-  {
-    value: 'consumer_behavior',
-    label: '소비자 행동 변화',
-    short: 'consumer',
-    description: '리뷰, 검색, 쇼핑, 추천, 구매 경로 변화',
-  },
-  {
-    value: 'brand_story',
-    label: '브랜드 흥망성쇠',
-    short: 'brand',
-    description: '브랜드가 뜨거나 무너진 구조와 카테고리 전쟁',
-  },
-  {
-    value: 'regulation_business',
-    label: '규제와 비즈니스 충격',
-    short: 'regulation',
-    description: 'FTC, SEC, EU, 개인정보, 광고 제재, 독과점',
-  },
-  {
-    value: 'capital_flow',
-    label: '돈의 흐름',
-    short: 'capital',
-    description: '투자, M&A, 상장, 기업 가치, 카테고리 자금 이동',
-  },
-  {
-    value: 'work_shift',
-    label: '일의 방식 변화',
-    short: 'work',
-    description: '마케터, 디자이너, 영업, 창업자, 프리랜서 역할 변화',
-  },
-  {
-    value: 'local_commerce',
-    label: '로컬/커머스 실무',
-    short: 'local',
-    description: '리뷰, 예약, 배달, 결제, 지역 광고, 작은 사업자 운영',
-  },
-];
+// 2-트랙 수집의 track 값 → 이슈 카드 배지 라벨.
+const ISSUE_TRACK_LABEL = {
+  curated: '지정 소스',
+  open: '자유 검색',
+};
 
-function issueCategoryLabel(value) {
-  const legacy = {
-    AI: 'AI tools',
-    marketing: 'AI tools',
-    tech: 'platform',
-    business: 'capital',
-  };
-  return ISSUE_CATEGORY_OPTIONS.find((category) => category.value === value)?.short || legacy[value] || value || 'issue';
+function issueTrackLabel(value) {
+  return ISSUE_TRACK_LABEL[value] || '자유 검색';
 }
 
 const ISSUE_HISTORY_STORAGE_KEY = 'giveneeds.researchWorkbench.issueHistory.v1';
@@ -324,12 +273,6 @@ export default function ResearchWorkbenchClient({ internalDocs, writerModel }) {
   const [selectedImpactKey, setSelectedImpactKey] = useState('persona');
   const [showAdvancedPanels, setShowAdvancedPanels] = useState(false);
   const [contentPlan, setContentPlan] = useState(null);
-  const [issueCategories, setIssueCategories] = useState([
-    'ai_marketing_tools',
-    'platform_policy',
-    'consumer_behavior',
-    'regulation_business',
-  ]);
   const [issueRecency, setIssueRecency] = useState('week');
   const [issueCandidates, setIssueCandidates] = useState([]);
   const [selectedIssue, setSelectedIssue] = useState(null);
@@ -503,14 +446,6 @@ export default function ResearchWorkbenchClient({ internalDocs, writerModel }) {
     return doc.files.find((file) => file.path === selectedPath) || doc.files[0];
   }
 
-  function toggleIssueCategory(category) {
-    setIssueCategories((prev) => (
-      prev.includes(category)
-        ? prev.filter((item) => item !== category)
-        : [...prev, category]
-    ));
-  }
-
   // mode: 'create' (처음 생성) | 'refine' (기존 + 자연어 수정 요청을 Claude 가 반영).
   async function generateIssueSearchPrompt(mode = 'create') {
     setIssuePromptStatus({ loading: true, error: '', meta: null, startedAt: Date.now() });
@@ -533,9 +468,6 @@ export default function ResearchWorkbenchClient({ internalDocs, writerModel }) {
       const prompt = json.searchPrompt?.sonar_user_prompt || '';
       setIssueSearchPrompt(prompt);
       if (isRefine) setIssueSearchRefineRequest(''); // refine 성공 후 입력칸 비움.
-      if (Array.isArray(json.searchPrompt?.preferred_categories) && json.searchPrompt.preferred_categories.length) {
-        setIssueCategories(json.searchPrompt.preferred_categories);
-      }
       if (json.searchPrompt?.recency) {
         setIssueRecency(json.searchPrompt.recency);
       }
@@ -561,7 +493,6 @@ export default function ResearchWorkbenchClient({ internalDocs, writerModel }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          categories: issueCategories,
           recency: issueRecency,
           excludeHistory: issueHistory,
           customPrompt,
@@ -598,7 +529,6 @@ export default function ResearchWorkbenchClient({ internalDocs, writerModel }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          categories: issueCategories,
           recency: issueRecency,
           excludeHistory: issueHistory,
           customPrompt: issueSearchPrompt.trim(),
@@ -820,7 +750,6 @@ export default function ResearchWorkbenchClient({ internalDocs, writerModel }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          categories: issueCategories,
           recency: issueRecency,
           excludeHistory: issueHistory,
           customPrompt: issueSearchPrompt || '',
@@ -1125,7 +1054,6 @@ export default function ResearchWorkbenchClient({ internalDocs, writerModel }) {
         articleUrl={articleUrl}
         sourceArticle={sourceArticle}
         articleStatus={articleStatus}
-        issueCategories={issueCategories}
         issueRecency={issueRecency}
         issueStatus={issueStatus}
         issueNotifyStatus={issueNotifyStatus}
@@ -1147,7 +1075,6 @@ export default function ResearchWorkbenchClient({ internalDocs, writerModel }) {
         onIssueSearchPromptChange={setIssueSearchPrompt}
         onArticleUrlChange={setArticleUrl}
         onFetchSourceArticle={fetchSourceArticle}
-        onToggleIssueCategory={toggleIssueCategory}
         onIssueRecencyChange={setIssueRecency}
         onGenerateIssueSearchPrompt={generateIssueSearchPrompt}
         onFetchIssues={() => fetchIssueCandidates('')}
@@ -1727,7 +1654,6 @@ function PlanningFlowPreview({
   articleUrl,
   sourceArticle,
   articleStatus,
-  issueCategories,
   issueRecency,
   issueStatus,
   issueNotifyStatus,
@@ -1745,7 +1671,6 @@ function PlanningFlowPreview({
   onIssueSearchPromptChange,
   onArticleUrlChange,
   onFetchSourceArticle,
-  onToggleIssueCategory,
   onIssueRecencyChange,
   onGenerateIssueSearchPrompt,
   onFetchIssues,
@@ -1790,7 +1715,6 @@ function PlanningFlowPreview({
           sourceArticle={sourceArticle}
           articleStatus={articleStatus}
           issueHistory={issueHistory}
-          categories={issueCategories}
           recency={issueRecency}
           status={issueStatus}
           notifyStatus={issueNotifyStatus}
@@ -1799,7 +1723,6 @@ function PlanningFlowPreview({
           onFetchSourceArticle={onFetchSourceArticle}
           onIssueSearchIntentChange={onIssueSearchIntentChange}
           onIssueSearchPromptChange={onIssueSearchPromptChange}
-          onToggleCategory={onToggleIssueCategory}
           onRecencyChange={onIssueRecencyChange}
           onGenerateIssueSearchPrompt={onGenerateIssueSearchPrompt}
           onFetchIssues={onFetchIssues}
@@ -1903,7 +1826,6 @@ function IssueScoutPanel({
   sourceArticle,
   articleStatus,
   issueHistory,
-  categories,
   recency,
   status,
   notifyStatus,
@@ -1912,7 +1834,6 @@ function IssueScoutPanel({
   onFetchSourceArticle,
   onIssueSearchIntentChange,
   onIssueSearchPromptChange,
-  onToggleCategory,
   onRecencyChange,
   onGenerateIssueSearchPrompt,
   onFetchIssues,
@@ -1922,7 +1843,6 @@ function IssueScoutPanel({
   onClearIssueHistory,
   onGenerateIssuePlan,
 }) {
-  const categoryOptions = ISSUE_CATEGORY_OPTIONS;
   const citations = Array.isArray(status.meta?.citations) ? status.meta.citations.slice(0, 5) : [];
 
   return (
@@ -1940,7 +1860,7 @@ function IssueScoutPanel({
           <button
             type="button"
             onClick={onFetchIssues}
-            disabled={status.loading || categories.length === 0}
+            disabled={status.loading}
             className="inline-flex items-center gap-2 px-4 py-2 rounded bg-zinc-900 text-white text-xs font-bold disabled:opacity-50"
           >
             <RefreshCw size={14} />
@@ -1949,7 +1869,7 @@ function IssueScoutPanel({
           <button
             type="button"
             onClick={onNotifyIssues}
-            disabled={notifyStatus.loading || categories.length === 0}
+            disabled={notifyStatus.loading}
             className="inline-flex items-center gap-2 px-4 py-2 rounded border border-zinc-300 bg-white text-zinc-800 text-xs font-bold hover:border-zinc-500 disabled:opacity-50"
           >
             <Sparkles size={14} />
@@ -2105,39 +2025,14 @@ function IssueScoutPanel({
         </div>
 
         <div className="rounded border border-zinc-200 bg-zinc-50 p-3">
-          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                주제 확장 맵
-              </div>
-              <p className="mt-1 text-[11px] text-zinc-500 leading-relaxed">
-                선택한 주제 축에 따라 Sonar가 우선 볼 소스 타입과 원문 후보가 달라진다.
-              </p>
+          <div className="mb-2">
+            <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+              2-트랙 수집
             </div>
-            <StatusPill label={`${categories.length}개 선택`} tone={categories.length ? 'ok' : 'warn'} />
-          </div>
-          <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
-          {categoryOptions.map((category) => {
-            const active = categories.includes(category.value);
-            return (
-              <button
-                key={category.value}
-                type="button"
-                onClick={() => onToggleCategory(category.value)}
-                title={category.description}
-                className={`rounded border px-3 py-2 text-left ${
-                  active
-                    ? 'border-zinc-900 bg-zinc-900 text-white'
-                    : 'border-zinc-200 bg-white text-zinc-600'
-                }`}
-              >
-                <span className="block text-xs font-black">{category.label}</span>
-                <span className={`mt-1 block text-[10px] leading-snug ${active ? 'text-zinc-300' : 'text-zinc-500'}`}>
-                  {category.description}
-                </span>
-              </button>
-            );
-          })}
+            <p className="mt-1 text-[11px] text-zinc-500 leading-relaxed">
+              [지정 소스] stratechery, firstround, notboring, theverge, businessinsider 5곳을 강제 검색 +
+              [자유 검색] 이야기 자격 조건(주인공 있는 사건, 구조 이동, 관점 내장, 한국 번역 가능)으로 선별. 두 트랙을 병렬로 돌려 합친다.
+            </p>
           </div>
           <div className="mt-3 flex flex-wrap items-center gap-2">
           <select
@@ -2150,7 +2045,7 @@ function IssueScoutPanel({
             <option value="month">최근 30일</option>
           </select>
           <span className="text-[11px] text-zinc-500">
-            기본값은 AI 도구, 플랫폼 정책, 소비자 행동, 규제 충격이다.
+            지정 소스 트랙은 발행 주기가 길어 자동으로 한 단계 넓게 검색한다.
           </span>
           </div>
         </div>
@@ -2243,7 +2138,7 @@ function IssueScoutPanel({
                 }`}
               >
                 <div className="flex flex-wrap items-center gap-2">
-                  <StatusPill label={issueCategoryLabel(issue.category)} tone={active ? 'dark' : 'muted'} />
+                  <StatusPill label={issueTrackLabel(issue.track)} tone={active ? 'dark' : 'muted'} />
                   <StatusPill label={issue.needs_deeper_research ? 'deep research 필요' : '검증 낮음'} tone={issue.needs_deeper_research ? 'warn' : 'muted'} />
                 </div>
                 <div className="mt-3 text-sm font-black leading-snug">{issue.issue_title}</div>
