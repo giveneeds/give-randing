@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import {
   Loader2, Filter, ExternalLink, ChevronLeft, ChevronRight,
-  Inbox, Check, X, Send, Tag, Clock, Languages, Play, Zap, MessageSquare,
+  Inbox, Check, X, Send, Tag, Clock, Languages, Play, Zap, MessageSquare, Rocket,
 } from 'lucide-react';
 
 const PAGE_SIZE = 20;
@@ -17,6 +17,7 @@ const SOURCE_LABEL = {
   google_news: { label: '구글뉴스', cls: 'bg-blue-50 text-blue-600 border-blue-200' },
   naver_news: { label: '네이버', cls: 'bg-green-50 text-green-600 border-green-200' },
   web: { label: 'Web', cls: 'bg-blue-50 text-blue-600 border-blue-200' },
+  sonar: { label: 'Sonar AI', cls: 'bg-violet-50 text-violet-700 border-violet-200' },
 };
 
 const STATUS_LABEL = {
@@ -178,6 +179,27 @@ export default function ContentStudioReviewPage() {
     }
   }
 
+  async function publishItem(id) {
+    setBusy((b) => ({ ...b, [id]: 'publish' }));
+    try {
+      const res = await fetch(`/api/admin/content-studio/items/${id}/publish`, {
+        method: 'POST',
+        headers: await authHeaders(),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert('발행 실패: ' + (data.error || ''));
+        return;
+      }
+      alert('발행 완료. 텔레그램으로 발송됐습니다.');
+      setRows((prev) => prev.map((r) => (r.id === id ? { ...r, status: 'sent', send_flag: true } : r)));
+    } catch (e) {
+      alert('네트워크 오류: ' + e.message);
+    } finally {
+      setBusy((b) => { const { [id]: _, ...rest } = b; return rest; });
+    }
+  }
+
   // 검토함 카드의 자료 1건을 스레드 드래프트로 변환. 변환 후 드래프트 편집 페이지로 이동 안내.
   async function makeThreadDraft(id) {
     setBusy((b) => ({ ...b, [id]: 'thread' }));
@@ -304,6 +326,7 @@ export default function ContentStudioReviewPage() {
               onPatch={patchItem}
               onNotify={notifyTelegram}
               onMakeThread={makeThreadDraft}
+              onPublish={publishItem}
             />
           ))}
         </div>
@@ -335,7 +358,7 @@ export default function ContentStudioReviewPage() {
   );
 }
 
-function ItemCard({ item, busy, onPatch, onNotify, onMakeThread }) {
+function ItemCard({ item, busy, onPatch, onNotify, onMakeThread, onPublish }) {
   const sourceCfg = SOURCE_LABEL[item.source] || { label: item.source, cls: 'bg-zinc-100 text-zinc-600 border-zinc-200' };
   const statusCfg = STATUS_LABEL[item.status] || STATUS_LABEL.collected;
   const original = item.normalized?.extracted_text || '';
@@ -472,6 +495,14 @@ function ItemCard({ item, busy, onPatch, onNotify, onMakeThread }) {
           </a>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={() => onPublish(item.id)}
+            disabled={!!busy || item.status === 'sent'}
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md bg-zinc-900 text-white text-xs font-bold hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition"
+          >
+            {busy === 'publish' ? <Loader2 size={12} className="animate-spin" /> : <Rocket size={12} />}
+            {busy === 'publish' ? '발행 중...' : '발행'}
+          </button>
           <button
             onClick={() => onMakeThread(item.id)}
             disabled={!!busy}

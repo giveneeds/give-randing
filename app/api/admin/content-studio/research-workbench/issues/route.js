@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import {
@@ -9,6 +10,7 @@ import {
   formatIssueTopicMap,
   normalizeIssueCategories,
 } from '@/lib/research/issueSourceDirectory';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 // Sonar 이슈 후보 수집도 외부 호출이라 Vercel 기본 타임아웃을 넘길 수 있다. webhook 패턴과 동일하게 한도 상향.
 export const runtime = 'nodejs';
@@ -220,6 +222,69 @@ function appendSourceDirectory(prompt) {
   ].join('\n');
 }
 
+const CATEGORY_THEME_MAP = {
+  ai_marketing_tools: 'AI 마케팅 도구',
+  platform_policy: '플랫폼 정책 변화',
+  consumer_behavior: '소비자 행동 변화',
+  brand_story: '브랜드 흥망성쇠',
+  regulation_business: '규제와 비즈니스 충격',
+  capital_flow: '돈의 흐름',
+  work_shift: '일의 방식 변화',
+  local_commerce: '로컬/커머스 실무',
+};
+
+async function saveIssuesToAgentItems(issues, citations) {
+  if (!supabaseAdmin || !Array.isArray(issues) || !issues.length) return 0;
+
+  // content_themes에서 이름 → id 매핑 로드
+  const themeNames = Object.values(CATEGORY_THEME_MAP);
+  const { data: themes } = await supabaseAdmin
+    .from('content_themes')
+    .select('id, name')
+    .in('name', themeNames);
+  const themeByName = new Map((themes || []).map((t) => [t.name, t.id]));
+
+  const now = new Date().toISOString();
+  const rows = issues.map((issue) => {
+    const titleHash = crypto.createHash('sha256').update(String(issue.issue_title || '')).digest('hex').slice(0, 24);
+    const themeName = CATEGORY_THEME_MAP[issue.category] || null;
+    const themeId = themeName ? (themeByName.get(themeName) || null) : null;
+    const firstCitation = Array.isArray(citations) && citations.length ? citations[0] : '';
+    return {
+      source: 'sonar',
+      post_id: titleHash,
+      post_url: firstCitation || '',
+      collected_at: now,
+      theme_id: themeId,
+      status: 'collected',
+      raw_data: { issue, citations },
+      normalized: {
+        title: issue.issue_title || '',
+        extracted_text: [issue.source_summary, issue.what_changed, issue.why_interesting].filter(Boolean).join('\n\n'),
+      },
+      summary: {
+        one_line_summary: issue.one_line_hook || '',
+        key_points: [issue.what_changed, issue.recency_note].filter(Boolean),
+        why_it_matters: issue.why_interesting || '',
+      },
+      classification: {
+        suggested_persona: 'general',
+        suggested_topic_cluster: issue.category || '',
+        reversal_score: issue.reversal_score || null,
+        audience_callout: issue.audience_callout_candidate || '',
+        content_angles: [issue.korean_hook].filter(Boolean),
+      },
+    };
+  });
+
+  const { error } = await supabaseAdmin
+    .from('agent_items')
+    .upsert(rows, { onConflict: 'source,post_id', ignoreDuplicates: true });
+
+  if (error) console.error('[issues] agent_items 저장 실패:', error.message);
+  return error ? 0 : rows.length;
+}
+
 export async function POST(request) {
   try {
     const key = process.env.PERPLEXITY_API_KEY;
@@ -295,16 +360,23 @@ export async function POST(request) {
       };
     }
 
+    const finalIssues = Array.isArray(parsed.issues) ? parsed.issues.slice(0, 10) : [];
+    const finalCitations = Array.isArray(json.citations) ? json.citations : [];
+
+    // 검토함(agent_items)에 이슈 후보 저장 — 실패해도 응답은 정상 반환
+    const savedCount = await saveIssuesToAgentItems(finalIssues, finalCitations);
+
     return NextResponse.json({
-      issues: Array.isArray(parsed.issues) ? parsed.issues.slice(0, 10) : [],
+      issues: finalIssues,
       prompt,
       prompt_source: customPrompt ? 'custom' : 'default',
       model: DEFAULT_SONAR_MODEL,
-      citations: Array.isArray(json.citations) ? json.citations : [],
+      citations: finalCitations,
       search_results: Array.isArray(json.search_results) ? json.search_results : [],
       excluded_history_count: excludeHistory.length,
       local_excluded_history_count: localExcludeHistory.length,
       source_directory_count: ISSUE_SOURCE_DIRECTORY.length,
+      saved_to_inbox: savedCount,
     });
   } catch (error) {
     return NextResponse.json({ error: error.message || '이슈 후보 수집 실패' }, { status: 500 });

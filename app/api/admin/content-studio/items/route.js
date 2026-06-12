@@ -4,7 +4,7 @@ import { requireAdmin } from '@/lib/adminAuth';
 
 export const runtime = 'nodejs';
 
-const ALLOWED_SOURCES = new Set(['youtube', 'threads', 'instagram', 'hackernews', 'reddit', 'naver_news', 'google_news', 'web']);
+const ALLOWED_SOURCES = new Set(['youtube', 'threads', 'instagram', 'hackernews', 'reddit', 'naver_news', 'google_news', 'web', 'sonar']);
 const ALLOWED_STATUSES = new Set(['collected', 'reviewed', 'approved', 'rejected', 'sent']);
 
 /**
