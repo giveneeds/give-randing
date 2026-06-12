@@ -2921,8 +2921,7 @@ function DraftCard({ draft, stageLabel }) {
       <div className="p-3 space-y-2">
         {draft.posts.map((post, index) => (
           <div key={`${draft.id}-${index}`} className="rounded border border-zinc-200 bg-zinc-50 p-3">
-            <div className="text-[10px] font-mono text-zinc-400 mb-1">{index + 1}</div>
-            <p className="text-sm text-zinc-900 leading-relaxed">{post}</p>
+            <p className="text-sm text-zinc-900 leading-relaxed whitespace-pre-wrap">{post}</p>
           </div>
         ))}
       </div>
