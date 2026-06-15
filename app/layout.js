@@ -68,8 +68,7 @@ export const metadata = {
     },
   },
   verification: {
-    // TODO: Google Search Console / 네이버 서치어드바이저에서 받은 코드로 교체
-    google: "REPLACE_WITH_GOOGLE_VERIFICATION",
+    google: "zY6gMEnmaPIQq_FHQ2F0NrL4ai7vfcG_KgPgs8IY0ok",
     other: {
       "naver-site-verification": "REPLACE_WITH_NAVER_VERIFICATION",
     },
