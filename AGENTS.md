@@ -24,6 +24,14 @@ To build an integrated high-conversion marketing portal for 'Giveneeds', featuri
 - **UI System**: Vanilla Tailwind / Lucide Icons / Framer Motion
 - **Routing**: `/` (Main Magazine), `/lp/[slug]` (Campaign), `/magazine/[slug]` (Detail)
 
+## 🔍 SEO WORK LOG (기록 + 재수정 경고)
+1. **작업 시작 전**: 루트 `SEO_LOG.md`를 먼저 읽는다. 수정하려는 대상(파일/영역)이 이미 기록돼 있으면, 진행하기 전에 사용자에게 다음을 알리고 경고한다.
+   - 그 작업이 **언제(날짜)** 이뤄졌는지
+   - 당시 **무슨 목적으로 / 무엇을 막기 위한** 변경이었는지
+   - 지금 방향·방법대로 진행하면 **어느 부분이 어떻게 바뀌는지**
+   그 후 사용자 확인을 받고 진행한다. (누가 했는지는 따지지 않는다)
+2. **커밋할 때마다**: `SEO_LOG.md` 맨 위에 항목 하나를 추가한다 (날짜 · 커밋해시 / 한 일 / 목적·이유 / 대상 / 검증). 기록 전용이며 할 일 목록은 적지 않는다.
+
 ---
 <!-- BEGIN:nextjs-agent-rules -->
 # This is NOT the Next.js you know
