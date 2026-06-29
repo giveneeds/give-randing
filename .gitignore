@@ -78,3 +78,4 @@ next-env.d.ts
 # 정욱님 본인용 실험 일지·작업 메모 — 공유 X
 /docs/experiments/
 
+.env*.local
