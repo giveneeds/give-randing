@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase, isDummyMode, DUMMY_SETTINGS, DUMMY_SECTIONS } from '@/lib/supabase';
 import LandingNavbar from '@/components/landing/LandingNavbar';
 import LandingFooter from '@/components/landing/LandingFooter';
-import SectionRenderer from '@/components/landing/SectionRenderer';
+import DeferredHomeSections from '@/components/landing/DeferredHomeSections';
 import CinematicHeader from '@/components/landing/CinematicHeader';
 
 export default function HomePage() {
@@ -75,22 +75,7 @@ export default function HomePage() {
           <h1 className="text-center text-sm sm:text-base font-bold tracking-tight text-zinc-400 dark:text-zinc-500 pt-12 pb-2 px-4">
             데이터 기반 종합 광고 대행사 기브니즈
           </h1>
-          {loading ? (
-            <div className="py-24 text-center text-xs text-zinc-400 tracking-widest uppercase">
-              Loading Contents
-            </div>
-          ) : (
-            sections.map(section => (
-              <div key={section.id} className="mb-16 md:mb-32">
-                <SectionRenderer
-                  type={section.type}
-                  title={section.title}
-                  subtitle={section.subtitle}
-                  content={section.content}
-                />
-              </div>
-            ))
-          )}
+          <DeferredHomeSections loading={loading} sections={sections} />
           
           {/* ─── AI 상담 유도 블록 (제거됨 - 상단 AI 전략 섹션이 대체) ─── */}
           

@@ -5,12 +5,13 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import { useEffect, Suspense, useState } from 'react';
 import { GA_MEASUREMENT_ID, pageview } from '@/lib/analytics/ga4';
 import { isAdminOrPreviewPath } from '@/lib/adminPreviewPaths';
+import useThirdPartyGate from '@/lib/useThirdPartyGate';
 
 /**
  * GA4 스크립트 주입 + SPA 라우트 변경 시 페이지뷰 자동 전송.
  *
  * - 측정 ID(NEXT_PUBLIC_GA_MEASUREMENT_ID)가 없으면 아무것도 렌더링하지 않음 — 개발/PR 환경에서 안전.
- * - Script strategy="lazyOnload" 로 첫 화면 렌더 뒤 유휴 시간에 로드.
+ * - 첫 스크롤/터치/클릭/키 입력 이후, 또는 로드 후 10초 뒤 로드해 모바일 초기 렌더 부담을 낮춘다.
  * - usePathname() 변화를 useEffect 로 감지해 pageview() 호출.
  *
  * Setup: docs/SETUP_GA4.md
@@ -31,19 +32,21 @@ function GAPageTracker({ enabled }) {
 export default function GoogleAnalytics() {
   const pathname = usePathname();
   const [ready, setReady] = useState(false);
+  const thirdPartyReady = useThirdPartyGate({ fallbackDelay: 10000 });
 
   if (!GA_MEASUREMENT_ID) return null;
   if (isAdminOrPreviewPath(pathname)) return null;
+  if (!thirdPartyReady) return null;
 
   return (
     <>
       <Script
-        strategy="lazyOnload"
+        strategy="afterInteractive"
         src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
       />
       <Script
         id="ga4-init"
-        strategy="lazyOnload"
+        strategy="afterInteractive"
         onReady={() => setReady(true)}
         dangerouslySetInnerHTML={{
           __html: `
