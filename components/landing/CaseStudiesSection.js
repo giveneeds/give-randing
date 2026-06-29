@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import OptimizedImage from '@/components/ui/OptimizedImage';
 
 export default function CaseStudiesSection({ title, subtitle, content }) {
   const items = content?.items || [];
@@ -44,12 +45,13 @@ export default function CaseStudiesSection({ title, subtitle, content }) {
               className="bg-white dark:bg-zinc-900 rounded-2xl shadow-[0_2px_20px_rgba(0,0,0,0.08)] border border-zinc-100 dark:border-zinc-800 overflow-hidden"
             >
               {/* 이미지 */}
-              <div className="w-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden" style={{ height: `${content?.image_height || 480}px` }}>
+              <div className="relative w-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden" style={{ height: `${content?.image_height || 480}px` }}>
                 {item.image_url ? (
-                  <img
+                  <OptimizedImage
                     src={item.image_url}
                     alt={`${item.metric_result || ''} ${item.client_type || ''}`}
-                    className="w-full h-full object-cover"
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, 33vw"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-zinc-400 text-sm font-medium">

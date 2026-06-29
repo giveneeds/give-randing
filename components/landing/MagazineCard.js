@@ -1,5 +1,6 @@
 'use client';
 import { MoveRight } from 'lucide-react';
+import OptimizedImage from '@/components/ui/OptimizedImage';
 
 export default function MagazineCard({ post, variant = 'default' }) {
   const date = new Date(post.created_at).toLocaleDateString('ko-KR', { 
@@ -12,10 +13,11 @@ export default function MagazineCard({ post, variant = 'default' }) {
       <a href={`/magazine/${post.slug}`} className="group block relative w-full h-full aspect-square md:aspect-auto md:min-h-[600px] overflow-hidden rounded-2xl">
         {/* 배경 이미지 */}
         <div className="absolute inset-0 bg-zinc-200 dark:bg-zinc-800">
-          <img
+          <OptimizedImage
             src={post.thumbnail_url}
             alt={post.title}
-            className="w-full h-full object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-105"
+            className="object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-105"
+            sizes="(max-width: 768px) 100vw, 66vw"
           />
         </div>
         {/* 그라디언트 오버레이 */}
@@ -71,10 +73,11 @@ export default function MagazineCard({ post, variant = 'default' }) {
     return (
       <a href={`/magazine/${post.slug}`} className="group block relative w-full h-full min-h-[220px] sm:min-h-[260px] overflow-hidden rounded-2xl">
         <div className="absolute inset-0 bg-zinc-200 dark:bg-zinc-800">
-          <img
+          <OptimizedImage
             src={post.thumbnail_url}
             alt={post.title}
-            className="w-full h-full object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-105"
+            className="object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-105"
+            sizes="(max-width: 768px) 100vw, 33vw"
           />
         </div>
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
@@ -103,10 +106,11 @@ export default function MagazineCard({ post, variant = 'default' }) {
   return (
     <a href={`/magazine/${post.slug}`} className="group block relative w-full h-full aspect-square md:aspect-auto md:min-h-[320px] overflow-hidden rounded-2xl">
       <div className="absolute inset-0 bg-zinc-200 dark:bg-zinc-800">
-        <img
+        <OptimizedImage
           src={post.thumbnail_url}
           alt={post.title}
-          className="w-full h-full object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-105"
+          className="object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-105"
+          sizes="(max-width: 768px) 100vw, 33vw"
         />
       </div>
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />

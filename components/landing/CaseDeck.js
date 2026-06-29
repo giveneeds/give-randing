@@ -2,6 +2,7 @@
 import { useState, useRef } from 'react';
 import { ChevronLeft, ChevronRight, MoveRight } from 'lucide-react';
 import Link from 'next/link';
+import OptimizedImage from '@/components/ui/OptimizedImage';
 
 /**
  * CaseDeck — 덱 형식 캐러셀
@@ -151,10 +152,11 @@ function DeckCard({ item }) {
       className="group block relative w-full h-full overflow-hidden rounded-2xl bg-zinc-200 dark:bg-zinc-800 shadow-2xl"
     >
       {cover && (
-        <img
+        <OptimizedImage
           src={cover}
           alt={item.title}
-          className="absolute inset-0 w-full h-full object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-105"
+          className="object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-105"
+          sizes="(max-width: 768px) 100vw, 50vw"
         />
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />

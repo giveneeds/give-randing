@@ -10,6 +10,33 @@ const nextConfig = {
   turbopack: {
     root: projectRoot,
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.supabase.co',
+        pathname: '/storage/v1/object/public/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.giveneeds.co.kr',
+      },
+      {
+        protocol: 'https',
+        hostname: 'giveneeds.co.kr',
+      },
+      {
+        protocol: 'https',
+        hostname: 'give-randing.vercel.app',
+      },
+    ],
+    formats: ['image/webp'],
+    qualities: [75],
+  },
 };
 
 export default nextConfig;

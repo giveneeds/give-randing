@@ -7,6 +7,7 @@ import LandingFooter from '@/components/landing/LandingFooter';
 import CaseCard from '@/components/landing/CaseCard';
 import { ArrowLeft, Share2 } from 'lucide-react';
 import Link from 'next/link';
+import OptimizedImage from '@/components/ui/OptimizedImage';
 
 export default function CaseDetailPage() {
   const params = useParams();
@@ -178,11 +179,14 @@ export default function CaseDetailPage() {
         {/* ─── Cover Image ─── */}
         {cover && (
           <section className="px-6 md:px-12 max-w-screen-xl mx-auto mb-20">
-            <div className="aspect-[21/9] overflow-hidden bg-zinc-100 dark:bg-zinc-900 rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800">
-              <img
+            <div className="relative aspect-[21/9] overflow-hidden bg-zinc-100 dark:bg-zinc-900 rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800">
+              <OptimizedImage
                 src={cover}
                 alt={item.title}
-                className="w-full h-full object-cover transition-transform duration-1000 hover:scale-105"
+                className="object-cover transition-transform duration-1000 hover:scale-105"
+                sizes="(max-width: 768px) 100vw, 1200px"
+                loading="eager"
+                fetchPriority="high"
               />
             </div>
           </section>

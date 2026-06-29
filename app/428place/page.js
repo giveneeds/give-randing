@@ -2,12 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { useTheme } from 'next-themes';
+import Link from 'next/link';
 import {
   Moon, Sun, MessageCircle, ArrowRight, Search, MapPin, Phone,
   Star, Users, TrendingUp, AlertTriangle, CheckCircle2, Sparkles,
   BookOpen, BarChart3, KeyRound, Target, Compass, Calendar,
   ExternalLink, ArrowUpRight, Quote
 } from 'lucide-react';
+import OptimizedImage from '@/components/ui/OptimizedImage';
 
 const KAKAO_OPENCHAT = 'https://open.kakao.com/o/gPg1ngqi';
 const KAKAO_CHANNEL = 'http://pf.kakao.com/_lutxdG';
@@ -20,10 +22,13 @@ export default function Place428Page() {
   const { theme, setTheme } = useTheme();
 
   useEffect(() => {
-    setMounted(true);
+    const mountedFrame = requestAnimationFrame(() => setMounted(true));
     const onScroll = () => setScrolled(window.scrollY > 40);
     window.addEventListener('scroll', onScroll);
-    return () => window.removeEventListener('scroll', onScroll);
+    return () => {
+      cancelAnimationFrame(mountedFrame);
+      window.removeEventListener('scroll', onScroll);
+    };
   }, []);
 
   return (
@@ -37,14 +42,14 @@ export default function Place428Page() {
         }`}
       >
         <div className="max-w-5xl mx-auto px-5 sm:px-8 h-14 flex items-center justify-between">
-          <a href="/" className="flex items-center gap-2 group">
+          <Link href="/" className="flex items-center gap-2 group">
             <span className="text-[13px] font-black tracking-[0.18em] text-zinc-900 dark:text-white">
               GIVENEEDS
             </span>
             <span className="hidden sm:inline-block text-[14px] tracking-widest text-zinc-400 dark:text-zinc-500 uppercase">
               · 428 Place Guide
             </span>
-          </a>
+          </Link>
           <div className="flex items-center gap-1.5">
             {mounted && (
               <button
@@ -537,9 +542,12 @@ export default function Place428Page() {
             </p>
           </div>
           <div className="bg-zinc-50 dark:bg-zinc-950/40 border-t border-zinc-200 dark:border-white/10 p-3 sm:p-5">
-            <img
+            <OptimizedImage
               src="/428place/rank-tracking.png"
               alt="실제 사장님 가게들의 4월 1~2주차 네이버 플레이스 순위 변동 추이 데이터"
+              fill={false}
+              width={901}
+              height={1635}
               className="w-full h-auto rounded-lg border border-zinc-200 dark:border-white/10"
               loading="lazy"
             />
@@ -771,9 +779,9 @@ export default function Place428Page() {
       <footer className="px-5 sm:px-8 py-12 border-t border-zinc-200 dark:border-white/10">
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
           <div>
-            <a href="/" className="text-[13px] font-black tracking-[0.18em] text-zinc-900 dark:text-white">
+            <Link href="/" className="text-[13px] font-black tracking-[0.18em] text-zinc-900 dark:text-white">
               GIVENEEDS
-            </a>
+            </Link>
             <p className="mt-2 text-[16px] text-zinc-500 dark:text-zinc-500">
               © {new Date().getFullYear()} GIVENEEDS. 네이버 플레이스 로직 변경 가이드 · 2026.04
             </p>

@@ -14,6 +14,7 @@ import ResourceDownloads from '@/components/content/ResourceDownloads';
 import { useAuth } from '@/lib/useAuth';
 import { appendMagazine } from '@/lib/userTrail';
 import { trackEvent } from '@/lib/tracker';
+import OptimizedImage from '@/components/ui/OptimizedImage';
 
 function injectLinkTargets(html) {
   if (!html) return html;
@@ -208,11 +209,14 @@ export default function MagazineDetailPage() {
 
         {/* ─── Featured Image ─── */}
         <section className="px-6 md:px-12 max-w-screen-xl mx-auto mb-20">
-          <div className="aspect-[21/9] overflow-hidden bg-zinc-100 dark:bg-zinc-900 rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800">
-            <img 
-              src={post.thumbnail_url} 
-              alt={post.title} 
-              className="w-full h-full object-cover transition-transform duration-1000 hover:scale-105" 
+          <div className="relative aspect-[21/9] overflow-hidden bg-zinc-100 dark:bg-zinc-900 rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800">
+            <OptimizedImage
+              src={post.thumbnail_url}
+              alt={post.title}
+              className="object-cover transition-transform duration-1000 hover:scale-105"
+              sizes="(max-width: 768px) 100vw, 1200px"
+              loading="eager"
+              fetchPriority="high"
             />
           </div>
         </section>

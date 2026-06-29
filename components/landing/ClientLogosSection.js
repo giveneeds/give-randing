@@ -1,4 +1,5 @@
 'use client';
+import OptimizedImage from '@/components/ui/OptimizedImage';
 
 export default function ClientLogosSection({ title, subtitle, content }) {
   const items = (content?.items || []).filter(item => item.image_url);
@@ -91,11 +92,15 @@ function LogoCard({ item }) {
         padding: '0 24px',
       }}
     >
-      <img
+      <OptimizedImage
         src={item.image_url}
         alt={item.name || '클라이언트 로고'}
+        fill={false}
+        width={Math.max(logoHeight * 3, 120)}
+        height={logoHeight}
         style={{
           height: `${logoHeight}px`,
+          width: 'auto',
           maxWidth: `${Math.max(logoHeight * 3, 120)}px`,
           objectFit: 'contain',
           display: 'block',

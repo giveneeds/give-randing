@@ -1,3 +1,5 @@
+import OptimizedImage from '@/components/ui/OptimizedImage';
+
 export default function GallerySection({ title, subtitle, content }) {
   return (
     <section id="gallery" className="section">
@@ -10,11 +12,11 @@ export default function GallerySection({ title, subtitle, content }) {
         <div className="gallery-grid-minimal">
           {(content.items || []).map((item, i) => (
             <div key={i} className="gallery-item-minimal group">
-              <div 
-                className="gallery-image-minimal"
-                style={{ 
-                  backgroundImage: `url(${item.image_url || 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=800&auto=format&fit=crop'})` 
-                }}
+              <OptimizedImage
+                src={item.image_url || 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=800&auto=format&fit=crop'}
+                alt={item.caption || title || '갤러리 이미지'}
+                className="gallery-image-minimal object-cover"
+                sizes="(max-width: 768px) 100vw, 33vw"
               />
               {item.caption && (
                 <div className="gallery-caption-minimal">

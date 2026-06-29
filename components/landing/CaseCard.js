@@ -1,5 +1,6 @@
 'use client';
 import { MoveRight } from 'lucide-react';
+import OptimizedImage from '@/components/ui/OptimizedImage';
 
 export default function CaseCard({ item, variant = 'default' }) {
   const date = item.created_at
@@ -17,10 +18,11 @@ export default function CaseCard({ item, variant = 'default' }) {
       >
         <div className="absolute inset-0 bg-zinc-200 dark:bg-zinc-800">
           {cover && (
-            <img
+            <OptimizedImage
               src={cover}
               alt={item.title}
-              className="w-full h-full object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-105"
+              className="object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-105"
+              sizes="(max-width: 768px) 100vw, 66vw"
             />
           )}
         </div>
@@ -75,10 +77,11 @@ export default function CaseCard({ item, variant = 'default' }) {
     >
       <div className="absolute inset-0 bg-zinc-200 dark:bg-zinc-800">
         {cover && (
-          <img
+          <OptimizedImage
             src={cover}
             alt={item.title}
-            className="w-full h-full object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-105"
+            className="object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-105"
+            sizes="(max-width: 768px) 100vw, 33vw"
           />
         )}
       </div>

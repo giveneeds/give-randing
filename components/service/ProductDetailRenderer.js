@@ -30,6 +30,7 @@ import {
   parseYouTubeUrl,
 } from '@/lib/serviceDetailBlocks';
 import SectionRenderer from '@/components/landing/SectionRenderer';
+import OptimizedImage from '@/components/ui/OptimizedImage';
 
 const iconMap = {
   intro: Sparkles,
@@ -109,11 +110,12 @@ function getMediaTransform(media) {
 
 function FramedImage({ image, frameRatio = '4 / 3', fitMode = 'contain', className = '' }) {
   return (
-    <div className={`overflow-hidden bg-zinc-100 ${className}`} style={{ aspectRatio: frameRatio }}>
-      <img
+    <div className={`relative overflow-hidden bg-zinc-100 ${className}`} style={{ aspectRatio: frameRatio }}>
+      <OptimizedImage
         src={image.url}
         alt={image.alt || image.caption || ''}
         className="h-full w-full"
+        sizes="(max-width: 768px) 100vw, 640px"
         style={{
           objectFit: fitMode === 'cover' ? 'cover' : 'contain',
           ...getMediaTransform(image),
@@ -1176,8 +1178,8 @@ function renderBlock(block, index, context = {}) {
             className="group flex overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50 hover:border-zinc-900 dark:border-zinc-800 dark:bg-zinc-800/60"
           >
             {magazine?.thumbnail_url && (
-              <div className="hidden w-40 shrink-0 overflow-hidden bg-zinc-100 sm:block">
-                <img src={magazine.thumbnail_url} alt={magazine.title || block.magazine_slug} className="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
+              <div className="relative hidden w-40 shrink-0 overflow-hidden bg-zinc-100 sm:block">
+                <OptimizedImage src={magazine.thumbnail_url} alt={magazine.title || block.magazine_slug} className="object-cover transition duration-700 group-hover:scale-105" sizes="160px" />
               </div>
             )}
             <div className="flex min-w-0 flex-1 items-center justify-between gap-4 p-5">

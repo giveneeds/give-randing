@@ -18,6 +18,7 @@ import LandingNavbar from '@/components/landing/LandingNavbar';
 import LandingFooter from '@/components/landing/LandingFooter';
 import ServiceLeadForm from '@/components/landing/ServiceLeadForm';
 import ProductDetailRenderer, { getProductDetailBlockToc } from '@/components/service/ProductDetailRenderer';
+import OptimizedImage from '@/components/ui/OptimizedImage';
 
 function PreviewLink({ href, preview, className, children, ...props }) {
   if (preview) {
@@ -275,8 +276,8 @@ export default function ServicePreviewSurface({
                         </div>
                         {duration && <MarkdownContent text={duration} variant="dark" />}
                         {referenceImg && (
-                          <div className="mt-5 rounded-xl overflow-hidden">
-                            <img src={referenceImg} alt={service.title} className="w-full" />
+                          <div className="relative mt-5 aspect-video rounded-xl overflow-hidden">
+                            <OptimizedImage src={referenceImg} alt={service.title} className="object-cover" sizes="(max-width: 768px) 100vw, 640px" />
                           </div>
                         )}
                       </motion.section>
@@ -299,11 +300,12 @@ export default function ServicePreviewSurface({
                   >
                     <div className="flex flex-col sm:flex-row items-stretch">
                       {relatedMagazine.thumbnail_url && (
-                        <div className="sm:w-48 h-40 sm:h-auto shrink-0 overflow-hidden bg-zinc-100 dark:bg-zinc-800">
-                          <img
+                        <div className="relative sm:w-48 h-40 sm:h-auto shrink-0 overflow-hidden bg-zinc-100 dark:bg-zinc-800">
+                          <OptimizedImage
                             src={relatedMagazine.thumbnail_url}
                             alt={relatedMagazine.title}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                            className="object-cover group-hover:scale-105 transition-transform duration-700"
+                            sizes="(max-width: 768px) 100vw, 192px"
                           />
                         </div>
                       )}

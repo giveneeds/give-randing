@@ -1,6 +1,7 @@
 'use client';
 import { motion } from 'framer-motion';
 import { Minus } from 'lucide-react';
+import OptimizedImage from '@/components/ui/OptimizedImage';
 
 export default function BrandAboutSection() {
   return (
@@ -35,11 +36,12 @@ export default function BrandAboutSection() {
           viewport={{ once: true }}
           className="relative"
         >
-          <div className="aspect-[4/5] bg-zinc-100 dark:bg-zinc-900 overflow-hidden border border-zinc-200 dark:border-zinc-800">
-            <img 
-              src="https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80" 
-              alt="Brand Identity" 
-              className="object-cover w-full h-full grayscale hover:grayscale-0 transition-all duration-1000"
+          <div className="relative aspect-[4/5] bg-zinc-100 dark:bg-zinc-900 overflow-hidden border border-zinc-200 dark:border-zinc-800">
+            <OptimizedImage
+              src="https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80"
+              alt="기브니즈 브랜드 철학을 보여주는 오피스 이미지"
+              className="object-cover grayscale hover:grayscale-0 transition-all duration-1000"
+              sizes="(max-width: 768px) 100vw, 50vw"
             />
           </div>
           <div className="absolute -bottom-8 -left-8 bg-white dark:bg-zinc-900 p-8 border border-zinc-200 dark:border-zinc-800 hidden md:block">

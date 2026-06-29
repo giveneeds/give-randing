@@ -5,6 +5,7 @@ import MagazineNavbar from '@/components/landing/MagazineNavbar';
 import LandingFooter from '@/components/landing/LandingFooter';
 import MagazineCard from '@/components/landing/MagazineCard';
 import { sortForAllView } from '@/lib/magazineCategories';
+import OptimizedImage from '@/components/ui/OptimizedImage';
 
 export default function MagazinePage() {
   const [magazines, setMagazines] = useState([]);
@@ -173,9 +174,12 @@ export default function MagazinePage() {
                               </h4>
                             </div>
                             {post.thumbnail_url && (
-                              <img
+                              <OptimizedImage
                                 src={post.thumbnail_url}
                                 alt=""
+                                fill={false}
+                                width={64}
+                                height={64}
                                 className="w-16 h-16 rounded-lg object-cover shrink-0 bg-zinc-100 dark:bg-zinc-900"
                               />
                             )}

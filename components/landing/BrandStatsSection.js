@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import OptimizedImage from '@/components/ui/OptimizedImage';
 
 export default function BrandStatsSection({ title, subtitle, content = {} }) {
   const {
@@ -29,13 +30,17 @@ export default function BrandStatsSection({ title, subtitle, content = {} }) {
           style={{
             position: 'absolute',
             inset: 0,
-            backgroundImage: `url(${bg_image})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
             opacity: bg_opacity,
             pointerEvents: 'none',
           }}
-        />
+        >
+          <OptimizedImage
+            src={bg_image}
+            alt=""
+            className="object-cover"
+            sizes="100vw"
+          />
+        </div>
       )}
 
       <div
