@@ -37,7 +37,7 @@ export default function DeferredHomeSections({ loading, sections }) {
           observer.disconnect();
         }
       },
-      { rootMargin: '160px 0px' },
+      { rootMargin: '0px' },
     );
 
     observer.observe(el);

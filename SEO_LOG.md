@@ -16,8 +16,8 @@
 
 ---
 
-### 2026-06-29 20:14 · `081b45b`
-- 한 일: 모바일 전용 경량 히어로를 분리하고 데스크탑 시네마틱 히어로는 데스크탑에서만 동적 로드되게 바꿨다. 홈 하단 섹션 렌더러는 스크롤 근접 시점 또는 8초 후 로드되게 늦췄고, GA4/Meta Pixel은 첫 스크롤·터치·클릭·키입력 이후 또는 10초 후 로드되게 조정했다. `사무실.png`는 원본을 유지하면서 추가 압축했고, 사용하지 않는 글로벌 CSS 일부를 제거했다.
+### 2026-06-29 20:14 · `081b45b + worktree`
+- 한 일: 모바일 전용 경량 히어로를 분리하고 데스크탑 시네마틱 히어로는 데스크탑에서만 동적 로드되게 바꿨다. 홈 하단 섹션 렌더러는 화면에 진입하는 시점 또는 8초 후 로드되게 늦췄고, GA4/Meta Pixel은 첫 스크롤·터치·클릭·키입력 이후 또는 10초 후 로드되게 조정했다. `사무실.png`는 원본을 유지하면서 추가 압축했고, 사용하지 않는 글로벌 CSS 일부를 제거했다.
 - 목적/이유: 모바일 PageSpeed에서 남은 병목이 자사 JS 실행, forced reflow, Facebook/GTM 초기 실행, 렌더 블로킹 CSS였기 때문에 모바일 첫 화면의 JS/레이아웃 부담을 줄이기 위함. 단, 4차 이미지 작업은 사용자 지시에 따라 제거/대체 없이 원본 이미지 압축만 수행했다.
 - 대상: components/landing/CinematicHeader.js, components/landing/DesktopCinematicHeader.js, components/landing/MobileCinematicHeader.js, components/landing/DeferredHomeSections.js, app/HomePageClient.js, components/GoogleAnalytics.js, components/MetaPixel.js, lib/useThirdPartyGate.js, app/globals.css, public/사무실.png
 - 검증: git diff --check ✅, npx eslint <변경 JS 파일 목록> ✅, npm run build ✅, 로컬 모바일/데스크탑 홈 화면 스모크 체크 ✅
