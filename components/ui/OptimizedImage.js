@@ -3,6 +3,7 @@ import Image from 'next/image';
 
 const OPTIMIZED_IMAGE_HOSTS = new Set([
   'images.unsplash.com',
+  'i.ytimg.com',
   'giveneeds.co.kr',
   'www.giveneeds.co.kr',
   'give-randing.vercel.app',

@@ -1,16 +1,13 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { supabase, isDummyMode, DUMMY_MAGAZINES, DUMMY_SETTINGS, DUMMY_SECTIONS } from '@/lib/supabase';
+import { supabase, isDummyMode, DUMMY_SETTINGS, DUMMY_SECTIONS } from '@/lib/supabase';
 import LandingNavbar from '@/components/landing/LandingNavbar';
 import LandingFooter from '@/components/landing/LandingFooter';
-import MagazineCard from '@/components/landing/MagazineCard';
 import SectionRenderer from '@/components/landing/SectionRenderer';
 import CinematicHeader from '@/components/landing/CinematicHeader';
-import { MoveRight } from 'lucide-react';
 
 export default function HomePage() {
-  const [magazines, setMagazines] = useState([]);
-  const [settings, setSettings] = useState({});
+  const [settings, setSettings] = useState(DUMMY_SETTINGS);
   const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -18,7 +15,6 @@ export default function HomePage() {
     async function loadData() {
       try {
         if (isDummyMode) {
-          setMagazines(DUMMY_MAGAZINES);
           setSettings(DUMMY_SETTINGS);
           setSections(DUMMY_SECTIONS.filter(s => s.is_active));
           setLoading(false);
@@ -26,14 +22,10 @@ export default function HomePage() {
         }
 
         // 실서버 데이터 로드 (실패 시 개별적으로 더미 데이터 폴백)
-        const [mRes, sRes, secRes] = await Promise.all([
-          supabase.from('magazines').select('*').eq('status', 'published').order('created_at', { ascending: false }),
+        const [sRes, secRes] = await Promise.all([
           supabase.from('landing_settings').select('*').single(),
           supabase.from('global_sections').select('*').eq('is_active', true).or('content->_page.is.null,content->>_page.eq.home').order('order_index', { ascending: true })
         ]);
-
-        // 매거진 데이터 (없으면 더미)
-        const magData = (mRes.data && mRes.data.length > 0) ? mRes.data : DUMMY_MAGAZINES;
         
         // 설정 데이터 (구조 변환: single row JSON -> 컴포넌트 기대 구조)
         let setData = DUMMY_SETTINGS;
@@ -53,12 +45,10 @@ export default function HomePage() {
           secData = secRes.data;
         }
 
-        setMagazines(magData);
         setSettings(setData);
         setSections(secData.filter(s => s.is_active));
       } catch (error) {
         console.error('데이터 로드 중 오류 발생 (더미 모드 전환):', error);
-        setMagazines(DUMMY_MAGAZINES);
         setSettings(DUMMY_SETTINGS);
         setSections(DUMMY_SECTIONS);
       } finally {
@@ -69,14 +59,7 @@ export default function HomePage() {
     loadData();
   }, []);
 
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-white dark:bg-zinc-950 transition-colors duration-700">
-      <div className="text-xs text-zinc-400 tracking-widest uppercase animate-pulse">Loading</div>
-    </div>
-  );
 
-  const featured = magazines[0];
-  const rest = magazines.slice(1);
 
   return (
     <>
@@ -92,16 +75,22 @@ export default function HomePage() {
           <h1 className="text-center text-sm sm:text-base font-bold tracking-tight text-zinc-400 dark:text-zinc-500 pt-12 pb-2 px-4">
             데이터 기반 종합 광고 대행사 기브니즈
           </h1>
-          {sections.map(section => (
-            <div key={section.id} className="mb-16 md:mb-32">
-              <SectionRenderer
-                type={section.type}
-                title={section.title}
-                subtitle={section.subtitle}
-                content={section.content}
-              />
+          {loading ? (
+            <div className="py-24 text-center text-xs text-zinc-400 tracking-widest uppercase">
+              Loading Contents
             </div>
-          ))}
+          ) : (
+            sections.map(section => (
+              <div key={section.id} className="mb-16 md:mb-32">
+                <SectionRenderer
+                  type={section.type}
+                  title={section.title}
+                  subtitle={section.subtitle}
+                  content={section.content}
+                />
+              </div>
+            ))
+          )}
           
           {/* ─── AI 상담 유도 블록 (제거됨 - 상단 AI 전략 섹션이 대체) ─── */}
           

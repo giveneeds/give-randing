@@ -31,6 +31,7 @@ import {
 } from '@/lib/serviceDetailBlocks';
 import SectionRenderer from '@/components/landing/SectionRenderer';
 import OptimizedImage from '@/components/ui/OptimizedImage';
+import LazyYouTubeEmbed from '@/components/ui/LazyYouTubeEmbed';
 
 const iconMap = {
   intro: Sparkles,
@@ -786,15 +787,14 @@ function MediaDisplay({ media, frameRatio = '4 / 3', fitMode = 'contain', classN
 
   if (media.type === 'youtube' && parsed.ok) {
     return (
-      <div className={`overflow-hidden rounded-2xl bg-zinc-950 ${className}`} style={{ aspectRatio: ratio }}>
-        <iframe
-          src={parsed.embedUrl}
-          title={media.title || 'YouTube video'}
-          className="h-full w-full"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-          allowFullScreen
-        />
-      </div>
+      <LazyYouTubeEmbed
+        videoId={parsed.videoId}
+        embedUrl={parsed.embedUrl}
+        title={media.title || 'YouTube video'}
+        className={className}
+        aspectClassName=""
+        style={{ aspectRatio: ratio }}
+      />
     );
   }
 
@@ -1104,15 +1104,12 @@ function renderBlock(block, index, context = {}) {
       return (
         <BlockShell block={block} index={index}>
           <StyledText as="h3" text={block.title} textStyle={block.title_style} fallbackRole="h3" className="mb-3" />
-          <div className={`overflow-hidden rounded-2xl bg-zinc-950 ${ratioClass(block.aspect_ratio)}`}>
-            <iframe
-              src={parsed.embedUrl}
-              title={block.title || 'YouTube video'}
-              className="h-full w-full"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              allowFullScreen
-            />
-          </div>
+          <LazyYouTubeEmbed
+            videoId={parsed.videoId}
+            embedUrl={parsed.embedUrl}
+            title={block.title || 'YouTube video'}
+            aspectClassName={ratioClass(block.aspect_ratio)}
+          />
           <StyledText as="p" text={block.description} textStyle={block.description_style} fallbackRole="body" fallbackColor="muted" className="mt-4" />
         </BlockShell>
       );

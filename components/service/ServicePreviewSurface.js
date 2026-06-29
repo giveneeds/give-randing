@@ -277,7 +277,7 @@ export default function ServicePreviewSurface({
                         {duration && <MarkdownContent text={duration} variant="dark" />}
                         {referenceImg && (
                           <div className="relative mt-5 aspect-video rounded-xl overflow-hidden">
-                            <OptimizedImage src={referenceImg} alt={service.title} className="object-cover" sizes="(max-width: 768px) 100vw, 640px" />
+                            <OptimizedImage src={referenceImg} alt={service.title} className="object-contain" sizes="(max-width: 768px) 100vw, 640px" />
                           </div>
                         )}
                       </motion.section>

@@ -17,11 +17,6 @@ export default function BrandStatsSection({ title, subtitle, content = {} }) {
 
   return (
     <section className="relative w-full bg-white dark:bg-zinc-950 overflow-hidden">
-      <style>{`
-        @keyframes bs-shine {
-          to { background-position: 200% center; }
-        }
-      `}</style>
 
       {/* 배경 이미지 (전체 노출, 투명도로 은은하게) */}
       {bg_image && (
@@ -64,14 +59,12 @@ export default function BrandStatsSection({ title, subtitle, content = {} }) {
         >
           <span className="block text-zinc-900 dark:text-white">{title_main}</span>
           <span
-            className="inline-block shimmer-light dark:shimmer-dark"
+            className="inline-block"
             style={{
               background: 'linear-gradient(to right, #bbb 20%, #3b82f6 40%, #60a5fa 50%, #3b82f6 60%, #bbb 80%)',
-              backgroundSize: '200% auto',
               WebkitBackgroundClip: 'text',
               backgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
-              animation: 'bs-shine 5s linear infinite',
             }}
           >
             {title_dim}

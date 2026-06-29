@@ -2,7 +2,7 @@
 
 import Script from 'next/script';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { useEffect, Suspense } from 'react';
+import { useEffect, Suspense, useState } from 'react';
 import { GA_MEASUREMENT_ID, pageview } from '@/lib/analytics/ga4';
 import { isAdminOrPreviewPath } from '@/lib/adminPreviewPaths';
 
@@ -10,39 +10,41 @@ import { isAdminOrPreviewPath } from '@/lib/adminPreviewPaths';
  * GA4 스크립트 주입 + SPA 라우트 변경 시 페이지뷰 자동 전송.
  *
  * - 측정 ID(NEXT_PUBLIC_GA_MEASUREMENT_ID)가 없으면 아무것도 렌더링하지 않음 — 개발/PR 환경에서 안전.
- * - Script strategy="afterInteractive" 로 LCP 영향 최소화.
+ * - Script strategy="lazyOnload" 로 첫 화면 렌더 뒤 유휴 시간에 로드.
  * - usePathname() 변화를 useEffect 로 감지해 pageview() 호출.
  *
  * Setup: docs/SETUP_GA4.md
  */
-function GAPageTracker() {
+function GAPageTracker({ enabled }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-
   useEffect(() => {
-    if (!pathname) return;
+    if (!enabled || !pathname) return;
     if (isAdminOrPreviewPath(pathname)) return;
     const url = pathname + (searchParams?.toString() ? `?${searchParams.toString()}` : '');
     pageview(url);
-  }, [pathname, searchParams]);
+  }, [enabled, pathname, searchParams]);
 
   return null;
 }
 
 export default function GoogleAnalytics() {
   const pathname = usePathname();
+  const [ready, setReady] = useState(false);
+
   if (!GA_MEASUREMENT_ID) return null;
   if (isAdminOrPreviewPath(pathname)) return null;
 
   return (
     <>
       <Script
-        strategy="afterInteractive"
+        strategy="lazyOnload"
         src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
       />
       <Script
         id="ga4-init"
-        strategy="afterInteractive"
+        strategy="lazyOnload"
+        onReady={() => setReady(true)}
         dangerouslySetInnerHTML={{
           __html: `
             window.dataLayer = window.dataLayer || [];
@@ -54,7 +56,7 @@ export default function GoogleAnalytics() {
         }}
       />
       <Suspense fallback={null}>
-        <GAPageTracker />
+        <GAPageTracker enabled={ready} />
       </Suspense>
     </>
   );

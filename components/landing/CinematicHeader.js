@@ -27,7 +27,7 @@ export default function CinematicHeader() {
     const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
 
     // 📏 해상도 기반 높이 계산 (모바일은 짧게)
-    const getScrollDist = () => window.innerHeight * (isMobile ? 3 : 12);
+    const getScrollDist = () => window.innerHeight * (isMobile ? 2.4 : 8);
 
     // 🧱 마스터 타임라인 - 고정과 애니메이션을 단 하나로 병합
     const masterTl = gsap.timeline({
@@ -37,7 +37,7 @@ export default function CinematicHeader() {
         end: () => `+=${getScrollDist()}`,
         pin: true,
         pinSpacing: true, // 다음 섹션을 강제로 아래로 밀어냄
-        scrub: 1.5, // 부드러운 스크롤 감도
+        scrub: 1,
         anticipatePin: 1,
         invalidateOnRefresh: true,
       }
@@ -49,7 +49,6 @@ export default function CinematicHeader() {
     masterTl.to(heroTextRef.current, {
       scale: 0.05,
       opacity: 0,
-      filter: 'blur(60px)',
       duration: 4,
       ease: "power2.inOut"
     });
@@ -64,11 +63,10 @@ export default function CinematicHeader() {
     // 3. 상품 순차 노출 (7 ~ 17) - 총 10단위 사용 (아이템당 2단위 = 넉넉한 호흡)
     MARKETING_PRODUCTS.forEach((_, index) => {
       masterTl.fromTo(listItemsRef.current[index],
-        { opacity: 0, x: -40, filter: 'blur(15px)' },
+        { opacity: 0, x: -40 },
         { 
           opacity: 1, 
           x: 0, 
-          filter: 'blur(0px)', 
           duration: 2, // 나타나는 시간 증가
           backgroundColor: 'rgba(59, 130, 246, 0.12)',
           borderColor: 'rgba(59, 130, 246, 0.4)',
@@ -85,7 +83,6 @@ export default function CinematicHeader() {
     masterTl.to(searchBarRef.current, {
       scale: 0.6,
       opacity: 0,
-      filter: 'blur(50px)',
       y: -100,
       duration: 3,
       ease: "power4.in"
@@ -102,7 +99,7 @@ export default function CinematicHeader() {
         {/* 브랜드 로고(장식) — 페이지 H1 은 히어로 아래 한국어 헤드라인이 담당하므로 div 로 둔다 */}
         <div
           ref={heroTextRef}
-          className="absolute top-[50%] md:top-[45%] left-1/2 -translate-x-1/2 -translate-y-1/2 text-[12vw] md:text-[16vw] font-black tracking-tighter text-zinc-900 dark:text-white drop-shadow-2xl select-none uppercase z-10 text-center leading-none whitespace-nowrap"
+          className="absolute top-[50%] md:top-[45%] left-1/2 -translate-x-1/2 -translate-y-1/2 text-[12vw] md:text-[16vw] font-black tracking-tighter text-zinc-900 dark:text-white drop-shadow-2xl select-none uppercase z-10 text-center leading-none whitespace-nowrap will-change-transform"
         >
           GIVENEEDS
         </div>
@@ -111,7 +108,7 @@ export default function CinematicHeader() {
         <div className="absolute inset-0 flex items-center justify-center px-4 z-20 pointer-events-none" style={{ paddingBottom: '5vh' }}>
         <div
           ref={searchBarRef}
-          className="max-h-[88vh] overflow-y-auto w-full max-w-[92vw] sm:max-w-[560px] bg-white/95 dark:bg-zinc-900/85 backdrop-blur-3xl border border-zinc-200 dark:border-white/10 rounded-3xl md:rounded-[2.5rem] shadow-[0_40px_120px_rgba(0,0,0,0.15)] md:shadow-[0_120px_300px_rgba(0,0,0,0.3)] dark:shadow-[0_120px_300px_rgba(0,0,0,1)] p-5 sm:p-6 pointer-events-auto opacity-0 invisible"
+          className="max-h-[88vh] overflow-y-auto w-full max-w-[92vw] sm:max-w-[560px] bg-white/95 dark:bg-zinc-900/85 backdrop-blur-3xl border border-zinc-200 dark:border-white/10 rounded-3xl md:rounded-[2.5rem] shadow-[0_40px_120px_rgba(0,0,0,0.15)] md:shadow-[0_120px_300px_rgba(0,0,0,0.3)] dark:shadow-[0_120px_300px_rgba(0,0,0,1)] p-5 sm:p-6 pointer-events-auto opacity-0 invisible will-change-transform"
         >
           <div className="flex items-center gap-3 sm:gap-5 pb-5 sm:pb-8 border-b border-zinc-100 dark:border-white/5 mb-5 sm:mb-6 min-w-0">
             <div className="shrink-0 w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-blue-500/10 flex items-center justify-center shadow-inner">
