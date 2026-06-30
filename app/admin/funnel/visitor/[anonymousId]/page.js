@@ -4,7 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import {
   ArrowLeft, User, Smartphone, Monitor,
   MousePointer2, Eye, FileText, CheckCircle2, Loader2,
-  LogIn, LogOut, Clock,
+  LogIn, LogOut, Clock, Search, Tag, Link2, Globe, CornerUpLeft,
 } from 'lucide-react';
 
 // ── 이벤트 메타 ───────────────────────────────────
@@ -114,15 +114,31 @@ function StartNode({ session }) {
       <div className="relative">
         {/* 글로우 */}
         <div className="absolute inset-0 rounded-2xl bg-emerald-400 blur-sm opacity-30" />
-        <div className="relative flex flex-col items-center gap-1.5 px-4 py-3 rounded-2xl border-2 border-emerald-400 bg-emerald-50 w-[130px]">
+        <div className="relative flex flex-col items-center gap-1.5 px-4 py-3 rounded-2xl border-2 border-emerald-400 bg-emerald-50 w-[140px]">
           <div className="w-8 h-8 rounded-xl bg-emerald-500 flex items-center justify-center shadow">
             <LogIn size={15} className="text-white" />
           </div>
           <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">진입</span>
           <span className="text-[11px] font-bold text-emerald-800 text-center leading-tight">{channel}</span>
-          {ref && (
-            <span className="text-[9px] text-emerald-600 truncate max-w-full opacity-70" title={ref}>
-              from {ref.replace(/https?:\/\//, '').split('/')[0]}
+          {/* 검색 키워드 */}
+          {session.utm_term && (
+            <span className="flex items-center gap-1 text-[9px] font-bold bg-amber-100 text-amber-700 border border-amber-300 px-1.5 py-0.5 rounded-full w-full justify-center truncate" title={session.utm_term}>
+              <Search size={8} />
+              {session.utm_term}
+            </span>
+          )}
+          {/* UTM source / medium */}
+          {session.utm_source && (
+            <span className="flex items-center gap-1 text-[9px] text-emerald-600 truncate max-w-full" title={`${session.utm_source} / ${session.utm_medium || ''}`}>
+              <Globe size={8} />
+              {session.utm_source}{session.utm_medium ? `/${session.utm_medium}` : ''}
+            </span>
+          )}
+          {/* 레퍼러 */}
+          {ref && !session.utm_source && (
+            <span className="flex items-center gap-1 text-[9px] text-emerald-600 truncate max-w-full opacity-70" title={ref}>
+              <Link2 size={8} />
+              {ref.replace(/https?:\/\//, '').split('/')[0]}
             </span>
           )}
           <span className="text-[9px] text-emerald-500 font-mono truncate max-w-full">{session.landing_url || '/'}</span>
@@ -247,8 +263,36 @@ function SessionRow({ session, events, index, total }) {
           {session.device_type === 'mobile'
             ? <Smartphone size={11} className="text-zinc-500" />
             : <Monitor size={11} className="text-zinc-500" />}
-          <span className="text-[10px] text-zinc-500">{CHANNEL_KO[session.channel_group] || '직접'}</span>
+          <span className="text-[10px] text-zinc-400">{CHANNEL_KO[session.channel_group] || '직접'}</span>
         </div>
+        {/* 검색 키워드 배지 */}
+        {session.utm_term && (
+          <span className="flex items-center gap-1 text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1.5 py-0.5 rounded-full">
+            <Search size={8} />
+            {session.utm_term}
+          </span>
+        )}
+        {/* UTM campaign */}
+        {session.utm_campaign && (
+          <span className="flex items-center gap-1 text-[9px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30 px-1.5 py-0.5 rounded-full">
+            <Tag size={8} />
+            {session.utm_campaign}
+          </span>
+        )}
+        {/* UTM source/medium */}
+        {session.utm_source && (
+          <span className="text-[9px] text-zinc-500 flex items-center gap-1">
+            <Globe size={8} />
+            {session.utm_source}{session.utm_medium ? `/${session.utm_medium}` : ''}
+          </span>
+        )}
+        {/* 레퍼러 */}
+        {session.referrer && !session.utm_source && (
+          <span className="text-[9px] text-zinc-500 flex items-center gap-1">
+            <Link2 size={8} />
+            {session.referrer.replace(/^https?:\/\//, '').split('/')[0]}
+          </span>
+        )}
         {/* 체류 순위 */}
         {top.length > 0 && (
           <div className="ml-auto flex items-center gap-1.5 flex-wrap">
@@ -327,6 +371,13 @@ export default function VisitorDetailPage() {
   const hasLead = events.some(e => e.event_type === 'form_submit');
   const uniquePages = [...new Set(events.filter(e => e.event_type === 'page_view').map(e => e.page_url))].length;
 
+  // 첫 세션 기준 유입 정보 요약
+  const firstSession = sessions[sessions.length - 1]; // sessions은 최신순 정렬이므로 마지막이 첫 세션
+  const allKeywords = [...new Set(sessions.filter(s => s.utm_term).map(s => s.utm_term))];
+  const allCampaigns = [...new Set(sessions.filter(s => s.utm_campaign).map(s => s.utm_campaign))];
+  const allSources = [...new Set(sessions.filter(s => s.utm_source).map(s => `${s.utm_source}${s.utm_medium ? '/' + s.utm_medium : ''}`))];
+  const allReferrers = [...new Set(sessions.filter(s => s.referrer).map(s => s.referrer.replace(/^https?:\/\//, '').split('/')[0]))];
+
   return (
     <div className="p-6 max-w-full mx-auto space-y-6">
 
@@ -375,6 +426,67 @@ export default function VisitorDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* 유입 경로 요약 카드 */}
+      {(allKeywords.length > 0 || allCampaigns.length > 0 || allSources.length > 0 || allReferrers.length > 0) && (
+        <div className="bg-white rounded-2xl border border-zinc-100 p-4 space-y-3">
+          <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">유입 경로 분석</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {allKeywords.length > 0 && (
+              <div className="rounded-xl bg-amber-50 border border-amber-100 p-3">
+                <div className="flex items-center gap-1 mb-1.5">
+                  <Search size={10} className="text-amber-600" />
+                  <span className="text-[9px] font-black text-amber-700 uppercase tracking-widest">검색 키워드</span>
+                </div>
+                <div className="flex flex-col gap-1">
+                  {allKeywords.map(k => (
+                    <span key={k} className="text-xs font-bold text-amber-900">{k}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {allSources.length > 0 && (
+              <div className="rounded-xl bg-blue-50 border border-blue-100 p-3">
+                <div className="flex items-center gap-1 mb-1.5">
+                  <Globe size={10} className="text-blue-600" />
+                  <span className="text-[9px] font-black text-blue-700 uppercase tracking-widest">소스/매체</span>
+                </div>
+                <div className="flex flex-col gap-1">
+                  {allSources.map(s => (
+                    <span key={s} className="text-xs font-bold text-blue-900">{s}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {allCampaigns.length > 0 && (
+              <div className="rounded-xl bg-violet-50 border border-violet-100 p-3">
+                <div className="flex items-center gap-1 mb-1.5">
+                  <Tag size={10} className="text-violet-600" />
+                  <span className="text-[9px] font-black text-violet-700 uppercase tracking-widest">캠페인</span>
+                </div>
+                <div className="flex flex-col gap-1">
+                  {allCampaigns.map(c => (
+                    <span key={c} className="text-xs font-bold text-violet-900">{c}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {allReferrers.length > 0 && (
+              <div className="rounded-xl bg-zinc-50 border border-zinc-100 p-3">
+                <div className="flex items-center gap-1 mb-1.5">
+                  <Link2 size={10} className="text-zinc-500" />
+                  <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">레퍼러</span>
+                </div>
+                <div className="flex flex-col gap-1">
+                  {allReferrers.map(r => (
+                    <span key={r} className="text-xs font-bold text-zinc-700">{r}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* 범례 */}
       <div className="flex items-center gap-2 flex-wrap text-[10px]">

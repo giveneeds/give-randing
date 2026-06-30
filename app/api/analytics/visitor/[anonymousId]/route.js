@@ -10,7 +10,7 @@ export async function GET(request, { params }) {
     // 해당 anonymous_id의 모든 세션
     const { data: sessions, error: sessErr } = await supabase
       .from('lead_sessions')
-      .select('id, session_start, channel_group, device_type, browser, landing_url, referrer, kakao_name, kakao_phone, lead_id, leads(name, phone)')
+      .select('id, session_start, channel_group, device_type, browser, landing_url, referrer, utm_source, utm_medium, utm_campaign, utm_term, utm_content, kakao_name, kakao_phone, lead_id, leads(name, phone)')
       .eq('anonymous_id', anonymousId)
       .order('session_start', { ascending: false });
 

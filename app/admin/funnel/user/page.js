@@ -5,6 +5,7 @@ import {
   Loader2, User, Smartphone, Monitor, Clock,
   Eye, FileText, MousePointer2, CheckCircle2,
   ChevronDown, ArrowLeft, LogIn, LogOut, Maximize2,
+  Search, Tag, Globe, Link2,
 } from 'lucide-react';
 
 // ── 이벤트 메타 ───────────────────────────────────
@@ -195,6 +196,28 @@ function SessionFlow({ session, events, index, total }) {
           <span className="text-[10px] text-zinc-500">·</span>
           <span className="text-[10px] text-zinc-400">{channel}</span>
           {session.device_type === 'mobile' ? <Smartphone size={10} className="text-zinc-500" /> : <Monitor size={10} className="text-zinc-500" />}
+          {/* UTM 키워드 */}
+          {session.utm_term && (
+            <span className="flex items-center gap-1 text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1.5 py-0.5 rounded-full">
+              <Search size={8} />
+              {session.utm_term}
+            </span>
+          )}
+          {/* 레퍼러 */}
+          {session.referrer && (
+            <span className="flex items-center gap-1 text-[9px] text-zinc-400">
+              <Link2 size={8} />
+              <span className="truncate max-w-[100px]" title={session.referrer}>
+                {session.referrer.replace(/^https?:\/\//, '').split('/')[0]}
+              </span>
+            </span>
+          )}
+          {/* UTM source/medium */}
+          {session.utm_source && (
+            <span className="text-[9px] text-zinc-500">
+              {session.utm_source}{session.utm_medium ? `/${session.utm_medium}` : ''}
+            </span>
+          )}
         </div>
 
         {/* 체류 순위 */}
@@ -291,21 +314,53 @@ function VisitorCard({ visitor, expanded, onToggle }) {
             {visitor.is_identified ? (visitor.display_name?.[0] || '?') : <User size={14} />}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className={`text-sm font-black truncate ${visitor.is_identified ? 'text-zinc-900' : 'text-zinc-400'}`}>
                 {visitor.display_name}
               </span>
               {visitor.is_identified && (
                 <span className="text-[9px] font-bold bg-violet-100 text-violet-600 px-1.5 py-0.5 rounded-full flex-shrink-0">식별됨</span>
               )}
+              {visitor.utm_term && (
+                <span className="flex items-center gap-1 text-[9px] font-bold bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-full flex-shrink-0">
+                  <Search size={8} />
+                  {visitor.utm_term}
+                </span>
+              )}
+              {visitor.utm_campaign && (
+                <span className="flex items-center gap-1 text-[9px] font-bold bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded-full flex-shrink-0">
+                  <Tag size={8} />
+                  {visitor.utm_campaign}
+                </span>
+              )}
             </div>
-            <div className="flex items-center gap-2 mt-0.5 text-[10px] text-zinc-400">
+            <div className="flex items-center gap-2 mt-0.5 text-[10px] text-zinc-400 flex-wrap">
               {visitor.device_type === 'mobile' ? <Smartphone size={9} /> : <Monitor size={9} />}
-              <span>{CHANNEL_KO[visitor.channel_group] || '직접'}</span>
+              <span className="font-medium text-zinc-600">{CHANNEL_KO[visitor.channel_group] || '직접'}</span>
               <span className="text-zinc-200">·</span>
               <span>{visitor.session_count}세션</span>
               <span className="text-zinc-200">·</span>
               <span>{visitor.event_count || 0}이벤트</span>
+              {visitor.first_referrer && (
+                <>
+                  <span className="text-zinc-200">·</span>
+                  <span className="flex items-center gap-1">
+                    <Link2 size={8} />
+                    <span className="truncate max-w-[120px]" title={visitor.first_referrer}>
+                      {visitor.first_referrer.replace(/^https?:\/\//, '').split('/')[0]}
+                    </span>
+                  </span>
+                </>
+              )}
+              {visitor.utm_source && !visitor.first_referrer && (
+                <>
+                  <span className="text-zinc-200">·</span>
+                  <span className="flex items-center gap-1">
+                    <Globe size={8} />
+                    {visitor.utm_source}{visitor.utm_medium ? ` / ${visitor.utm_medium}` : ''}
+                  </span>
+                </>
+              )}
             </div>
           </div>
         </button>

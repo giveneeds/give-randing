@@ -8,7 +8,7 @@ export async function GET() {
     // anonymous_id별 최신 세션 + 이벤트 수 집계
     const { data: sessions, error: sessErr } = await supabase
       .from('lead_sessions')
-      .select('anonymous_id, kakao_name, kakao_phone, channel_group, device_type, session_start, lead_id, leads(name, phone)')
+      .select('anonymous_id, kakao_name, kakao_phone, channel_group, device_type, session_start, lead_id, referrer, landing_url, utm_source, utm_medium, utm_campaign, utm_term, utm_content, leads(name, phone)')
       .order('session_start', { ascending: false });
 
     if (sessErr) throw sessErr;
@@ -30,6 +30,14 @@ export async function GET() {
           device_type: s.device_type,
           last_seen: s.session_start,
           session_count: 0,
+          // 첫 세션 기준 유입 정보
+          first_referrer: s.referrer || null,
+          first_landing_url: s.landing_url || null,
+          utm_source: s.utm_source || null,
+          utm_medium: s.utm_medium || null,
+          utm_campaign: s.utm_campaign || null,
+          utm_term: s.utm_term || null,
+          utm_content: s.utm_content || null,
         };
       }
       visitorMap[aid].session_count++;

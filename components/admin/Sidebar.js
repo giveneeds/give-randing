@@ -15,7 +15,6 @@ import {
   ShieldCheck,
   Download,
   Activity,
-  Sparkles,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -49,7 +48,6 @@ const NAV_GROUPS = [
     items: [
       { href: '/admin/magazines', icon: BookOpen, label: '매거진 콘텐츠' },
       { href: '/admin/cases', icon: Briefcase, label: '고객 사례 (For You)' },
-      { href: '/admin/content-studio', icon: Sparkles, label: '콘텐츠 스튜디오' },
     ],
   },
   {
