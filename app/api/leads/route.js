@@ -37,7 +37,7 @@ async function sendKakaoMemo(accessToken, text) {
       template_object: JSON.stringify({
         object_type: 'text',
         text,
-        link: { web_url: 'https://give-randing.vercel.app/admin/leads' },
+        link: { web_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.giveneeds.co.kr'}/admin/leads` },
       }),
     }),
   });

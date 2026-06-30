@@ -14,7 +14,7 @@ import OptimizedImage from '@/components/ui/OptimizedImage';
 const KAKAO_OPENCHAT = 'https://open.kakao.com/o/gPg1ngqi';
 const KAKAO_CHANNEL = 'http://pf.kakao.com/_lutxdG';
 const RANK_CHECK = 'https://inflowtest.vercel.app/rankcheck';
-const MAGAZINE = 'https://giveneeds.co.kr/magazine';
+const MAGAZINE = 'https://www.giveneeds.co.kr/magazine';
 
 export default function Place428Page() {
   const [mounted, setMounted] = useState(false);
