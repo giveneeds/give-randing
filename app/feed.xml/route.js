@@ -5,7 +5,7 @@ const SITE_NAME = 'GIVENEEDS 마케팅 인사이트 매거진';
 const SITE_DESC = '기브니즈 매거진에서 마케팅 대행사 실무자가 정리한 광고, 검색 노출, 리뷰 관리, 콘텐츠 전략, AI 마케팅 인사이트를 확인하세요.';
 
 function escapeXml(str = '') {
-  return str
+  return String(str)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
@@ -23,7 +23,7 @@ export async function GET() {
   if (supabase) {
     const { data } = await supabase
       .from('magazines')
-      .select('slug, title, excerpt, content_html, category, thumbnail_url, created_at, updated_at')
+      .select('slug, title, excerpt, content_html, category, created_at')
       .eq('status', 'published')
       .order('created_at', { ascending: false })
       .limit(50);
@@ -33,21 +33,19 @@ export async function GET() {
 
   const items = posts.map((post) => {
     const url = `${SITE_URL}/magazine/${post.slug}`;
-    const description = post.excerpt || stripHtml(post.content_html || '').slice(0, 200);
+    const description = escapeXml(
+      (post.excerpt || stripHtml(post.content_html || '')).slice(0, 200)
+    );
     const pubDate = new Date(post.created_at).toUTCString();
-    const image = post.thumbnail_url
-      ? `<enclosure url="${escapeXml(post.thumbnail_url)}" type="image/jpeg" />`
-      : '';
 
     return `
     <item>
       <title>${escapeXml(post.title)}</title>
       <link>${url}</link>
       <guid isPermaLink="true">${url}</guid>
-      <description>${escapeXml(description)}</description>
+      <description>${description}</description>
       <pubDate>${pubDate}</pubDate>
       ${post.category ? `<category>${escapeXml(post.category)}</category>` : ''}
-      ${image}
     </item>`;
   }).join('');
 
@@ -60,11 +58,6 @@ export async function GET() {
     <language>ko</language>
     <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
     <atom:link href="${SITE_URL}/feed.xml" rel="self" type="application/rss+xml" />
-    <image>
-      <url>${SITE_URL}/opengraph-image.png</url>
-      <title>${escapeXml(SITE_NAME)}</title>
-      <link>${SITE_URL}/magazine</link>
-    </image>
     ${items}
   </channel>
 </rss>`;
