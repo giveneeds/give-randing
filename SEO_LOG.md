@@ -16,6 +16,14 @@
 
 ---
 
+### 2026-06-30 · `ec72d3c`
+- 한 일: 어드민 사이드바에서 콘텐츠 스튜디오 메뉴 제거. 퍼널 방문자 분석 페이지에 UTM 키워드·채널·레퍼러 표시 기능 추가.
+- 목적/이유: 콘텐츠 스튜디오는 사용하지 않아 메뉴 노출 제거. 임준혁·김동언·강민진 등 특정 리드의 유입 경로와 검색 키워드를 퍼널에서 바로 확인할 수 있도록 개선.
+- 대상: `components/admin/Sidebar.js`, `app/admin/funnel/user/page.js`, `app/admin/funnel/visitor/[anonymousId]/page.js`, `app/api/analytics/visitors/route.js`, `app/api/analytics/visitor/[anonymousId]/route.js`
+- 검증: git push → Vercel 자동 배포
+
+---
+
 ### 2026-06-29 21:19 · `768214f`
 - 한 일: 모바일 첫 화면에서 GIVENEEDS 타이틀과 다음 검색 카드가 한 화면에 눌려 보이던 구성을 다시 분리했다. 첫 화면은 메인 타이틀/설명/스크롤 안내까지만 보이게 하고, 검색 카드형 두 번째 타이틀은 다음 화면 아래로 내려서 표시한다. GIVENEEDS 영문 타이틀은 중앙 정렬과 폭 제한을 적용해 좌우 글자 잘림을 막았다.
 - 목적/이유: 모바일 PageSpeed 최적화 과정에서 히어로 높이를 한 화면 안에 압축하면서 메인 타이틀과 다음 카드가 합쳐져 보이고, 큰 영문 타이틀이 좌우로 치우쳐 일부 글자가 잘리는 문제를 해결하기 위함.
