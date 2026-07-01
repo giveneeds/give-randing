@@ -1,4 +1,5 @@
 import { supabase, isDummyMode, DUMMY_MAGAZINES } from '@/lib/supabase';
+import { getServicePath } from '@/lib/serviceRoutes';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.giveneeds.co.kr';
 
@@ -30,7 +31,7 @@ export default async function sitemap() {
       priority: 0.8,
     })),
     ...services.map((s) => ({
-      url: `${SITE_URL}/service/${s.slug}`,
+      url: `${SITE_URL}${getServicePath(s.slug)}`,
       lastModified: s.updated_at ? new Date(s.updated_at) : now,
       changeFrequency: 'monthly',
       priority: 0.8,
@@ -54,11 +55,11 @@ async function fetchSlugs(table, { filter } = {}) {
     return [];
   }
   try {
-    let query = supabase.from(table).select('slug, updated_at');
+    let query = supabase.from(table).select(table === 'services' ? 'slug, updated_at, details' : 'slug, updated_at');
     if (filter) query = filter(query);
     const { data, error } = await query;
     if (error) return [];
-    return (data || []).filter((r) => r.slug);
+    return (data || []).filter((r) => r.slug && (table !== 'services' || r.details?.seo?.sitemap !== false));
   } catch {
     return [];
   }

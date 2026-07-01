@@ -3,9 +3,15 @@ import { DUMMY_SERVICE_PRODUCTS, isDummyMode, supabase } from '@/lib/supabase';
 import { requireAdmin } from '@/lib/adminAuth';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { mergeServiceDetailsForSave } from '@/lib/serviceDetailBlocks';
+import { isReservedServiceSlug, normalizeServiceSlug, resolveServiceSlug } from '@/lib/serviceRoutes';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
+
+function findByFlexibleSlug(services = [], slug = '') {
+  const normalized = resolveServiceSlug(slug);
+  return services.find((service) => service.slug === slug || resolveServiceSlug(service.slug) === normalized) || null;
+}
 
 // GET: 서비스 목록 조회 (활성화된 것 위주)
 export async function GET(request) {
@@ -28,7 +34,7 @@ export async function GET(request) {
       }));
 
       if (slug) {
-        const found = services.find((service) => service.slug === slug && (all || service.is_active));
+        const found = findByFlexibleSlug(services.filter((service) => all || service.is_active), slug);
         if (!found) return NextResponse.json({ error: 'Service not found' }, { status: 404 });
         return NextResponse.json(found);
       }
@@ -55,17 +61,17 @@ export async function GET(request) {
       query = query.eq('is_active', true);
     }
 
-    if (slug) {
-      query = query.eq('slug', slug).maybeSingle();
-    } else if (category) {
+    if (category) {
       query = query.eq('category', category);
     }
 
     const { data, error } = await query;
 
     if (error) throw error;
-    if (slug && !data) {
-      return NextResponse.json({ error: 'Service not found' }, { status: 404 });
+    if (slug) {
+      const found = findByFlexibleSlug(Array.isArray(data) ? data : [], slug);
+      if (!found) return NextResponse.json({ error: 'Service not found' }, { status: 404 });
+      return NextResponse.json(found);
     }
 
     return NextResponse.json(data);
@@ -96,15 +102,20 @@ export async function POST(request) {
     }
     
     // 필수 필드 체크
-    if (!body.slug || !body.title || !body.category) {
+    const normalizedSlug = normalizeServiceSlug(body.slug);
+
+    if (!normalizedSlug || !body.title || !body.category) {
       return NextResponse.json({ error: 'Slug, Title, and Category are required' }, { status: 400 });
+    }
+    if (isReservedServiceSlug(normalizedSlug)) {
+      return NextResponse.json({ error: '예약된 URL은 상품 slug로 사용할 수 없습니다.' }, { status: 400 });
     }
 
     const { data, error } = await supabaseAdmin
       .from('services')
       .insert([
         {
-          slug: body.slug,
+          slug: normalizedSlug,
           title: body.title,
           subtitle: body.subtitle,
           description: body.description,

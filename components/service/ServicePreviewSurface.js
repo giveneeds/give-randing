@@ -19,6 +19,7 @@ import LandingFooter from '@/components/landing/LandingFooter';
 import ServiceLeadForm from '@/components/landing/ServiceLeadForm';
 import ProductDetailRenderer, { getProductDetailBlockToc } from '@/components/service/ProductDetailRenderer';
 import OptimizedImage from '@/components/ui/OptimizedImage';
+import { getServiceSeo } from '@/lib/serviceSeo';
 
 function PreviewLink({ href, preview, className, children, ...props }) {
   if (preview) {
@@ -60,6 +61,7 @@ export default function ServicePreviewSurface({
   }
 
   const details = service.details || {};
+  const seo = getServiceSeo(service);
   const isComingSoon = details.status === 'coming_soon';
 
   if (isComingSoon) {
@@ -149,7 +151,7 @@ export default function ServicePreviewSurface({
                   )}
                 </div>
                 <h1 className="whitespace-pre-line break-keep text-3xl md:text-4xl font-black tracking-tighter mb-3 uppercase italic leading-[1.1] text-zinc-900 dark:text-white">
-                  {service.title}
+                  {seo.h1}
                 </h1>
                 {service.subtitle && (
                   <p className="whitespace-pre-line break-keep text-base md:text-lg font-bold text-zinc-600 dark:text-zinc-400 leading-snug">

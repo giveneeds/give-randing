@@ -1,6 +1,6 @@
 // 서버 layout — /service 의 페이지별 고유 metadata(title·canonical) 주입.
 // /service 페이지 본체는 client 컴포넌트라 metadata 를 export 할 수 없어, 여기서 담당한다.
-// (/service/[slug] 는 자체 layout 에서 generateMetadata 로 override)
+// 상품 상세는 루트 1뎁스 /[slug] 에서 담당한다.
 
 export const metadata = {
   title: '광고 대행사 기브니즈가 하는 일 — 바이럴·플레이스·퍼포먼스',

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase, isDummyMode } from '@/lib/supabase';
+import { resolveServiceSlug } from '@/lib/serviceRoutes';
 
 export async function GET(request, { params }) {
   try {
@@ -46,12 +47,12 @@ export async function GET(request, { params }) {
         .maybeSingle();
       service = sRow || null;
     } else if (data?.service_slug) {
-      const { data: sRow } = await supabase
+      const { data: serviceRows } = await supabase
         .from('services')
         .select('id, slug, title')
-        .eq('slug', data.service_slug)
-        .maybeSingle();
-      service = sRow || null;
+        .eq('is_active', true);
+      const requested = resolveServiceSlug(data.service_slug);
+      service = (serviceRows || []).find((row) => row.slug === data.service_slug || resolveServiceSlug(row.slug) === requested) || null;
     }
 
     return NextResponse.json({ lead: { ...data, campaign, magazine, service } });

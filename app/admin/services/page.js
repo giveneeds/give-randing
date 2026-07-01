@@ -75,6 +75,7 @@ function normalizeDetails(details = {}) {
     reference_img: '',
     related_magazine_slug: '',
     related_magazine_header: '',
+    seo: {},
     status: 'published',
     ...details,
   };
@@ -406,6 +407,9 @@ function ServiceFullScreenEditor({
   const existing = mode !== 'new';
 
   const setDetails = (patch) => setEditForm((prev) => ({ ...prev, details: { ...prev.details, ...patch } }));
+  const seo = editForm.details?.seo || {};
+  const setSeo = (patch) => setDetails({ seo: { ...seo, ...patch } });
+  const seoKeywords = Array.isArray(seo.keywords) ? seo.keywords.join(', ') : seo.keywords || '';
 
   const editor = (
     <div className="fixed inset-0 z-[9999] isolate bg-zinc-950/70 text-zinc-900">
@@ -457,6 +461,7 @@ function ServiceFullScreenEditor({
                 <div className="flex flex-wrap gap-2">
                   {[
                     ['#basic', '기본 정보'],
+                    ['#seo', 'SEO 설정'],
                     ['#builder', '상세 페이지 빌더'],
                     ['#settings', '설정'],
                   ].map(([href, label]) => (
@@ -519,6 +524,137 @@ function ServiceFullScreenEditor({
                     placeholder="서비스 개요를 입력하세요."
                     onChange={(e) => setEditForm((prev) => ({ ...prev, description: e.target.value }))}
                   />
+                </div>
+              </section>
+
+              <section id="seo" className="scroll-mt-24 rounded-3xl border border-zinc-200 bg-white p-6">
+                <div className="mb-6 flex items-center gap-3">
+                  <Search className="text-zinc-900" size={20} />
+                  <div>
+                    <h3 className="text-lg font-black uppercase italic text-zinc-900 underline decoration-zinc-200">
+                      SEO Settings
+                    </h3>
+                    <p className="mt-1 text-xs font-semibold leading-relaxed text-zinc-600">
+                      비워두면 상품명과 기본 설명을 자동으로 사용합니다. 검색 노출을 노리는 상품은 직접 작성하는 편이 좋습니다.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                  <label>
+                    <span className={LABEL}>SEO Title</span>
+                    <input
+                      className={FIELD}
+                      value={seo.title || ''}
+                      onChange={(e) => setSeo({ title: e.target.value })}
+                      placeholder="예) 네이버 플레이스 마케팅 | 기브니즈"
+                    />
+                  </label>
+                  <label>
+                    <span className={LABEL}>Page H1</span>
+                    <input
+                      className={FIELD}
+                      value={seo.h1 || ''}
+                      onChange={(e) => setSeo({ h1: e.target.value })}
+                      placeholder="예) 네이버 플레이스 마케팅"
+                    />
+                  </label>
+                  <label className="md:col-span-2">
+                    <span className={LABEL}>Meta Description</span>
+                    <textarea
+                      className={`${FIELD} min-h-28 resize-y leading-relaxed`}
+                      value={seo.description || ''}
+                      onChange={(e) => setSeo({ description: e.target.value })}
+                      placeholder="예) 네이버 플레이스 상위노출, 리뷰 관리, 지도 검색 최적화를 통해 오프라인 방문 전환을 높이는 플레이스 마케팅 서비스입니다."
+                    />
+                    <p className="mt-2 text-[11px] font-semibold text-zinc-600">
+                      권장 길이: 80~155자. 검색 결과 설명문과 SNS 미리보기 설명의 기본값으로 사용됩니다.
+                    </p>
+                  </label>
+                  <label className="md:col-span-2">
+                    <span className={LABEL}>Keywords</span>
+                    <input
+                      className={FIELD}
+                      value={seoKeywords}
+                      onChange={(e) => setSeo({ keywords: e.target.value })}
+                      placeholder="플레이스 마케팅, 네이버 플레이스, 상위노출, 리뷰 관리"
+                    />
+                  </label>
+                  <label>
+                    <span className={LABEL}>OG Title</span>
+                    <input
+                      className={FIELD}
+                      value={seo.ogTitle || ''}
+                      onChange={(e) => setSeo({ ogTitle: e.target.value })}
+                      placeholder="카카오톡/페이스북 공유 제목"
+                    />
+                  </label>
+                  <label>
+                    <span className={LABEL}>OG Image URL</span>
+                    <input
+                      className={FIELD}
+                      value={seo.ogImage || ''}
+                      onChange={(e) => setSeo({ ogImage: e.target.value })}
+                      placeholder="https://..."
+                    />
+                  </label>
+                  <label className="md:col-span-2">
+                    <span className={LABEL}>OG Description</span>
+                    <textarea
+                      className={`${FIELD} min-h-24 resize-y leading-relaxed`}
+                      value={seo.ogDescription || ''}
+                      onChange={(e) => setSeo({ ogDescription: e.target.value })}
+                      placeholder="비워두면 Meta Description을 사용합니다."
+                    />
+                  </label>
+                  <label>
+                    <span className={LABEL}>Structured Data Name</span>
+                    <input
+                      className={FIELD}
+                      value={seo.structuredName || ''}
+                      onChange={(e) => setSeo({ structuredName: e.target.value })}
+                      placeholder="구조화 데이터용 서비스명"
+                    />
+                  </label>
+                  <label>
+                    <span className={LABEL}>Structured Data Description</span>
+                    <input
+                      className={FIELD}
+                      value={seo.structuredDescription || ''}
+                      onChange={(e) => setSeo({ structuredDescription: e.target.value })}
+                      placeholder="구조화 데이터용 설명"
+                    />
+                  </label>
+                </div>
+
+                <div className="mt-6 grid grid-cols-1 gap-3 md:grid-cols-3">
+                  <label className="flex items-center gap-3 rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3">
+                    <input
+                      type="checkbox"
+                      className="h-5 w-5 rounded-md border-zinc-300"
+                      checked={seo.index !== false}
+                      onChange={(e) => setSeo({ index: e.target.checked })}
+                    />
+                    <span className="text-xs font-black text-zinc-900">검색 색인 허용</span>
+                  </label>
+                  <label className="flex items-center gap-3 rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3">
+                    <input
+                      type="checkbox"
+                      className="h-5 w-5 rounded-md border-zinc-300"
+                      checked={seo.follow !== false}
+                      onChange={(e) => setSeo({ follow: e.target.checked })}
+                    />
+                    <span className="text-xs font-black text-zinc-900">링크 추적 허용</span>
+                  </label>
+                  <label className="flex items-center gap-3 rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3">
+                    <input
+                      type="checkbox"
+                      className="h-5 w-5 rounded-md border-zinc-300"
+                      checked={seo.sitemap !== false}
+                      onChange={(e) => setSeo({ sitemap: e.target.checked })}
+                    />
+                    <span className="text-xs font-black text-zinc-900">sitemap 포함</span>
+                  </label>
                 </div>
               </section>
 

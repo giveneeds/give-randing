@@ -10,6 +10,7 @@ import { ArrowRight, Sparkles, X } from 'lucide-react';
 import AiSolutionBlock from '@/components/ui/AiSolutionBlock';
 import CaseStudiesSection from '@/components/landing/CaseStudiesSection';
 import ClientLogosSection from '@/components/landing/ClientLogosSection';
+import { getServicePath } from '@/lib/serviceRoutes';
 
 const SECTORS = [
   {
@@ -234,7 +235,7 @@ export default function ServicePage() {
                   return (
                     <Link
                       key={service.slug}
-                      href={`/service/${service.slug}`}
+                      href={getServicePath(service.slug)}
                       className="group no-underline"
                     >
                       {cardInner}

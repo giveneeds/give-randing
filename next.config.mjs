@@ -9,7 +9,7 @@ const nextConfig = {
     return [
       {
         source: '/service/place-optimize',
-        destination: '/service/place-marketing',
+        destination: '/placemarketing',
         permanent: true,
       },
     ];

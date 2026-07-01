@@ -9,6 +9,7 @@ import {
   AlertCircle, Loader2, Monitor, Smartphone, Tablet, ExternalLink, Compass,
 } from 'lucide-react';
 import { prettyReferrer } from '@/lib/leadInflow';
+import { getServicePath } from '@/lib/serviceRoutes';
 
 const PIPELINE_CONFIG = {
   new:       { label: '신규',  color: 'bg-amber-50 text-amber-700 border-amber-200' },
@@ -380,7 +381,7 @@ export default function LeadDetailPage() {
             {(lead?.service?.title || lead?.service_slug) && (
               <InflowRow label="서비스">
                 <a
-                  href={`/service/${lead.service?.slug || lead.service_slug}`}
+                  href={getServicePath(lead.service?.slug || lead.service_slug)}
                   target="_blank"
                   rel="noreferrer"
                   className="inline-flex items-center gap-1 text-indigo-600 hover:underline truncate"
@@ -390,7 +391,7 @@ export default function LeadDetailPage() {
                   <ExternalLink size={10} className="flex-shrink-0" />
                 </a>
                 <div className="mt-1 font-mono text-[10px] text-zinc-400">
-                  /service/{lead.service?.slug || lead.service_slug}
+                  {getServicePath(lead.service?.slug || lead.service_slug)}
                 </div>
               </InflowRow>
             )}

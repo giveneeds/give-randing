@@ -8,6 +8,7 @@ import {
   MessageSquare, Coins, MapPin
 } from 'lucide-react';
 import { prettyReferrer } from '@/lib/leadInflow';
+import { getServicePath } from '@/lib/serviceRoutes';
 
 const LEAD_TYPE_CONFIG = {
   consultation:          { label: '메인 문의', color: 'bg-violet-50 text-violet-600 border-violet-200' },
@@ -61,7 +62,7 @@ function getServiceSource(lead) {
   return {
     slug,
     title: lead?.service?.title || slug,
-    href: `/service/${slug}`,
+    href: getServicePath(slug),
   };
 }
 
@@ -484,7 +485,7 @@ export default function AdminLeads() {
                                 <div className="min-w-0">
                                   <p className="text-zinc-400 font-bold uppercase tracking-wider mb-0.5">서비스 상품</p>
                                   <LeadServiceLink lead={lead} className="max-w-full text-xs font-bold" />
-                                  <p className="mt-0.5 font-mono text-[10px] text-zinc-400">/service/{getServiceSource(lead).slug}</p>
+                                  <p className="mt-0.5 font-mono text-[10px] text-zinc-400">{getServiceSource(lead).href}</p>
                                 </div>
                               </div>
                             )}

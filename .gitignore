@@ -41,6 +41,7 @@ yarn-error.log*
 next-env.d.ts
 
 # local scratch: 일회성 탐색/설정 스크립트, 백업, 개인 IDE 설정
+/.tmp/
 /scripts/legacy/
 /backups/
 /public/uploads/

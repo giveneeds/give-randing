@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabase, isDummyMode } from '@/lib/supabase';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { getServicePath } from '@/lib/serviceRoutes';
 
 const BUDGET_LABELS = {
   under_100: '100만원 이하',
@@ -55,7 +56,7 @@ async function sendKakaoWebhook(lead) {
     `📌 ${lead.name} | ${lead.company_name || '회사명 미입력'}`,
     `📞 ${lead.phone || '연락처 없음'}`,
     `📧 ${lead.email || '이메일 없음'}`,
-    lead.service_slug ? `📦 상품: /service/${lead.service_slug}` : '',
+    lead.service_slug ? `📦 상품: ${getServicePath(lead.service_slug)}` : '',
     `💰 예산: ${budgetText}`,
     lead.message ? `💬 ${lead.message.slice(0, 100)}${lead.message.length > 100 ? '...' : ''}` : '',
     ``,
