@@ -16,6 +16,12 @@
 
 ---
 
+### 2026-07-01 19:35 · `e6c901e`
+- 한 일: 네이버/구글에 남아 있던 예전 PHP·게시판·매거진 URL을 현재 페이지로 308 리다이렉트하거나, 대응 콘텐츠가 없는 잘못된 URL은 410 Gone으로 응답하게 정리했다. 로그인/회원가입은 robots.txt 차단 대신 페이지 meta robots `noindex, nofollow`를 읽을 수 있게 바꾸고, OG 이미지 엔드포인트에는 `X-Robots-Tag: noindex, nofollow`를 추가했다.
+- 목적/이유: `/pages/...php`, `/board`, 옛 매거진 slug, 누락 PDF, `/$` 같은 과거/오류 URL이 검색결과나 색인 제외 리포트에 오래 남는 문제를 줄이기 위함. 검색엔진이 403/robots 차단/내용 없는 200보다 명확한 이동·삭제·색인 제외 신호를 받게 한다.
+- 대상: next.config.mjs, proxy.js, app/robots.js, app/login/layout.js, app/signup/layout.js
+- 검증: git diff --check ✅, npx eslint next.config.mjs proxy.js app/robots.js app/login/layout.js app/signup/layout.js ✅, npm run build ✅, 로컬에서 전달받은 URL들의 308/410/noindex/X-Robots-Tag 응답 확인 ✅
+
 ### 2026-07-01 17:15 · `6e82886`
 - 한 일: 전역 `<head>`에 출력되는 네이버 사이트 소유확인 meta 값을 `www.giveneeds.co.kr` 속성용 신규 토큰으로 교체했다.
 - 목적/이유: 네이버 서치어드바이저에서 표준 도메인인 `https://www.giveneeds.co.kr`을 별도 사이트로 등록하고 소유확인을 완료할 수 있게 하기 위함. 기존 non-www 속성만으로는 `www` canonical/sitemap/RSS 관리와 맞지 않는 문제를 해결한다.
