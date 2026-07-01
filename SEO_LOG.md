@@ -16,9 +16,15 @@
 
 ---
 
+### 2026-07-01 19:39 · `f0bed1d`
+- 한 일: 잘못 수집된 `/$` URL이 인코딩된 `/%24` 형태로 요청돼도 410 Gone과 `X-Robots-Tag: noindex, nofollow`로 응답하도록 보완했다.
+- 목적/이유: Google Search Console에는 `/$`처럼 표시되더라도 실제 크롤러 요청은 `/%24`로 들어올 수 있어, 한쪽만 처리하면 오류 URL이 계속 200으로 남을 수 있기 때문이다.
+- 대상: proxy.js, SEO_LOG.md
+- 검증: git diff --check ✅, npx eslint proxy.js ✅, npm run build ✅, 로컬에서 `/$`, `/%24`, 누락 PDF 410 및 옛 매거진 slug 308 응답 확인 ✅
+
 ### 2026-07-01 19:35 · `e6c901e`
 - 한 일: 네이버/구글에 남아 있던 예전 PHP·게시판·매거진 URL을 현재 페이지로 308 리다이렉트하거나, 대응 콘텐츠가 없는 잘못된 URL은 410 Gone으로 응답하게 정리했다. 로그인/회원가입은 robots.txt 차단 대신 페이지 meta robots `noindex, nofollow`를 읽을 수 있게 바꾸고, OG 이미지 엔드포인트에는 `X-Robots-Tag: noindex, nofollow`를 추가했다.
-- 목적/이유: `/pages/...php`, `/board`, 옛 매거진 slug, 누락 PDF, `/$` 같은 과거/오류 URL이 검색결과나 색인 제외 리포트에 오래 남는 문제를 줄이기 위함. 검색엔진이 403/robots 차단/내용 없는 200보다 명확한 이동·삭제·색인 제외 신호를 받게 한다.
+- 목적/이유: `/pages/...php`, `/board`, 옛 매거진 slug, 누락 PDF, `/$` 및 `/%24` 같은 과거/오류 URL이 검색결과나 색인 제외 리포트에 오래 남는 문제를 줄이기 위함. 검색엔진이 403/robots 차단/내용 없는 200보다 명확한 이동·삭제·색인 제외 신호를 받게 한다.
 - 대상: next.config.mjs, proxy.js, app/robots.js, app/login/layout.js, app/signup/layout.js
 - 검증: git diff --check ✅, npx eslint next.config.mjs proxy.js app/robots.js app/login/layout.js app/signup/layout.js ✅, npm run build ✅, 로컬에서 전달받은 URL들의 308/410/noindex/X-Robots-Tag 응답 확인 ✅
 

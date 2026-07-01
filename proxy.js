@@ -3,6 +3,7 @@ import { isReservedServiceSlug, resolveServiceSlug } from '@/lib/serviceRoutes';
 
 const GONE_PATHS = new Set([
   '/$',
+  '/%24',
   '/resource/file/company_intro.pdf',
 ]);
 
