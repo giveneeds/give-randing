@@ -16,6 +16,12 @@
 
 ---
 
+### 2026-07-01 17:15 · `6e82886`
+- 한 일: 전역 `<head>`에 출력되는 네이버 사이트 소유확인 meta 값을 `www.giveneeds.co.kr` 속성용 신규 토큰으로 교체했다.
+- 목적/이유: 네이버 서치어드바이저에서 표준 도메인인 `https://www.giveneeds.co.kr`을 별도 사이트로 등록하고 소유확인을 완료할 수 있게 하기 위함. 기존 non-www 속성만으로는 `www` canonical/sitemap/RSS 관리와 맞지 않는 문제를 해결한다.
+- 대상: app/layout.js
+- 검증: npx eslint app/layout.js ✅, npm run build ✅, 로컬 HTML에서 `<meta name="naver-site-verification" content="bfab3f9a0111f88d7edec185c607dee9e3f5d2d2"/>` 출력 확인 ✅
+
 ### 2026-07-01 16:16 · `27ade70`
 - 한 일: 상품 상세 페이지의 표준 URL을 `/service/{slug}`에서 `/{slug}` 1뎁스 구조로 옮기고, 하이픈이 있던 상품 slug를 모두 하이픈 없는 형태로 정규화했다. 기존 `/service/{slug}` 및 하이픈 포함 1뎁스 주소는 308 리다이렉트로 새 표준 주소에 연결했다. 서비스 상세 메타데이터, canonical, og:url, sitemap, Service JSON-LD를 새 1뎁스 주소 기준으로 생성하고, 어드민 서비스/솔루션 관리 화면에서 SEO Title, Page H1, Meta Description, Keywords, OG, 구조화 데이터, index/follow/sitemap 여부를 직접 수정할 수 있게 했다.
 - 목적/이유: 경쟁 페이지처럼 개별 상품 페이지를 검색 의도가 선명한 1뎁스 랜딩 페이지로 만들면서, 기존 주소의 SEO 신호와 공유 링크가 끊기지 않도록 하기 위함. 또한 상품별 설명문·검색 결과 제목·공유 미리보기 문구를 코드 수정 없이 관리자가 직접 보완할 수 있게 하기 위함.
