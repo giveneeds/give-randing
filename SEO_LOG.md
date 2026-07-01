@@ -16,13 +16,17 @@
 
 ---
 
+### 2026-07-01 16:16 · `27ade70`
+- 한 일: 상품 상세 페이지의 표준 URL을 `/service/{slug}`에서 `/{slug}` 1뎁스 구조로 옮기고, 하이픈이 있던 상품 slug를 모두 하이픈 없는 형태로 정규화했다. 기존 `/service/{slug}` 및 하이픈 포함 1뎁스 주소는 308 리다이렉트로 새 표준 주소에 연결했다. 서비스 상세 메타데이터, canonical, og:url, sitemap, Service JSON-LD를 새 1뎁스 주소 기준으로 생성하고, 어드민 서비스/솔루션 관리 화면에서 SEO Title, Page H1, Meta Description, Keywords, OG, 구조화 데이터, index/follow/sitemap 여부를 직접 수정할 수 있게 했다.
+- 목적/이유: 경쟁 페이지처럼 개별 상품 페이지를 검색 의도가 선명한 1뎁스 랜딩 페이지로 만들면서, 기존 주소의 SEO 신호와 공유 링크가 끊기지 않도록 하기 위함. 또한 상품별 설명문·검색 결과 제목·공유 미리보기 문구를 코드 수정 없이 관리자가 직접 보완할 수 있게 하기 위함.
+- 대상: app/[slug]/page.js, app/service/[slug]/*, app/service/page.js, app/sitemap.js, proxy.js, app/admin/services/page.js, app/api/services/route.js, app/api/leads/*, app/admin/leads/*, components/service/ServicePreviewSurface.js, components/service/ServiceDetailTracker.js, lib/serviceRoutes.js, lib/serviceSeo.js, lib/supabase.js, Supabase services.slug 데이터
+- 검증: DB 변경 전 services 테이블 백업(`.tmp/services-before-root-slug-migration-2026-07-01T07-09-19-734Z.json`) 및 slug 충돌 사전 확인 ✅, git diff --check ✅, 변경 파일 대상 ESLint ✅, npm run build ✅, 로컬/프로덕션에서 `/placemarketing` 200·`/place-marketing` 308·`/service/place-marketing` 308·sitemap 새 URL 반영·canonical/og:url 새 URL 반영·기존 slug API 조회 호환 확인 ✅
+
 ### 2026-06-30 · `ec72d3c`
 - 한 일: 어드민 사이드바에서 콘텐츠 스튜디오 메뉴 제거. 퍼널 방문자 분석 페이지에 UTM 키워드·채널·레퍼러 표시 기능 추가.
 - 목적/이유: 콘텐츠 스튜디오는 사용하지 않아 메뉴 노출 제거. 임준혁·김동언·강민진 등 특정 리드의 유입 경로와 검색 키워드를 퍼널에서 바로 확인할 수 있도록 개선.
 - 대상: `components/admin/Sidebar.js`, `app/admin/funnel/user/page.js`, `app/admin/funnel/visitor/[anonymousId]/page.js`, `app/api/analytics/visitors/route.js`, `app/api/analytics/visitor/[anonymousId]/route.js`
 - 검증: git push → Vercel 자동 배포
-
----
 
 ### 2026-06-29 21:19 · `768214f`
 - 한 일: 모바일 첫 화면에서 GIVENEEDS 타이틀과 다음 검색 카드가 한 화면에 눌려 보이던 구성을 다시 분리했다. 첫 화면은 메인 타이틀/설명/스크롤 안내까지만 보이게 하고, 검색 카드형 두 번째 타이틀은 다음 화면 아래로 내려서 표시한다. GIVENEEDS 영문 타이틀은 중앙 정렬과 폭 제한을 적용해 좌우 글자 잘림을 막았다.
